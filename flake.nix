@@ -1,8 +1,22 @@
 {
-  description = "pavg15 — NixOS + Hyprland + caelestia shell";
+  description = "universe — NixOS configuration";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    git-hooks-nix = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -20,21 +34,17 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs: {
-    nixosConfigurations.pavg15 = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./configuration.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "bak";
-          home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.users.atqa = import ./home.nix;
-        }
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" ];
+      imports = [
+        inputs.treefmt-nix.flakeModule
+        inputs.git-hooks-nix.flakeModule
+        ./parts/formatter.nix
+        ./parts/checks.nix
+        ./parts/devshells.nix
+        ./parts/hosts.nix
       ];
     };
-  };
 }
