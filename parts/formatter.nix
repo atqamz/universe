@@ -1,11 +1,8 @@
-{ ... }:
-{
-  perSystem =
-    { ... }:
-    {
-      treefmt = {
-        projectRootFile = "flake.nix";
-        programs.nixfmt.enable = true;
-      };
+_: {
+  perSystem = _: {
+    treefmt = {
+      projectRootFile = "flake.nix";
+      programs.nixfmt.enable = true;
     };
+  };
 }

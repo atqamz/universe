@@ -5,3 +5,9 @@ build.log
 
 # home-manager backups
 *.bak
+
+# git-hooks.nix generated config (symlink into the nix store)
+.pre-commit-config.yaml
+
+# direnv
+.direnv/

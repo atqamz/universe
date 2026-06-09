@@ -1,5 +1,4 @@
 {
-  config,
   pkgs,
   lib,
   inputs,
@@ -9,9 +8,11 @@
 {
   imports = [ inputs.caelestia-shell.homeManagerModules.default ];
 
-  home.username = "atqa";
-  home.homeDirectory = "/home/atqa";
-  home.stateVersion = "26.05";
+  home = {
+    username = "atqa";
+    homeDirectory = "/home/atqa";
+    stateVersion = "26.05";
+  };
 
   programs.home-manager.enable = true;
 

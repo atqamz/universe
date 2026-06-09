@@ -3,15 +3,21 @@
 {
   imports = [ ./hardware.nix ];
 
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    # Use latest kernel. (cachyos kernel to be swapped in as a follow-up rebuild)
+    kernelPackages = pkgs.linuxPackages_latest;
+  };
 
-  # Use latest kernel. (cachyos kernel to be swapped in as a follow-up rebuild)
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
-  networking.hostName = "pavg15";
-  networking.networkmanager.enable = true;
+  networking = {
+    hostName = "pavg15";
+    networkmanager.enable = true;
+    firewall = {
+      trustedInterfaces = [ "tailscale0" ];
+      allowedUDPPorts = [ config.services.tailscale.port ];
+    };
+  };
 
   time.timeZone = "Asia/Jakarta";
   i18n.defaultLocale = "en_US.UTF-8";
@@ -24,24 +30,63 @@
 
   # NVIDIA Optimus: AMD Renoir iGPU drives the only live output (eDP-1),
   # NVIDIA GTX 1650 (Turing) is offload-only for the disconnected HDMI.
-  services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-  };
-  hardware.nvidia = {
-    modesetting.enable = true;
-    open = true; # Turing supports the open kernel modules
-    nvidiaSettings = true;
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-    prime = {
-      offload = {
-        enable = true;
-        enableOffloadCmd = true;
-      };
-      amdgpuBusId = "PCI:5:0:0";
-      nvidiaBusId = "PCI:1:0:0";
+  hardware = {
+    graphics = {
+      enable = true;
+      enable32Bit = true;
     };
+    nvidia = {
+      modesetting.enable = true;
+      open = true; # Turing supports the open kernel modules
+      nvidiaSettings = true;
+      package = config.boot.kernelPackages.nvidiaPackages.stable;
+      prime = {
+        offload = {
+          enable = true;
+          enableOffloadCmd = true;
+        };
+        amdgpuBusId = "PCI:5:0:0";
+        nvidiaBusId = "PCI:1:0:0";
+      };
+    };
+    bluetooth.enable = true;
+  };
+
+  services = {
+    xserver.videoDrivers = [ "nvidia" ];
+
+    # Hyprland + uwsm session.
+    # Login: greetd + tuigreet launching hyprland via uwsm.
+    greetd = {
+      enable = true;
+      settings.default_session = {
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland'";
+        user = "greeter";
+      };
+    };
+
+    # Printing.
+    printing.enable = true;
+
+    # Power profiles + battery + bluetooth (caelestia shell queries these).
+    power-profiles-daemon.enable = true;
+    upower.enable = true;
+
+    # Sound (pipewire).
+    pulseaudio.enable = false;
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
+
+    # Keyring + polkit for the desktop session.
+    gnome.gnome-keyring.enable = true;
+
+    # SSH + Tailscale.
+    openssh.enable = true;
+    tailscale.enable = true;
   };
 
   # Hyprland + uwsm session.
@@ -50,36 +95,13 @@
     withUWSM = true;
   };
 
-  # Login: greetd + tuigreet launching hyprland via uwsm.
-  services.greetd = {
-    enable = true;
-    settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland'";
-      user = "greeter";
-    };
+  security = {
+    rtkit.enable = true;
+    polkit.enable = true;
+    # Passwordless sudo for wheel (per user request; native NixOS, the
+    # /etc/sudoers.d drop-in is not honored).
+    sudo.wheelNeedsPassword = false;
   };
-
-  # Printing.
-  services.printing.enable = true;
-
-  # Power profiles + battery + bluetooth (caelestia shell queries these).
-  services.power-profiles-daemon.enable = true;
-  services.upower.enable = true;
-  hardware.bluetooth.enable = true;
-
-  # Sound (pipewire).
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-  };
-
-  # Keyring + polkit for the desktop session.
-  services.gnome.gnome-keyring.enable = true;
-  security.polkit.enable = true;
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
@@ -99,23 +121,11 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  # Passwordless sudo for wheel (per user request; native NixOS, the
-  # /etc/sudoers.d drop-in is not honored).
-  security.sudo.wheelNeedsPassword = false;
-
   environment.systemPackages = with pkgs; [
     git
     vim
     wget
   ];
-
-  # SSH + Tailscale.
-  services.openssh.enable = true;
-  services.tailscale.enable = true;
-  networking.firewall = {
-    trustedInterfaces = [ "tailscale0" ];
-    allowedUDPPorts = [ config.services.tailscale.port ];
-  };
 
   system.stateVersion = "26.05";
 }
