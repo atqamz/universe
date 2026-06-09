@@ -17,7 +17,10 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   # Flakes.
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # NVIDIA Optimus: AMD Renoir iGPU drives the only live output (eDP-1),
   # NVIDIA GTX 1650 (Turing) is offload-only for the disconnected HDMI.
@@ -87,7 +90,11 @@
   users.users."atqa" = {
     isNormalUser = true;
     description = "Atqa Munzir";
-    extraGroups = [ "networkmanager" "wheel" "video" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "video"
+    ];
   };
 
   nixpkgs.config.allowUnfree = true;

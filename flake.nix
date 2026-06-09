@@ -8,6 +8,11 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
 
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -29,6 +34,8 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
       imports = [
+        inputs.treefmt-nix.flakeModule
+        ./parts/formatter.nix
         ./parts/hosts.nix
       ];
     };

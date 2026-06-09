@@ -1,5 +1,8 @@
 { inputs }:
-{ hostname, system ? "x86_64-linux" }:
+{
+  hostname,
+  system ? "x86_64-linux",
+}:
 inputs.nixpkgs.lib.nixosSystem {
   specialArgs = { inherit inputs hostname; };
   modules = [
