@@ -25,14 +25,14 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
-        ./configuration.nix
+        ./hosts/pavg15/default.nix
         home-manager.nixosModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "bak";
           home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.users.atqa = import ./home.nix;
+          home-manager.users.atqa = import ./modules/home;
         }
       ];
     };
