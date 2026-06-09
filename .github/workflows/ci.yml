@@ -2,8 +2,14 @@ name: ci
 
 on:
   pull_request:
-  push:
-    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
