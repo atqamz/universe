@@ -1,0 +1,7 @@
+# nix build artifacts
+result
+result-*
+build.log
+
+# home-manager backups
+*.bak
