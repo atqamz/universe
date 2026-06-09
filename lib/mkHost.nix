@@ -7,6 +7,7 @@ inputs.nixpkgs.lib.nixosSystem {
   specialArgs = { inherit inputs hostname; };
   modules = [
     ../hosts/${hostname}
+    ../modules/nixos
     inputs.home-manager.nixosModules.home-manager
     {
       nixpkgs.hostPlatform = system;
