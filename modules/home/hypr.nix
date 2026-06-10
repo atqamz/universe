@@ -1,4 +1,6 @@
 _: {
+  services.hyprpolkitagent.enable = true;
+
   # configType "hyprlang": the HM 26.05 default lua backend has no `bindel`
   # and wants split bind args, so comma-strings would not parse.
   wayland.windowManager.hyprland =
@@ -6,7 +8,7 @@ _: {
       terminal = "alacritty";
       browser = "zen-browser";
       editor = "zeditor";
-      fileExplorer = "nautilus";
+      fileExplorer = "alacritty -e yazi";
       mod = "SUPER";
     in
     {

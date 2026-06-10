@@ -4,6 +4,7 @@ _: {
     ./caelestia.nix
     ./hypr.nix
     ./cursor.nix
+    ./yazi.nix
   ];
 
   home = {
