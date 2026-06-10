@@ -6,8 +6,6 @@ _: {
   wayland.windowManager.hyprland =
     let
       terminal = "alacritty";
-      browser = "zen-browser";
-      editor = "zeditor";
       fileExplorer = "alacritty -e yazi";
       mod = "SUPER";
     in
@@ -42,17 +40,42 @@ _: {
 
         bind = [
           "${mod}, Return, exec, ${terminal}"
-          "${mod}, Q, killactive,"
-          "${mod}, M, exit,"
           "${mod}, E, exec, ${fileExplorer}"
-          "${mod}, B, exec, ${browser}"
-          "${mod}, C, exec, ${editor}"
-          "${mod}, V, togglefloating,"
+          "${mod}, C, exec, hyprpicker -a"
+
+          "${mod}, Space, global, caelestia:launcher"
+          "${mod}, L, global, caelestia:session"
+          "${mod} SHIFT, L, global, caelestia:lock"
+          "${mod}, V, exec, caelestia clipboard"
+          "${mod}, period, exec, caelestia emoji --picker"
+
+          "${mod} SHIFT, Q, killactive,"
+          "${mod}, Q, togglefloating,"
           "${mod}, F, fullscreen,"
+          "${mod}, J, togglesplit,"
+          "${mod}, P, pseudo,"
+          "${mod} SHIFT, left, swapwindow, l"
+          "${mod} SHIFT, right, swapwindow, r"
+          "${mod} SHIFT, up, swapwindow, u"
+          "${mod} SHIFT, down, swapwindow, d"
+          "${mod} CTRL, up, resizeactive, 0 -50"
+          "${mod} CTRL, down, resizeactive, 0 50"
+          "${mod}, G, togglegroup,"
+          "${mod} ALT, G, moveoutofgroup,"
+          "${mod} ALT, left, moveintogroup, l"
+          "${mod} ALT, right, moveintogroup, r"
+          "${mod} ALT, up, moveintogroup, u"
+          "${mod} ALT, down, moveintogroup, d"
+          "${mod} CTRL, left, changegroupactive, b"
+          "${mod} CTRL, right, changegroupactive, f"
+
           "${mod}, left, movefocus, l"
           "${mod}, right, movefocus, r"
           "${mod}, up, movefocus, u"
           "${mod}, down, movefocus, d"
+          "CTRL ALT, Tab, focusmonitor, +1"
+          "${mod}, mouse_down, workspace, e+1"
+          "${mod}, mouse_up, workspace, e-1"
           "${mod}, 1, workspace, 1"
           "${mod}, 2, workspace, 2"
           "${mod}, 3, workspace, 3"
@@ -63,8 +86,12 @@ _: {
           "${mod} SHIFT, 3, movetoworkspace, 3"
           "${mod} SHIFT, 4, movetoworkspace, 4"
           "${mod} SHIFT, 5, movetoworkspace, 5"
-          "${mod}, Space, global, caelestia:launcher"
-          "${mod}, X, global, caelestia:session"
+
+          ",XF86AudioNext, global, caelestia:mediaNext"
+          ",XF86AudioPrev, global, caelestia:mediaPrev"
+          ",XF86AudioPlay, global, caelestia:mediaToggle"
+          ",Print, global, caelestia:screenshotClip"
+          "${mod} SHIFT, S, global, caelestia:screenshot"
         ];
 
         bindm = [
@@ -76,8 +103,8 @@ _: {
           ",XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
           ",XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
           ",XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-          ",XF86MonBrightnessUp, exec, brightnessctl s 5%+"
-          ",XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+          ",XF86MonBrightnessUp, global, caelestia:brightnessUp"
+          ",XF86MonBrightnessDown, global, caelestia:brightnessDown"
         ];
       };
     };

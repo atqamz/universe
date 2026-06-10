@@ -19,8 +19,9 @@
       grim
       slurp
       wl-clipboard
+      cliphist
+      fuzzel
       brightnessctl
-      playerctl
       pavucontrol
     ]
   );
