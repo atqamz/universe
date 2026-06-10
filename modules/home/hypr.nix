@@ -52,7 +52,7 @@ _: {
           "${mod} SHIFT, Q, killactive,"
           "${mod}, Q, togglefloating,"
           "${mod}, F, fullscreen,"
-          "${mod}, J, togglesplit,"
+          "${mod}, J, layoutmsg, togglesplit"
           "${mod}, P, pseudo,"
           "${mod} SHIFT, left, swapwindow, l"
           "${mod} SHIFT, right, swapwindow, r"
