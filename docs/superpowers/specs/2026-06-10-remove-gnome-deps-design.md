@@ -69,6 +69,16 @@ GUI authentication prompts cannot appear in the Hyprland session today.
 - `nix path-info -r <new toplevel> | grep -iE 'gnome|nautilus'` returns
   empty. If an unavoidable transitive GNOME path remains, it is documented
   here with its dependency chain (`nix why-depends`).
+
+  **Documented exception (measured on the new closure):** two GNOME
+  *library* paths remain — `gnome-desktop-44.5` and
+  `gnome-settings-daemon-50.1-gsettings-schemas` — both via the single
+  chain `system-path → xdg-desktop-portal-gtk`. The GTK portal backend is
+  added upstream by `programs.hyprland` (NixOS module) and provides the
+  FileChooser portal this design relies on (plain yazi, uploads through the
+  file picker). They are linked libraries of the portal, not installed GNOME
+  components; removing them would mean removing the portal itself. All seven
+  previously-measured GNOME paths rooted in nautilus/gnome-keyring are gone.
 - CI green on the PR.
 - The systemd user unit `hyprpolkitagent.service` exists in the built
   home-manager generation.
