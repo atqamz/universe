@@ -12,6 +12,7 @@
     [
       alacritty
       zed-editor
+      unityhub
       inputs.zen-browser.packages.${pkgs.system}.default
       bibata-cursors
       jq
