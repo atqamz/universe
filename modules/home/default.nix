@@ -2,6 +2,7 @@ _: {
   imports = [
     ./packages.nix
     ./caelestia.nix
+    ./clipboard.nix
     ./hypr.nix
     ./cursor.nix
     ./yazi.nix
