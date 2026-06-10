@@ -11,7 +11,6 @@
     with pkgs;
     [
       alacritty
-      nautilus
       zed-editor
       inputs.zen-browser.packages.${pkgs.system}.default
       bibata-cursors
