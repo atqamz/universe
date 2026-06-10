@@ -22,7 +22,6 @@
       cliphist
       fuzzel
       brightnessctl
-      playerctl
       pavucontrol
     ]
   );
