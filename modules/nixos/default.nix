@@ -8,6 +8,7 @@ _: {
     ./audio.nix
     ./power.nix
     ./users.nix
+    ./secrets.nix
     ./locale.nix
   ];
 }
