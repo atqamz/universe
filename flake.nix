@@ -50,6 +50,7 @@
         ./parts/checks.nix
         ./parts/devshells.nix
         ./parts/hosts.nix
+        ./parts/apps.nix
       ];
     };
 }
