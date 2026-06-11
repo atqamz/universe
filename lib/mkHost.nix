@@ -9,6 +9,7 @@ inputs.nixpkgs.lib.nixosSystem {
     ../hosts/${hostname}
     ../modules/nixos
     inputs.home-manager.nixosModules.home-manager
+    inputs.sops-nix.nixosModules.sops
     {
       nixpkgs.hostPlatform = system;
       home-manager = {
