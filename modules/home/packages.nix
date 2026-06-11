@@ -16,6 +16,7 @@
       inputs.zen-browser.packages.${pkgs.system}.default
       bibata-cursors
       jq
+      gh
       hyprpicker
       grim
       slurp

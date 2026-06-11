@@ -5,6 +5,7 @@ _: {
       vault = "$HOME/secrets";
       rt = with pkgs; [
         git
+        gh
         gnupg
         sops
         age
@@ -36,7 +37,7 @@ _: {
           if [ ! -d "$vault/.git" ]; then
             echo "==> cloning vault"
             mkdir -p "$(dirname "$vault")"
-            git clone git@github.com:atqamz/secrets "$vault"
+            gh repo clone atqamz/secrets "$vault"
           fi
           cd "$vault" || exit 1
           ./scripts/import.sh
