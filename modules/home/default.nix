@@ -7,6 +7,8 @@ _: {
     ./cursor.nix
     ./yazi.nix
     ./secrets-sync.nix
+    ./dotai.nix
+    ./brain-sync.nix
   ];
 
   home = {
