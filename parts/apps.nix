@@ -2,7 +2,7 @@ _: {
   perSystem =
     { pkgs, ... }:
     let
-      vault = "$HOME/repo/secrets";
+      vault = "$HOME/secrets";
       rt = with pkgs; [
         git
         gnupg
