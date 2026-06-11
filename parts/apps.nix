@@ -46,15 +46,38 @@ _: {
           ./scripts/import.sh
         '';
       };
+
+      brainBootstrap = pkgs.writeShellApplication {
+        name = "brain-bootstrap";
+        runtimeInputs = rt;
+        text = ''
+          for repo in dotai brain; do
+            dest="$HOME/$repo"
+            if [ ! -d "$dest/.git" ]; then
+              echo "==> cloning $repo"
+              gh repo clone "atqamz/$repo" "$dest"
+            else
+              echo "==> updating $repo"
+              git -C "$dest" pull --ff-only
+            fi
+          done
+        '';
+      };
     in
     {
-      apps.secrets-export = {
-        type = "app";
-        program = "${export}/bin/secrets-export";
-      };
-      apps.secrets-bootstrap = {
-        type = "app";
-        program = "${bootstrap}/bin/secrets-bootstrap";
+      apps = {
+        secrets-export = {
+          type = "app";
+          program = "${export}/bin/secrets-export";
+        };
+        secrets-bootstrap = {
+          type = "app";
+          program = "${bootstrap}/bin/secrets-bootstrap";
+        };
+        brain-bootstrap = {
+          type = "app";
+          program = "${brainBootstrap}/bin/brain-bootstrap";
+        };
       };
     };
 }
