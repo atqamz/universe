@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  vault = "$HOME/repo/secrets";
+  vault = "$HOME/secrets";
   sync = pkgs.writeShellApplication {
     name = "secrets-sync";
     runtimeInputs = with pkgs; [
