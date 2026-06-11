@@ -103,28 +103,40 @@ prompts. Instead:
 - **Standing instruction** in `~/.claude/CLAUDE.md`: when a prompt might be
   answered from the brain, query it (qmd) before answering; read `index.md`
   first at small scale. The agent recalls when it judges relevant; context stays
-  clean.
+  clean. Recall runs through **qmd** (the MCP tools below) or the thin
+  `bin/brain-recall` CLI; both read `index.md` + `notes/`. `brain-recall` is the
+  shell entry point — it queries qmd when available and falls back to grep over
+  `index.md`/`notes/` when not, so recall works the same whether or not qmd built.
 
-### qmd, gated
+### qmd — in scope
 
 qmd (`@tobilu/qmd`, MIT, Node ≥ 22) does local hybrid retrieval (BM25 via FTS5 +
 vector via sqlite-vec + local-GGUF LLM rerank), with stdio / HTTP / daemon MCP
 modes. Index and ~2GB GGUF models live in `~/.cache/qmd/` (machine-local, never
-committed, rebuilt per machine).
+committed, rebuilt per machine). qmd is registered as a global MCP server in
+`settings.json` (tools `query` / `get` / `multi_get` / `status`) and is the
+retrieval engine for the brain.
 
-It is **gated behind a NixOS validation spike**: empirically confirm
-`npm install -g @tobilu/qmd` (or a nix packaging) plus `qmd embed` and
-`qmd query` actually run on the target host, because its native deps
-(`better-sqlite3`, `node-llama-cpp`) are exactly the kind that break on NixOS
-without packaging effort, and there is no documented NixOS support. **Until then,
-brain is usable without qmd** — the agent reads `index.md` then the files
-directly (zero infra). qmd is an upgrade, not a boot prerequisite.
+**A NixOS validation spike comes first** — confirm `qmd embed` + `qmd query`
+actually run on the target host before wiring dependents — because the native deps
+(`better-sqlite3`, `node-llama-cpp`) are exactly the kind that break on NixOS, and
+there is no documented NixOS support. The spike is a build task, not a deferral:
+qmd ships in this work. If the spike exposes a packaging gap, `brain-recall` and
+the agent fall back to grep over `index.md`/`notes/` so recall still functions
+(graceful degradation), and the packaging gap is fixed rather than the feature
+dropped.
 
 Spec corrections to carry: there is no `qmd update --pull` flag — pull is a
 per-collection `update-cmd` (set to `git pull`) that `qmd update` runs first. The
 CLI command is `qmd multi-get` (hyphen) though the MCP tool is `multi_get`.
 
 ## Canon gate — promotion via scheduled PR
+
+> **Deferred to a follow-up plan.** The automated promotion timer is built after
+> the rest ships — it needs `log/` populated by the Stop hook to have anything to
+> promote, and the gate works manually meanwhile (the user opens a `log/`→`notes/`
+> PR by hand, or edits `notes/` directly). Everything else in this design is in
+> scope now.
 
 Promotion `log/` → `notes/` is where hallucination/noise is filtered, and it is
 the single human control point.
@@ -154,7 +166,7 @@ No stow anywhere.
   editing `CLAUDE.md` / `context/` is instantly live with **no rebuild**. This
   beats `home.file` (which forces a rebuild per edit) and stow (not captured in
   the flake). Files linked: `CLAUDE.md`, `context/`, `settings.json`,
-  `bin/brain-recall`.
+  `bin/brain-recall` (plus the hook/statusline scripts settings.json references).
 - **Volatile `~/.claude`** — `projects/`, auth tokens, history — stays
   machine-local and untracked. Home-manager does not touch it. No secrets enter
   any repo.
@@ -181,8 +193,8 @@ No stow anywhere.
 ## Data flow
 
 - **New machine:** clone `dotai` + `brain`; home-manager symlinks `dotai` into
-  `~/.claude` and starts the `brain` sync service. (If qmd is validated:
-  `qmd collection add` + `qmd embed` to build the local index.)
+  `~/.claude` and starts the `brain` sync service; `qmd collection add` + `qmd embed`
+  build the local index (~2GB GGUF in `~/.cache/qmd`).
 - **Steady state — capture:** session ends → Stop hook digests → commit + push
   `log/` to `main`. Other devices auto-pull.
 - **Steady state — recall:** prompt arrives → agent queries the brain (qmd or
@@ -201,9 +213,9 @@ No stow anywhere.
 
 ## Testing / acceptance
 
-- [ ] **qmd NixOS spike:** `qmd embed` + `qmd query` run on the target host (or a
-      documented nix packaging path), or the feature ships index-only with qmd
-      deferred — decision recorded, not silently dropped.
+- [ ] **qmd works on NixOS:** `qmd embed` + `qmd query` run on the target host; the
+      qmd MCP tools are available in-session; `brain-recall` returns ranked hits via
+      qmd and falls back to grep over `index.md`/`notes/` when qmd is down.
 - [ ] `dotai` symlinked into `~/.claude` via `mkOutOfStoreSymlink`; editing
       `CLAUDE.md` is live without a rebuild; volatile `~/.claude` untouched.
 - [ ] Stop hook writes a provenance-stamped digest to `brain/log/`, commits, and
