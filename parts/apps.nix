@@ -38,6 +38,9 @@ _: {
             echo "==> cloning vault"
             mkdir -p "$(dirname "$vault")"
             gh repo clone atqamz/secrets "$vault"
+          else
+            echo "==> updating vault"
+            git -C "$vault" pull --ff-only
           fi
           cd "$vault" || exit 1
           ./scripts/import.sh
