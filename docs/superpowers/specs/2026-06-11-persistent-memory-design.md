@@ -162,7 +162,11 @@ No stow anywhere.
   issue #4 secrets-sync pattern): auto-pull `~/brain` (`git pull --ff-only`,
   skip + notify on divergence, never clobber); push is deliberate (the Stop hook
   pushes `log/`; promotion pushes via PR).
-- **`dotfiles` stays AI-free** — all AI config moves out into `dotai`.
+- **`dotfiles` stays AI-free** — all AI config moves out into `dotai`. Repo
+  strategy: the old `dotfiles` stays for sfx14 (not edited in place); universe-era
+  non-AI dotfiles get a new `dotfiles-universe` repo, AI config gets `dotai`; once
+  fully migrated, the old `dotfiles` is deleted and `dotfiles-universe` renamed to
+  `dotfiles`.
 
 ## Retirement / migration (the "fusion")
 
