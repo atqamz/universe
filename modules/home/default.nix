@@ -6,6 +6,7 @@ _: {
     ./hypr.nix
     ./cursor.nix
     ./yazi.nix
+    ./secrets-sync.nix
   ];
 
   home = {
