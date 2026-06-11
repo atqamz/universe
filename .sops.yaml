@@ -1,0 +1,10 @@
+# universe holds only L1 system secrets (the login-password hash). Recipients:
+# the GPG primary key F1F60517 for interactive edit / lockout recovery, plus one
+# HOST ssh key per machine (via ssh-to-age) so root decrypts headlessly at
+# activation with no user-gpg bootstrap. This is intentionally a DIFFERENT
+# recipient set from the vault's user-age keys.
+# Re-run `sops updatekeys <file>` after changing recipients.
+creation_rules:
+  - path_regex: modules/nixos/secrets/.*\.sops\.yaml$
+    pgp: F1F60517602888C8D5E486EB8AD7D4A302EE6771
+    age: age16mzlwjdhj8c3xw475vllqfm998k6ztm6av5y0n3kqujzvs3tz5xqrw5vvu
