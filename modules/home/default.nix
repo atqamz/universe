@@ -9,6 +9,7 @@ _: {
     ./secrets-sync.nix
     ./dotai.nix
     ./brain-sync.nix
+    ./qmd.nix
   ];
 
   home = {

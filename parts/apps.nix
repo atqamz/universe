@@ -61,6 +61,13 @@ _: {
               git -C "$dest" pull --ff-only
             fi
           done
+          if command -v qmd >/dev/null 2>&1; then
+            echo "==> building brain index (qmd)"
+            qmd collection add "$HOME/brain" --name brain 2>/dev/null || true
+            qmd embed
+          else
+            echo "==> qmd not installed; skipping index build (grep recall still works)"
+          fi
         '';
       };
     in
