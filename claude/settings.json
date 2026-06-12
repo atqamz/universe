@@ -13,6 +13,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/atqa/.claude/hooks/brain-capture.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
