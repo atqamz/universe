@@ -1,4 +1,8 @@
-{ config, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 let
   dotai = "${config.home.homeDirectory}/dotai/claude";
   link = config.lib.file.mkOutOfStoreSymlink;
@@ -16,6 +20,11 @@ in
     ".claude/bin/brain-recall".source = link "${dotai}/bin/brain-recall";
   };
 
-  # Put the brain-recall CLI on PATH so it is callable by bare name.
-  home.sessionPath = [ "${config.home.homeDirectory}/.claude/bin" ];
+  # Expose brain-recall by bare name through the profile bin (always on PATH),
+  # execing the live symlink so dotai edits stay instantly live.
+  home.packages = [
+    (pkgs.writeShellScriptBin "brain-recall" ''
+      exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"
+    '')
+  ];
 }
