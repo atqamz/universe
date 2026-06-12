@@ -13,6 +13,9 @@
       alacritty
       zed-editor
       unityhub
+      # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
+      # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
+      unzip
       inputs.zen-browser.packages.${pkgs.system}.default
       bibata-cursors
       jq
