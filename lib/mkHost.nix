@@ -16,7 +16,7 @@ inputs.nixpkgs.lib.nixosSystem {
         useGlobalPkgs = true;
         useUserPackages = true;
         backupFileExtension = "bak";
-        extraSpecialArgs = { inherit inputs; };
+        extraSpecialArgs = { inherit inputs hostname; };
         users.atqa = ../modules/home;
       };
     }

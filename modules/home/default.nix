@@ -9,6 +9,7 @@ _: {
     ./secrets-sync.nix
     ./dotai.nix
     ./brain-sync.nix
+    ./flake-autoupdate.nix
     ./qmd.nix
   ];
 
