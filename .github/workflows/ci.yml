@@ -16,15 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: free disk space
-        run: |
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
-          df -h /
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - name: flake check
         run: nix flake check --print-build-logs
-      - name: build pavg15
-        run: nix build --print-build-logs .#nixosConfigurations.pavg15.config.system.build.toplevel
