@@ -1,7 +1,11 @@
 # Memory
 
-- Update memory end of EVERY substantive task. Never skip. Never wait to be asked. Reflex like commit-after-change.
-- Triggers: task done/shipped/closed. Status change (open→merged→done). Decision locked. Non-obvious fact learned. Track switched.
-- One file = one fact + MEMORY.md index pointer. Update existing, no dup. Delete wrong.
-- Skip what repo/git/CLAUDE.md already records, or convo-only detail.
-- Status change → fix BOTH project file frontmatter AND MEMORY.md index line. Stale index = recall miss.
+- Canonical memory is `~/brain` (git, auto-pulled). It supersedes the old
+  per-project `~/.claude/projects/*/memory/`. Do not write per-project memory.
+- Capture is automatic: the Stop hook digests each session into `~/brain/log/`.
+  You do not hand-write `log/`.
+- Recall: when a prompt might be answered from past work, consult the brain —
+  read `~/brain/index.md`, open the matching `~/brain/notes/<slug>.md`, cite it.
+  Use `brain-recall <query>` (qmd-ranked, grep fallback) when available.
+- Canon (`notes/`) changes only through a reviewed PR on the `brain` repo. Do not
+  edit `notes/` casually; propose promotions from `log/` via PR.
