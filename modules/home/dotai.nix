@@ -15,4 +15,7 @@ in
     ".claude/hooks/context-warn.sh".source = link "${dotai}/hooks/context-warn.sh";
     ".claude/bin/brain-recall".source = link "${dotai}/bin/brain-recall";
   };
+
+  # Put the brain-recall CLI on PATH so it is callable by bare name.
+  home.sessionPath = [ "${config.home.homeDirectory}/.claude/bin" ];
 }
