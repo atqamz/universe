@@ -17,6 +17,8 @@
       # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
       unzip
       inputs.zen-browser.packages.${pkgs.system}.default
+      inputs.claude-code.packages.${pkgs.system}.default
+      inputs.codex-cli.packages.${pkgs.system}.default
       bibata-cursors
       jq
       gh
