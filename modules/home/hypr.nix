@@ -48,6 +48,7 @@ _: {
           "${mod} SHIFT, L, global, caelestia:lock"
           "${mod}, V, exec, caelestia clipboard"
           "${mod}, period, exec, caelestia emoji --picker"
+          "${mod} ALT, P, exec, passmenu"
 
           "${mod} SHIFT, Q, killactive,"
           "${mod}, Q, togglefloating,"
@@ -97,6 +98,7 @@ _: {
         bindm = [
           "${mod}, mouse:272, movewindow"
           "${mod}, mouse:273, resizewindow"
+          "${mod} SHIFT, mouse:272, resizewindow"
         ];
 
         bindel = [
