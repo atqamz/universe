@@ -11,6 +11,7 @@ _: {
     ./brain-sync.nix
     ./flake-autoupdate.nix
     ./qmd.nix
+    ./passmenu.nix
   ];
 
   home = {
