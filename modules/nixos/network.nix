@@ -1,26 +1,18 @@
-{ config, pkgs, ... }:
-let
-  # sshd asks this for "%u"'s keys at connect time; we answer only for atqa and
-  # pull live from github.com/atqamz.keys, so a key rotated on GitHub works
-  # without a redeploy. Empty output for any other user. Network failure falls
-  # through to Tailscale SSH.
-  githubKeys = pkgs.writeShellScript "ssh-github-keys" ''
-    [ "$1" = "atqa" ] || exit 0
-    ${pkgs.curl}/bin/curl -fsS --max-time 5 \
-      --cacert ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
-      https://github.com/atqamz.keys || true
-  '';
-in
+{ config, ... }:
 {
   networking.networkmanager.enable = true;
 
-  services.openssh = {
+  # SSH is handled by Tailscale SSH: tailscaled runs its own SSH server on the
+  # tailnet, auth governed by the tailnet ACL (keyless, no authorized_keys).
+  # `set --ssh` applies this declaratively on every activation. sshd stays
+  # enabled as a shadowed break-glass if Tailscale SSH is ever turned off.
+  services.openssh.enable = true;
+  services.tailscale = {
     enable = true;
-    authorizedKeysCommand = "${githubKeys} %u";
-    # Unprivileged helper user, per sshd's requirement for AuthorizedKeysCommand.
-    authorizedKeysCommandUser = "nobody";
+    extraSetFlags = [ "--ssh" ];
   };
-  services.tailscale.enable = true;
+
+  # Port 22 is reachable only over the tailnet; nothing is exposed publicly.
   networking.firewall = {
     trustedInterfaces = [ "tailscale0" ];
     allowedUDPPorts = [ config.services.tailscale.port ];
