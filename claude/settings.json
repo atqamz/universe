@@ -2,18 +2,8 @@
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"/home/atqa/.claude/hooks/context-warn.sh\""
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",
