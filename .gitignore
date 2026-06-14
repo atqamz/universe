@@ -11,3 +11,6 @@ build.log
 
 # direnv
 .direnv/
+
+# superpowers working docs (specs/plans/notes kept local, not tracked)
+docs/superpowers/
