@@ -11,5 +11,6 @@ _: {
     ./gnupg.nix
     ./secrets.nix
     ./locale.nix
+    ./warp.nix
   ];
 }
