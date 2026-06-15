@@ -11,6 +11,7 @@
     with pkgs;
     [
       alacritty
+      sourcegit
       zed-editor
       unityhub
       # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
