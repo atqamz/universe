@@ -39,6 +39,10 @@
       bibata-cursors
       jq
       gh
+      # git-lfs: the nsr game project stores textures as LFS objects. Without
+      # the filter binary on PATH a checkout leaves them as pointer stubs, so
+      # Unity can't import the PNGs (DefaultAsset) and materials render magenta.
+      git-lfs
       hyprpicker
       grim
       slurp
