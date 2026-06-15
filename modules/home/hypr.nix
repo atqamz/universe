@@ -34,7 +34,7 @@ _: {
 
         # Hyprland has no default placement for floating windows, so apps that
         # request no position open at 0,0 (top-left). Center them on spawn.
-        windowrulev2 = [
+        windowrule = [
           "center, floating:1"
         ];
 
