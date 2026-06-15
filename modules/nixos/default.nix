@@ -5,6 +5,7 @@ _: {
     ./network.nix
     ./gpu.nix
     ./desktop.nix
+    ./portal.nix
     ./audio.nix
     ./power.nix
     ./earlyoom.nix

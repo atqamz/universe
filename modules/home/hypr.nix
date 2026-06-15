@@ -5,8 +5,8 @@ _: {
   # and wants split bind args, so comma-strings would not parse.
   wayland.windowManager.hyprland =
     let
-      terminal = "alacritty";
-      fileExplorer = "alacritty -e yazi";
+      terminal = "ghostty";
+      fileExplorer = "ghostty -e yazi";
       mod = "SUPER";
     in
     {
