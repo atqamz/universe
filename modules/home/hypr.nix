@@ -35,7 +35,8 @@ _: {
         # Hyprland has no default placement for floating windows, so apps that
         # request no position open at 0,0 (top-left). Center them on spawn.
         windowrule = [
-          "center, floating:1"
+          # Hyprland 0.53+ requires a value for boolean effects like center.
+          "center 1, floating:1"
         ];
 
         input = {
