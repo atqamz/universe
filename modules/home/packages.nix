@@ -16,16 +16,19 @@
       # Unity Editor runs inside unityhub's buildFHSEnv sandbox, so its runtime
       # deps must live in the FHS env, not home.packages (which never reaches
       # it). python3: Editor's python-interpreter probe (USD/asset tooling);
-      # librsvg: SVG pixbuf loader for GTK dialog icons; shared-mime-info: mime
-      # DB those dialogs query. Without these the Editor.log spams "no working
-      # python interpreter" and Gtk pixbuf/mime warnings.
+      # shared-mime-info: mime DB the Editor's GTK file dialogs query. Without
+      # these the Editor.log spams "no working python interpreter" and a Gtk
+      # mime-database warning. (librsvg for the SVG pixbuf loader was tried but
+      # dropped: extraLibs/multiPkgs silently discards it on i686, and even via
+      # extraPkgs gdk-pixbuf needs its loaders.cache regenerated to register the
+      # loader — buildFHSEnv exposes no hook for that. The remaining pixbuf
+      # warning is a cosmetic GTK theme-icon probe with no functional impact.)
       (unityhub.override {
         extraPkgs =
           pkgs: with pkgs; [
             python3
             shared-mime-info
           ];
-        extraLibs = pkgs: with pkgs; [ librsvg ];
       })
       # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
       # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
