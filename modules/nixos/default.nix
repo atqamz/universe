@@ -7,6 +7,7 @@ _: {
     ./desktop.nix
     ./audio.nix
     ./power.nix
+    ./earlyoom.nix
     ./users.nix
     ./gnupg.nix
     ./secrets.nix
