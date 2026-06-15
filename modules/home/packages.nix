@@ -23,6 +23,7 @@
       bibata-cursors
       jq
       gh
+      python3
       hyprpicker
       grim
       slurp
