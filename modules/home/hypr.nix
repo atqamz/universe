@@ -47,6 +47,13 @@ _: {
           touchpad.natural_scroll = true;
         };
 
+        # Hyprland 0.51+ dropped gestures:workspace_swipe for the `gesture`
+        # keyword: "<fingers>, <direction>, <action>" (legacy/hyprlang parser).
+        # horizontal = swipe either way to move between workspaces.
+        gesture = [
+          "3, horizontal, workspace"
+        ];
+
         bind = [
           "${mod}, Return, exec, ${terminal}"
           "${mod}, E, exec, ${fileExplorer}"
