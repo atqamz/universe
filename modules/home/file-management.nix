@@ -128,7 +128,7 @@ in
           ];
         }
         {
-          name = "*.{zip,tar,gz,tgz,bz2,7z,rar,xz,zst}";
+          url = "*.{zip,tar,gz,tgz,bz2,7z,rar,xz,zst}";
           use = [
             "extract"
             "open"
@@ -153,11 +153,11 @@ in
             run = "ouch";
           }
           {
-            name = "*.md";
+            url = "*.md";
             run = "rich-preview";
           }
           {
-            name = "*.csv";
+            url = "*.csv";
             run = "rich-preview";
           }
         ];
