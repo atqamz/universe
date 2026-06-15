@@ -38,7 +38,11 @@ _: {
           # Hyprland 0.53+ windowrule v3 grammar: comma-separated "key value"
           # fields. Matchers take a "match:" prefix; the floating matcher prop
           # is named "float" (not "floating"). "center 1" is the effect.
-          "center 1, match:float 1"
+          # Only center native Wayland floats: XWayland apps (e.g. Unity) place
+          # their own popups/menus anchored to a position, and forcing those to
+          # center yanks dropdown menus to mid-screen. match:xwayland 0 skips
+          # them so their placement is respected.
+          "center 1, match:float 1, match:xwayland 0"
         ];
 
         input = {
