@@ -13,7 +13,20 @@
       alacritty
       sourcegit
       zed-editor
-      unityhub
+      # Unity Editor runs inside unityhub's buildFHSEnv sandbox, so its runtime
+      # deps must live in the FHS env, not home.packages (which never reaches
+      # it). python3: Editor's python-interpreter probe (USD/asset tooling);
+      # librsvg: SVG pixbuf loader for GTK dialog icons; shared-mime-info: mime
+      # DB those dialogs query. Without these the Editor.log spams "no working
+      # python interpreter" and Gtk pixbuf/mime warnings.
+      (unityhub.override {
+        extraPkgs =
+          pkgs: with pkgs; [
+            python3
+            shared-mime-info
+          ];
+        extraLibs = pkgs: with pkgs; [ librsvg ];
+      })
       # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
       # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
       unzip
@@ -23,7 +36,6 @@
       bibata-cursors
       jq
       gh
-      python3
       hyprpicker
       grim
       slurp
