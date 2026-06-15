@@ -64,8 +64,8 @@ if [ -f "$props" ]; then
 fi
 cat >>"$props" <<'EOF'
 extra-keys = [ \
- ['ESC','TAB','CTRL','ALT','SHIFT','/','-','|','~','HOME'], \
- ['KEYBOARD','PGUP','UP','PGDN','DEL','LEFT','DOWN','RIGHT','END','ENTER'] \
+ ['ESC','TAB','CTRL','ALT','SHIFT','/','-','|','~','DEL'], \
+ ['KEYBOARD','HOME','END','PGUP','PGDN','LEFT','DOWN','UP','RIGHT','ENTER'] \
 ]
 EOF
 termux-reload-settings 2>/dev/null || true
