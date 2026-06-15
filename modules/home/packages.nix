@@ -58,7 +58,6 @@ in
   home.packages = lib.mkAfter (
     with pkgs;
     [
-      alacritty
       sourcegit
       zed-editor
       # NVIDIA-offload-wrapped Unity Hub; see the let block above.
