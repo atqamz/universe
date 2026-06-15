@@ -67,6 +67,7 @@ _: {
           "${mod}, L, global, caelestia:session"
           "${mod} SHIFT, L, global, caelestia:lock"
           "${mod}, V, exec, caelestia clipboard"
+          "${mod} ALT, V, exec, sh -c 'cliphist wipe && notify-send Clipboard \"History cleared\" || true'"
           "${mod}, period, exec, caelestia emoji --picker"
           "${mod} ALT, P, exec, passmenu"
 
