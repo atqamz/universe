@@ -12,6 +12,7 @@ _: {
     ./flake-autoupdate.nix
     ./qmd.nix
     ./passmenu.nix
+    ./fuzzel.nix
   ];
 
   home = {
