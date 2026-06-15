@@ -18,5 +18,12 @@
     cursor-style = block
     confirm-close-surface = false
     gtk-single-instance = true
+
+    # ghostty advertises TERM=xterm-ghostty, whose terminfo most remote hosts
+    # lack -- so `ssh host` then `tmux` fails with "missing or unsuitable
+    # terminal: xterm-ghostty". ssh-terminfo installs ghostty's terminfo on the
+    # remote on first connect; ssh-env falls back to TERM=xterm-256color when
+    # that can't happen (e.g. read-only remote).
+    shell-integration-features = ssh-env,ssh-terminfo
   '';
 }
