@@ -11,7 +11,7 @@
   xdg.configFile."ghostty/config".text = ''
     font-family = JetBrainsMono Nerd Font
     font-size = 12
-    theme = catppuccin-mocha
+    theme = Catppuccin Mocha
     background-opacity = 0.95
     window-padding-x = 8
     window-padding-y = 8
