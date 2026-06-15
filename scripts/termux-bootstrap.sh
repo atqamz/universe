@@ -2,7 +2,7 @@
 # Termux bootstrap: make a fresh phone reachable over SSH and pleasant to type in.
 #
 # Run on a new phone (Termux from any source):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/atqamz/universe/master/scripts/termux-bootstrap.sh)
+#   curl -fsSL atqamz.com/termux | sh
 #
 # Idempotent: safe to re-run. Does NOT touch Nix (Termux can't host a Nix store).
 # After running, laptops connect with `ssh phone` (port 8022).
