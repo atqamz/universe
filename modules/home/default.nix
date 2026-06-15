@@ -5,7 +5,8 @@ _: {
     ./clipboard.nix
     ./hypr.nix
     ./cursor.nix
-    ./yazi.nix
+    ./ghostty.nix
+    ./file-management.nix
     ./secrets-sync.nix
     ./dotai.nix
     ./brain-sync.nix
