@@ -7,10 +7,7 @@ let
   # Shared bash: resolve Zen profile dir, detect running browser.
   common = ''
     REPO="$HOME/.local/share/zen-profile"
-    IDENTITY="$HOME/.config/zen-profile/identity"
     BLOB="zen-profile.tar.age"
-    # Files synced (relative to the profile dir). Full profile incl layout.
-    FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
 
     die() { echo "zen-profile: $*" >&2; exit 1; }
 
@@ -60,6 +57,7 @@ let
     ];
     text = ''
       ${common}
+      IDENTITY="$HOME/.config/zen-profile/identity"
       if zen_running; then die "close Zen before pull (last-push-wins clobbers live session)"; fi
       [ -f "$IDENTITY" ] || die "no identity at $IDENTITY — provision from vault"
       ensure_repo
@@ -88,11 +86,13 @@ let
     ];
     text = ''
       ${common}
+      # Files synced (relative to the profile dir). Full profile incl layout.
+      FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
       if zen_running; then die "close Zen before push"; fi
       ensure_repo
       pdir="$(profile_dir)"
       tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
-      # --ignore-failed-read: recovery.jsonlz4 may be absent.
+      # recovery.jsonlz4 may be absent; only archive files that exist.
       present=()
       for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
       [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
