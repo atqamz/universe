@@ -195,6 +195,21 @@ in
         run = "plugin smart-enter";
         desc = "Enter dir / open file";
       }
+      # Create an archive from the selection. ouch picks the format from the
+      # name you type (foo.tar.gz, foo.zip, ...). --block hands yazi the
+      # terminal so the prompt is interactive.
+      {
+        on = [ "<C-a>" ];
+        run = ''shell 'printf "Archive name: " && read -r n && [ -n "$n" ] && ouch compress "$@" "$n"' --block'';
+        desc = "Create archive (ouch)";
+      }
+      # Connect to a network share (smb/sftp): gio mounts it under the gvfs
+      # runtime dir, then yazi jumps there so you can browse it.
+      {
+        on = [ "<C-g>" ];
+        run = ''shell 'printf "Mount URL (smb://host/share): " && read -r u && gio mount "$u"; printf "\n[enter to continue] " && read -r _ && ya emit cd "/run/user/$(id -u)/gvfs"' --block'';
+        desc = "Connect to network share (gio)";
+      }
     ];
   };
 
@@ -246,6 +261,7 @@ in
   # ---- supporting CLIs ---------------------------------------------------
   home.packages = with pkgs; [
     trash-cli # `d` in yazi shells out to the freedesktop trash; this is the CLI to list/restore
+    ouch # extract (open rules) + create archives (<C-a>); the yazi ouch plugin shells out to this
     dragon-drop # drag-and-drop source/target (<C-d>)
     ffmpegthumbnailer # video thumbnails in previews
     poppler-utils # pdftoppm: pdf previews
