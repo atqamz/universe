@@ -8,6 +8,7 @@ _: {
     ./ghostty.nix
     ./file-management.nix
     ./secrets-sync.nix
+    ./zen-profile.nix
     ./dotai.nix
     ./claude-plugins.nix
     ./brain-sync.nix
