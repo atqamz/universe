@@ -22,9 +22,16 @@ let
     profile_dir() {
       local root rel
       root="$(zen_root)"
-      # installs.ini Default= is the actively-launched profile.
+      # 1. installs.ini Default= — the actively-launched profile (multi-profile case).
       rel="$(grep -m1 '^Default=' "$root/installs.ini" 2>/dev/null | sed 's/^Default=//')"
-      [ -z "$rel" ] && rel="$(awk -F= '/^\[Install/{f=1} f && /^Default=/{sub(/^Default=/,""); print; exit}' "$root/profiles.ini")"
+      # 2. else profiles.ini — profile flagged Default=1, else the first profile.
+      [ -z "$rel" ] && rel="$(awk '
+        function flush(){ if (p != "") { if (f == "") f = p; if (d == "1") c = p } }
+        /^\[/ { flush(); p=""; d=""; next }
+        /^Path=/ { p = substr($0, 6) }
+        /^Default=/ { d = substr($0, 9) }
+        END { flush(); print (c != "" ? c : f) }
+      ' "$root/profiles.ini")"
       [ -z "$rel" ] && die "cannot resolve default profile"
       echo "$root/$rel"
     }
