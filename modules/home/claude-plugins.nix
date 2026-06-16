@@ -74,6 +74,11 @@ let
       kmkt="$HOME/.claude/plugins/known_marketplaces.json"
       inst="$HOME/.claude/plugins/installed_plugins.json"
 
+      # claude shells out to git to add/refresh marketplaces; the user gitconfig
+      # rewrites https->ssh (insteadOf), which needs an ssh key + pinentry that
+      # an unattended activation/timer lacks. Neutralize it to stay on https.
+      export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+
       ${mktAddLines}
 
       ${pluginInstallLines}
@@ -98,6 +103,9 @@ let
     runtimeInputs = runtime;
     text = ''
       log() { logger -t claude-plugins -- "$*"; printf '==> %s\n' "$*"; }
+
+      # See the ensure script: keep claude's git on https, not the ssh rewrite.
+      export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 
       claude plugin marketplace update || log "marketplace update failed"
       ${pluginUpdateLines}
