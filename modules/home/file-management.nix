@@ -17,9 +17,31 @@ let
   # behaviour:
   #   open      -> --chooser-file: space-select, Enter writes the selection
   #   directory -> --cwd-file: navigate in, q writes the current directory
-  #   save      -> navigate to target dir, q; we append the suggested filename
-  # The save mapping is the weak one (yazi can't prompt for a new name); see the
-  # honest summary in the PR. open + directory are exact.
+  #   save      -> pick the target dir in yazi, then a readline prompt for the
+  #               filename (prefilled with the app's suggestion, editable)
+  # open + directory are exact; save is a two-step (browse then type) rather
+  # than a single dialog, but you do get to name/rename the file.
+
+  # Runs inside the spawned terminal for the save path: yazi to choose the
+  # directory, then an editable filename prompt. Separate script so the
+  # interactive prompt can follow yazi in one terminal window.
+  saveHelper = pkgs.writeShellApplication {
+    name = "termfilechooser-yazi-save";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.yazi
+    ];
+    text = ''
+      start="$1"; suggested="$(basename "$2")"; out="$3"
+      tmp="$(mktemp)"
+      yazi "$start" --cwd-file="$tmp"
+      dir="$(cat "$tmp")"; rm -f "$tmp"
+      [ -d "$dir" ] || dir="$HOME"
+      read -e -i "$suggested" -r -p "Save as: " fname || true
+      printf '%s\n' "$dir/''${fname:-$suggested}" > "$out"
+    '';
+  };
+
   chooser = pkgs.writeShellApplication {
     name = "termfilechooser-yazi";
     runtimeInputs = [ pkgs.coreutils ];
@@ -32,12 +54,7 @@ let
       [ -d "$start" ] || start="$HOME"
 
       if [ "$save" = "1" ]; then
-        name="$(basename "$path")"
-        tmp="$(mktemp)"
-        ${termcmd} ${yazi} "$start" --cwd-file="$tmp"
-        dir="$(cat "$tmp")"; rm -f "$tmp"
-        [ -d "$dir" ] || dir="$HOME"
-        printf '%s\n' "$dir/$name" > "$out"
+        ${termcmd} ${saveHelper}/bin/termfilechooser-yazi-save "$start" "$path" "$out"
       elif [ "$directory" = "1" ]; then
         ${termcmd} ${yazi} "$start" --cwd-file="$out"
       else
@@ -182,6 +199,14 @@ in
         on = [ "<C-d>" ];
         run = ''shell 'dragon-drop -a -x -- "$@"' --confirm'';
         desc = "Drag selection (dragon)";
+      }
+      # Drag INTO yazi: dragon opens a target window; drop files from another
+      # app onto it and they are copied into the current directory. A terminal
+      # can't itself be a drop target, so this proxy window is the workaround.
+      {
+        on = [ "<C-S-d>" ];
+        run = ''shell 'dragon-drop --target --print-path -x | while IFS= read -r f; do cp -rn -- "$f" ./; done' --block'';
+        desc = "Receive dropped files (dragon)";
       }
       # Removable + network drive manager.
       {
