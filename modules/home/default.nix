@@ -9,6 +9,7 @@ _: {
     ./file-management.nix
     ./secrets-sync.nix
     ./dotai.nix
+    ./claude-plugins.nix
     ./brain-sync.nix
     ./flake-autoupdate.nix
     ./qmd.nix
