@@ -170,7 +170,11 @@ def call_claude(system_prompt, user_prompt):
 
 def llm(system_prompt, user_prompt):
     if provider == "ollama":
-        return call_ollama(system_prompt, user_prompt)
+        out = call_ollama(system_prompt, user_prompt)
+        if out:
+            return out
+        warn("ollama unavailable; falling back to claude")
+        return call_claude(system_prompt, user_prompt)
     return call_claude(system_prompt, user_prompt)
 
 # Load manifest
