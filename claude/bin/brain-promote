@@ -226,52 +226,112 @@ for p in candidates:
     title_match = re.search(r"^##\s+(.+)$", body, re.M)
     title = title_match.group(1).strip() if title_match else "(untitled)"
     bullets = [m.group(1).strip() for m in re.finditer(r"^[-*]\s+(.+)$", body, re.M)]
-    prov_match = re.search(r"\*\*Provenance:\*\*\s+session\s+`([^`]+)`\s+·\s+cwd\s+`([^`]+)`\s+·\s+(\d{8}T\d{6}Z)", text)
+    prov_match = re.search(r"\*\*Provenance:\*\*\s+session\s+\\?`([^\\`]+)\\?`\s+·\s+cwd\s+\\?`([^\\`]+)\\?`\s+·\s+(\d{8}T\d{6}Z)", text)
     session_id, cwd, prov_ts = (prov_match.groups() if prov_match else ("", "", ts_from_filename(p)))
     log_entries.append({
         "path": p, "ts": ts_from_filename(p), "title": title, "bullets": bullets,
         "body": body, "session_id": session_id, "cwd": cwd, "provenance_ts": prov_ts,
     })
 
-# --- infer target note for each log entry ---
-def infer_note_slug(entry):
+# --- infer project family from cwd ---
+def project_family(entry):
     cwd = entry["cwd"] or ""
     home = str(Path.home())
     rel = cwd.removeprefix(home).strip("/")
     parts = rel.split("/")
-    head = ""
+    if len(parts) >= 3 and parts[0] in ("repo", "workspace"):
+        return f"{parts[1]}/{parts[2]}"
     if len(parts) >= 2 and parts[0] in ("repo", "workspace"):
-        head = parts[1]
-    elif len(parts) >= 1:
-        head = parts[0]
-
-    query = (entry["title"] + " " + " ".join(entry["bullets"])).lower()
-    best_slug, best_score = None, 0
-    for slug, meta in index_notes.items():
-        score = 0
-        if head and head in slug:
-            score += 5
-        for word in re.findall(r"[a-z0-9_]+", slug.lower()):
-            if len(word) > 3 and word in query:
-                score += 1
-        if score > best_score:
-            best_score = score
-            best_slug = slug
-    if best_slug and best_score >= 4:
-        return best_slug, "existing"
-    return None, "new"
+        return parts[1]
+    if len(parts) >= 1:
+        return parts[0]
+    return "unknown"
 
 for e in log_entries:
-    slug, reason = infer_note_slug(e)
-    e["target_slug"] = slug
-    e["target_reason"] = reason
+    e["project"] = project_family(e)
+
+# Group by project family first
+project_groups = {}
+for e in log_entries:
+    project_groups.setdefault(e["project"], []).append(e)
+
+# --- LLM classifier per project family ---
+def classify_routing(project, entries):
+    """Return a dict mapping entry id -> (target_slug, is_new)."""
+    if not entries:
+        return {}
+
+    # Build note catalog limited to notes likely relevant (same project prefix or global)
+    catalog = []
+    for slug, meta in index_notes.items():
+        # Include note if its slug contains the project head, or if project is unknown
+        parts = project.split("/")
+        head = parts[0]
+        if head in slug or project == "unknown":
+            note_text = existing_notes.get(slug, {}).get("body", "")[:300]
+            catalog.append(f"- {slug}: {meta['description']}\n  {note_text.replace(chr(10), ' ')}")
+    if not catalog:
+        # No relevant existing notes -> all new
+        return {id(e): (None, True) for e in entries}
+
+    log_summaries = "\n\n".join(
+        f"[id:{id(e)}]\ntitle: {e['title']}\n" + "\n".join(f"- {b}" for b in e["bullets"])
+        for e in entries
+    )
+
+    system_prompt = (
+        "You route session log summaries to brain notes. For each log ID, decide whether it "
+        "belongs to an existing note or needs a new note. Output ONLY one line per log ID in "
+        "exactly this format:\n"
+        "EXISTING:<id>:<exact_existing_slug>\n"
+        "or\n"
+        "NEW:<id>:<proposed_new_slug>\n\n"
+        "Proposed new slugs must follow this format: home-atqa-<context>__<topic>. "
+        "If a log clearly belongs to a NEW topic not covered by existing notes, use NEW. "
+        "Do NOT merge unrelated topics into existing notes just because they share a broad project. "
+        "Do NOT add any other text."
+    )
+    user_prompt = (
+        f"Project context: {project}\n\n"
+        "Existing notes:\n" + "\n".join(catalog) + "\n\n"
+        "Log summaries:\n" + log_summaries
+    )
+
+    out = llm(system_prompt, user_prompt)
+    if not out:
+        warn(f"classifier failed for project {project}; marking all as new")
+        return {id(e): (None, True) for e in entries}
+
+    routing = {}
+    for line in out.splitlines():
+        line = line.strip()
+        m = re.match(r"^(EXISTING|NEW):(\d+):(.+)$", line)
+        if not m:
+            continue
+        kind, eid, slug = m.group(1), int(m.group(2)), safe_filename(m.group(3).strip())
+        routing[eid] = (slug, kind == "NEW")
+
+    # Fallback for any entry the classifier missed
+    for e in entries:
+        if id(e) not in routing:
+            routing[id(e)] = (None, True)
+    return routing
+
+# Apply classifier per project family
+entry_targets = {}
+for project, entries in project_groups.items():
+    log(f"classifying {len(entries)} entries for project {project}")
+    routing = classify_routing(project, entries)
+    for e in entries:
+        slug, is_new = routing.get(id(e), (None, True))
+        entry_targets[id(e)] = (slug if slug else f"new-{project}-{id(e)}", is_new)
 
 # Group by target slug
 new_groups = {}
 for e in log_entries:
-    slug = e["target_slug"]
-    if slug is None:
-        continue
+    slug, is_new = entry_targets[id(e)]
+    e["target_slug"] = slug
+    e["target_is_new"] = is_new
     new_groups.setdefault(slug, []).append(e)
 
 if not new_groups:
@@ -299,17 +359,21 @@ def merge_note(slug, entries, existing_fm, existing_body):
     user_prompt = f"Note slug: {slug}\n\nNew sources to integrate:\n{sources}{existing_section}"
     return clean_model_output(llm(system_prompt, user_prompt) or "")
 
-def new_note_slug_and_frontmatter(entries):
+def new_note_slug_and_frontmatter(entries, hint_slug=None):
     sources = "\n\n---\n\n".join(
         f"Source: {e['path'].name} (cwd: {e['cwd']})\n## {e['title']}\n" + "\n".join(f"- {b}" for b in e["bullets"])
         for e in entries
     )
+    hint = ""
+    if hint_slug:
+        hint = f"Suggested slug: {hint_slug}\n"
     system_prompt = (
         "You are proposing a new canonical brain note. Based on the log sources, "
         "output ONLY a JSON object with keys: slug (string, format like home-atqa-<context>__<topic>), "
-        "description (one-line string), body (markdown string). No preamble."
+        "description (one-line string), body (markdown string). No preamble. "
+        "The slug must be specific to the topic, not a generic project name."
     )
-    out = llm(system_prompt, sources)
+    out = llm(system_prompt, hint + sources)
     if not out:
         return None
     out = re.sub(r"^```json\n", "", out)
@@ -329,8 +393,9 @@ def new_note_slug_and_frontmatter(entries):
 # --- produce proposed note files ---
 proposed = []
 for slug, entries in new_groups.items():
+    is_new = entries[0].get("target_is_new", not existing_notes.get(slug))
     existing = existing_notes.get(slug)
-    if existing:
+    if existing and not is_new:
         fm = dict(existing["frontmatter"])
         old_body = existing["body"]
         new_body = merge_note(slug, entries, fm, old_body)
@@ -350,7 +415,7 @@ for slug, entries in new_groups.items():
             "is_new": False,
         })
     else:
-        data = new_note_slug_and_frontmatter(entries)
+        data = new_note_slug_and_frontmatter(entries, hint_slug=slug if is_new else None)
         if not data:
             warn("new-note proposal failed for group; skipping")
             continue
