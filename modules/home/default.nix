@@ -12,6 +12,7 @@ _: {
     ./dotai.nix
     ./claude-plugins.nix
     ./brain-sync.nix
+    ./brain-promote.nix
     ./flake-autoupdate.nix
     ./qmd.nix
     ./passmenu.nix
