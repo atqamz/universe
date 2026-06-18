@@ -20,6 +20,19 @@ if [ "$stop_active" = "true" ]; then exit 0; fi
 if [ -z "$transcript" ] || [ ! -f "$transcript" ]; then exit 0; fi
 if [ ! -d "$brain/.git" ]; then exit 0; fi
 
+# --- Guard: branch. log/ commits must land on main. If we can't switch to main
+# cleanly, skip capture and notify so the user sees why logs are not landing.
+brain_branch=$(git -C "$brain" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+if [ "$brain_branch" != "main" ]; then
+  if git -C "$brain" checkout -q main 2>/dev/null && \
+     git -C "$brain" pull --ff-only >/dev/null 2>&1; then
+    :
+  else
+    notify-send "brain-capture" "brain on branch $brain_branch, cannot checkout main — skipping capture" || true
+    exit 0
+  fi
+fi
+
 # --- Guard 2: substantiality. Skip trivial sessions (a few lines of transcript
 # aren't worth a digest or a commit).
 lines=$(wc -l < "$transcript" 2>/dev/null || echo 0)
@@ -61,6 +74,7 @@ fi
 {
   printf '%s\n\n' "$digest"
   printf -- '---\n'
+  # shellcheck disable=SC2016
   printf '**Provenance:** session \`%s\` · cwd \`%s\` · %s\n' "$session_id" "$cwd" "$ts"
 } > "$logfile"
 
@@ -69,8 +83,15 @@ fi
 git -C "$brain" add "$logfile" >/dev/null 2>&1
 git -C "$brain" commit -m "session digest ${ts}-${short_sid}" >/dev/null 2>&1 || exit 0
 git -C "$brain" pull --rebase --autostash >/dev/null 2>&1 || true
-git -C "$brain" push >/dev/null 2>&1 || {
+git -C "$brain" push origin main >/dev/null 2>&1 || {
   git -C "$brain" pull --rebase --autostash >/dev/null 2>&1 || true
-  git -C "$brain" push >/dev/null 2>&1 || true
+  git -C "$brain" push origin main >/dev/null 2>&1 || true
 }
+
+# --- Keep the qmd recall index current. Failures must not break capture.
+if command -v qmd >/dev/null 2>&1 && qmd status >/dev/null 2>&1; then
+  qmd collection add "$brain" --name brain >/dev/null 2>&1 || true
+  qmd embed >/dev/null 2>&1 || true
+fi
+
 exit 0
