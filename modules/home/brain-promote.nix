@@ -1,6 +1,28 @@
 { pkgs, ... }:
 let
   brain = "$HOME/brain";
+
+  ollamaConfig = pkgs.writeShellApplication {
+    name = "ollama-ensure-config";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      mkdir -p "$HOME/.ollama"
+      if [ ! -f "$HOME/.ollama/config.json" ]; then
+        cat > "$HOME/.ollama/config.json" <<'JSON'
+      {
+        "integrations": {
+          "claude": {
+            "models": [
+              "kimi-k2.7-code:cloud"
+            ]
+          }
+        }
+      }
+      JSON
+      fi
+    '';
+  };
+
   promote = pkgs.writeShellApplication {
     name = "brain-promote";
     runtimeInputs = with pkgs; [
@@ -33,23 +55,48 @@ let
   };
 in
 {
-  home.packages = [ promote ];
+  home.packages = [
+    promote
+    pkgs.ollama
+  ];
 
-  systemd.user.services.brain-promote = {
-    Unit.Description = "Promote brain log digests to note PR via LLM classifier";
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${promote}/bin/brain-promote";
-    };
-  };
+  systemd = {
+    user = {
+      services = {
+        ollama = {
+          Unit.Description = "Local Ollama server for Claude cloud models";
+          Service = {
+            Type = "simple";
+            ExecStartPre = "${ollamaConfig}/bin/ollama-ensure-config";
+            ExecStart = "${pkgs.ollama}/bin/ollama serve";
+            Restart = "on-failure";
+            Environment = [ "OLLAMA_HOST=127.0.0.1:11434" ];
+          };
+          Install.WantedBy = [ "default.target" ];
+        };
 
-  systemd.user.timers.brain-promote = {
-    Unit.Description = "Daily brain promotion";
-    Timer = {
-      OnCalendar = "04:00";
-      Persistent = true;
-      RandomizedDelaySec = "15min";
+        brain-promote = {
+          Unit = {
+            Description = "Promote brain log digests to note PR via LLM classifier";
+            After = [ "ollama.service" ];
+            Wants = [ "ollama.service" ];
+          };
+          Service = {
+            Type = "oneshot";
+            ExecStart = "${promote}/bin/brain-promote";
+          };
+        };
+      };
+
+      timers.brain-promote = {
+        Unit.Description = "Daily brain promotion";
+        Timer = {
+          OnCalendar = "04:00";
+          Persistent = true;
+          RandomizedDelaySec = "15min";
+        };
+        Install.WantedBy = [ "timers.target" ];
+      };
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }
