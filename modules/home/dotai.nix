@@ -18,13 +18,17 @@ in
     ".claude/statusline-command.sh".source = link "${dotai}/statusline-command.sh";
     ".claude/hooks/brain-capture.sh".source = link "${dotai}/hooks/brain-capture.sh";
     ".claude/bin/brain-recall".source = link "${dotai}/bin/brain-recall";
+    ".claude/bin/brain-promote".source = link "${dotai}/bin/brain-promote";
   };
 
-  # Expose brain-recall by bare name through the profile bin (always on PATH),
-  # execing the live symlink so dotai edits stay instantly live.
+  # Expose brain helpers by bare name through the profile bin (always on PATH),
+  # execing the live symlinks so dotai edits stay instantly live.
   home.packages = [
     (pkgs.writeShellScriptBin "brain-recall" ''
       exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"
+    '')
+    (pkgs.writeShellScriptBin "brain-promote" ''
+      exec "${config.home.homeDirectory}/.claude/bin/brain-promote" "$@"
     '')
   ];
 }
