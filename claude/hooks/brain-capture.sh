@@ -75,7 +75,7 @@ fi
   printf '%s\n\n' "$digest"
   printf -- '---\n'
   # shellcheck disable=SC2016
-  printf '**Provenance:** session \`%s\` · cwd \`%s\` · %s\n' "$session_id" "$cwd" "$ts"
+  printf '**Provenance:** session `%s` · cwd `%s` · %s\n' "$session_id" "$cwd" "$ts"
 } > "$logfile"
 
 # --- Commit + push to main. Pull-rebase first to absorb other machines' pushes;
