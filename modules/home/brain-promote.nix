@@ -36,7 +36,7 @@ in
   home.packages = [ promote ];
 
   systemd.user.services.brain-promote = {
-    Unit.Description = "Promote brain log digests to note PR";
+    Unit.Description = "Promote brain log digests to note PR via LLM classifier";
     Service = {
       Type = "oneshot";
       ExecStart = "${promote}/bin/brain-promote";
