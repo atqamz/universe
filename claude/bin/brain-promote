@@ -470,15 +470,20 @@ res = shell(["git", "checkout", "-b", branch, "main"], cwd=brain)
 if res.returncode != 0:
     fail(f"failed to create branch {branch}: {res.stderr}")
 
+def yaml_scalar(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
+
 def serialize_frontmatter(fm):
     lines = ["---"]
     for k, v in fm.items():
         if isinstance(v, dict):
             lines.append(f"{k}:")
             for kk, vv in v.items():
-                lines.append(f"  {kk}: {vv}")
+                lines.append(f"  {kk}: {yaml_scalar(vv)}")
         else:
-            lines.append(f"{k}: {v}")
+            lines.append(f"{k}: {yaml_scalar(v)}")
     lines.append("---")
     return "\n".join(lines)
 
