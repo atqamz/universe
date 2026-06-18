@@ -33,6 +33,8 @@ let
   };
 in
 {
+  home.packages = [ promote ];
+
   systemd.user.services.brain-promote = {
     Unit.Description = "Promote brain log digests to note PR";
     Service = {

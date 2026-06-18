@@ -27,8 +27,5 @@ in
     (pkgs.writeShellScriptBin "brain-recall" ''
       exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"
     '')
-    (pkgs.writeShellScriptBin "brain-promote" ''
-      exec "${config.home.homeDirectory}/.claude/bin/brain-promote" "$@"
-    '')
   ];
 }
