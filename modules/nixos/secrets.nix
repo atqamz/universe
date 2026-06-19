@@ -9,5 +9,8 @@ _: {
       # Decrypted before users are created so it can back hashedPasswordFile.
       neededForUsers = true;
     };
+
+    # Tailscale OAuth client secret consumed by tailscaled-autoconnect at boot.
+    secrets.tailscale-oauth.sopsFile = ./secrets/tailscale-oauth.sops.yaml;
   };
 }

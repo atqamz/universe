@@ -18,6 +18,15 @@
     openssh.enable = true;
     tailscale = {
       enable = true;
+      # OAuth client secret (long-lived, revoke-only -- no 90-day auth-key
+      # expiry). Auto-joins on first boot, so a fresh reinstall lands on the
+      # tailnet with no console step. OAuth-authed nodes must be tagged; tagged
+      # nodes never key-expire, so the node stays up permanently too.
+      authKeyFile = config.sops.secrets.tailscale-oauth.path;
+      extraUpFlags = [
+        "--ssh"
+        "--advertise-tags=tag:universe"
+      ];
       extraSetFlags = [ "--ssh" ];
     };
   };
