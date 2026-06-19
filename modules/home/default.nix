@@ -9,6 +9,8 @@ _: {
     ./file-management.nix
     ./secrets-sync.nix
     ./gpg-preset.nix
+    ./gtk.nix
+    ./zen.nix
     ./zen-profile.nix
     ./dotai.nix
     ./claude-plugins.nix
