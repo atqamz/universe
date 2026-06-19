@@ -70,6 +70,82 @@ _: {
           fi
         '';
       };
+
+      bootstrapCheck = pkgs.writeShellApplication {
+        name = "bootstrap-check";
+        runtimeInputs = with pkgs; [
+          bash
+          coreutils
+          curl
+          git
+          gh
+          gnupg
+          jq
+          systemd
+          tailscale
+          gawk
+        ];
+        text = ''
+          set -euo pipefail
+
+          pass=0
+          fail=0
+          results=""
+
+          check() {
+            name="$1"
+            shift
+            if "$@" >/dev/null 2>&1; then
+              echo "PASS: $name"
+              pass=$((pass + 1))
+              results="$results\nPASS: $name"
+            else
+              echo "FAIL: $name"
+              fail=$((fail + 1))
+              results="$results\nFAIL: $name"
+            fi
+          }
+
+          echo "== bootstrap-check =="
+
+          check "user atqa exists" id -u atqa
+          check "user atqa is in wheel" groups atqa | grep -q wheel
+          check "tailscale daemon running" systemctl is-active tailscaled
+          check "tailscale up" tailscale status
+          check "ssh daemon active" systemctl is-active sshd
+          check "gh authenticated" gh auth status
+          check "secrets vault cloned" test -d "$HOME/secrets/.git"
+          check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
+          check "gpg key present" gpg -K
+          check "dotai cloned" test -d "$HOME/dotai/.git"
+          check "brain cloned" test -d "$HOME/brain/.git"
+          # shellcheck disable=SC2016
+          check "brain on main" bash -c 'cd "$HOME/brain" && test "$(git rev-parse --abbrev-ref HEAD)" = main'
+          check "brain qmd index exists" test -f "$HOME/.cache/qmd/index.sqlite"
+          check "ollama service active" systemctl --user is-active ollama.service
+          check "ollama api reachable" curl -fsS http://127.0.0.1:11434/api/tags
+          check "brain-promote on PATH" command -v brain-promote
+          check "brain-promote timer enabled" systemctl --user is-enabled brain-promote.timer
+          check "brain-sync timer enabled" systemctl --user is-enabled brain-sync.timer
+          check "secrets-sync timer enabled" systemctl --user is-enabled secrets-sync.timer
+          check "flake-autoupdate timer enabled" systemctl --user is-enabled flake-autoupdate.timer
+          check "universe repo cloned" test -d "$HOME/universe/.git"
+          check "greetd active" systemctl is-active greetd
+          check "claude-code on PATH" command -v claude
+
+          echo ""
+          echo "== summary =="
+          echo "PASS: $pass"
+          echo "FAIL: $fail"
+          if [ "$fail" -eq 0 ]; then
+            echo "bootstrap OK"
+            exit 0
+          else
+            echo "bootstrap has failures"
+            exit 1
+          fi
+        '';
+      };
     in
     {
       apps = {
@@ -84,6 +160,10 @@ _: {
         brain-bootstrap = {
           type = "app";
           program = "${brainBootstrap}/bin/brain-bootstrap";
+        };
+        bootstrap-check = {
+          type = "app";
+          program = "${bootstrapCheck}/bin/bootstrap-check";
         };
       };
     };
