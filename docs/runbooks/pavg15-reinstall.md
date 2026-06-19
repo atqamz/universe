@@ -150,6 +150,9 @@ This clones `~/vault` and runs `import.sh`, populating:
 - GPG keys
 - SSH keys / authorized keys
 - Git signing config
+- the gpg preset passphrase (`~/.gnupg/.preset-passphrase`, 0400) so the
+  `gpg-preset` login service can unlock the auth/sign subkeys headlessly after
+  every reboot (no interactive pinentry for git-over-ssh or commit signing)
 
 Verify:
 
@@ -260,3 +263,20 @@ syntax mismatch.
 ### `brain-promote` fails with Unauthorized
 
 Ollama cloud is not signed in. See step 10.
+
+### `github ssh auth` fails after a reboot
+
+git-over-ssh uses the gpg-agent `[A]` auth subkey; gpg-agent clears its
+passphrase cache on reboot, so without preset the first signing attempt needs a
+pinentry that an unattended/ssh context has no tty for (`agent refused
+operation`). The `gpg-preset` user service presets the passphrase at login from
+`~/.gnupg/.preset-passphrase`. If the check fails, confirm the service ran and
+the passphrase file is present:
+
+```bash
+systemctl --user status gpg-preset
+ls -l ~/.gnupg/.preset-passphrase
+```
+
+If the file is missing, `secrets-bootstrap` did not place it -- the vault must
+contain `gpg/passphrase.sops.txt` (encrypt it with `scripts/encrypt.sh`).
