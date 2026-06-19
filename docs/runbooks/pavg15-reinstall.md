@@ -144,7 +144,7 @@ Login as `atqa`, open a terminal:
 nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#secrets-bootstrap
 ```
 
-This clones `~/secrets` and runs `import.sh`, populating:
+This clones `~/vault` and runs `import.sh`, populating:
 
 - age keys
 - GPG keys
@@ -191,7 +191,7 @@ It reports pass/fail for:
 - `atqa` user exists with correct groups
 - `tailscale` is up (`tailscale status`)
 - `sshd` / tailscale-ssh reachable
-- `secrets-bootstrap` state present (`~/secrets/.git`, `~/.ssh/id_ed25519.pub`)
+- `secrets-bootstrap` state present (`~/vault/.git`, `~/.ssh/id_ed25519.pub`)
 - `brain-bootstrap` state present (`~/brain/.git`, `~/dotai/.git`, qmd index)
 - `ollama.service` is active and `/api/tags` responds
 - `brain-promote` dry-run reaches ollama and completes

@@ -2,7 +2,7 @@ _: {
   perSystem =
     { pkgs, ... }:
     let
-      vault = "$HOME/secrets";
+      vault = "$HOME/vault";
       rt = with pkgs; [
         git
         gh
@@ -34,10 +34,24 @@ _: {
         runtimeInputs = rt;
         text = ''
           vault="${vault}"
+          # Clone/pull the private vault over ssh with the sops-provisioned
+          # read-only deploy key, so no interactive gh auth is needed on a fresh
+          # machine. Falls back to gh if the key is absent (e.g. non-NixOS host).
+          key=/run/secrets/vault-deploy-key
+          if [ -r "$key" ]; then
+            export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+            remote="git@github.com:atqamz/vault.git"
+          else
+            remote=""
+          fi
           if [ ! -d "$vault/.git" ]; then
             echo "==> cloning vault"
             mkdir -p "$(dirname "$vault")"
-            gh repo clone atqamz/secrets "$vault"
+            if [ -n "$remote" ]; then
+              git clone "$remote" "$vault"
+            else
+              gh repo clone atqamz/vault "$vault"
+            fi
           else
             echo "==> updating vault"
             git -C "$vault" pull --ff-only
@@ -114,7 +128,7 @@ _: {
           check "tailscale up" tailscale status
           check "ssh daemon active" systemctl is-active sshd
           check "gh authenticated" gh auth status
-          check "secrets vault cloned" test -d "$HOME/secrets/.git"
+          check "secrets vault cloned" test -d "$HOME/vault/.git"
           check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
           check "gpg key present" gpg -K
           check "dotai cloned" test -d "$HOME/dotai/.git"
