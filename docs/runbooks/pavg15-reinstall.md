@@ -49,7 +49,7 @@ If `systemd-run` is unavailable, run the daemon in the background directly:
 nix-shell -p tailscale --run '
   nohup sudo tailscaled > /tmp/tailscaled.log 2>&1 &
   sleep 3
-  sudo tailscale up --ssh
+  sudo tailscale up --ssh --qr
 '
 ```
 
@@ -62,10 +62,14 @@ BTRFS volume with `root`, `home`, and `nix` subvolumes.
 **This wipes the disk.** Ensure `/home/atqa` is backed up if you want to keep
 it.
 
+The full `pavg15` closure is too large to build inside the NixOS minimal ISO's
+tmpfs, so install the `pavg15-minimal` configuration first, then switch to the
+full config after first boot.
+
 ```bash
 lsblk
 # Confirm the NVMe device is /dev/nvme0n1 before continuing.
-nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git#pavg15 --disk main /dev/nvme0n1
+nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git#pavg15-minimal --disk main /dev/nvme0n1
 ```
 
 If GitHub rate-limits the flake fetch, clone first:
@@ -73,7 +77,7 @@ If GitHub rate-limits the flake fetch, clone first:
 ```bash
 git clone https://github.com/atqamz/universe.git /tmp/universe
 cd /tmp/universe
-nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake .#pavg15 --disk main /dev/nvme0n1
+nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake .#pavg15-minimal --disk main /dev/nvme0n1
 ```
 
 `disko-install` will partition, format, mount everything at `/mnt`, and then
@@ -137,10 +141,10 @@ nix run github:atqamz/universe#brain-bootstrap
 
 This clones `~/dotai` and `~/brain` and builds the qmd index.
 
-## 9. Apply full config (if not already)
+## 9. Apply full config
 
-If you installed from the live flake, the full config is already active. To
-update or repair:
+The ISO installed `pavg15-minimal`. After first boot, switch to the full
+`pavg15` configuration:
 
 ```bash
 cd ~/universe || git clone https://github.com/atqamz/universe.git ~/universe

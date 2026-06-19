@@ -2,12 +2,14 @@
 {
   hostname,
   system ? "x86_64-linux",
+  nixosModule ? ../modules/nixos,
+  homeModule ? ../modules/home,
 }:
 inputs.nixpkgs.lib.nixosSystem {
   specialArgs = { inherit inputs hostname; };
   modules = [
     ../hosts/${hostname}
-    ../modules/nixos
+    nixosModule
     inputs.disko.nixosModules.disko
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
@@ -18,7 +20,7 @@ inputs.nixpkgs.lib.nixosSystem {
         useUserPackages = true;
         backupFileExtension = "bak";
         extraSpecialArgs = { inherit inputs hostname; };
-        users.atqa = ../modules/home;
+        users.atqa = homeModule;
       };
     }
   ];
