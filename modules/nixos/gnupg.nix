@@ -16,5 +16,18 @@ in
     enable = true;
     enableSSHSupport = true;
     pinentryPackage = pinentry-auto;
+    # allow-preset-passphrase lets the login-time gpg-preset service unlock the
+    # subkeys headlessly via gpg-preset-passphrase (modules/home/gpg-preset.nix),
+    # so git-over-ssh and signing work after a reboot with no interactive
+    # pinentry. Empty value renders the bare flag; gpg-agent rejects
+    # `allow-preset-passphrase true`. Long TTLs keep the preset alive for the
+    # machine's whole uptime.
+    settings = {
+      "allow-preset-passphrase" = "";
+      default-cache-ttl = 86400;
+      default-cache-ttl-ssh = 86400;
+      max-cache-ttl = 34560000;
+      max-cache-ttl-ssh = 34560000;
+    };
   };
 }
