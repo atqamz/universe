@@ -45,7 +45,12 @@ let
 
     ensure_repo() {
       [ -d "$REPO/.git" ] && return 0
-      gh repo clone atqamz/zen-profile "$REPO"
+      # Clone over ssh via the gpg-agent auth key so headless hosts with no
+      # interactive gh auth (e.g. a fresh NixOS reinstall) can still fetch.
+      local sock
+      sock="$(gpgconf --list-dirs agent-ssh-socket)"
+      GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" SSH_AUTH_SOCK="$sock" \
+        git clone git@github.com:atqamz/zen-profile.git "$REPO"
     }
   '';
 
@@ -54,6 +59,7 @@ let
     runtimeInputs = with pkgs; [
       git
       gh
+      gnupg
       age
       gnutar
       coreutils
@@ -83,6 +89,7 @@ let
     runtimeInputs = with pkgs; [
       git
       gh
+      gnupg
       age
       gnutar
       coreutils
