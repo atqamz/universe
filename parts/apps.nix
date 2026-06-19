@@ -68,7 +68,8 @@ _: {
           # Clone over ssh using the gpg-agent auth key (registered on GitHub),
           # so no interactive gh auth is needed. Pin SSH_AUTH_SOCK to gpg-agent
           # since an ssh-in session would otherwise inherit sshd's agent.
-          export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+          SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+          export SSH_AUTH_SOCK
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
           for repo in dotai brain; do
             dest="$HOME/$repo"
