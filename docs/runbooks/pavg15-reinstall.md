@@ -49,7 +49,7 @@ it.
 ```bash
 lsblk
 # Confirm the NVMe device is /dev/nvme0n1 before continuing.
-nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git/pavg15 --disk main /dev/nvme0n1
+nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git#pavg15 --disk main /dev/nvme0n1
 ```
 
 If GitHub rate-limits the flake fetch, clone first:
