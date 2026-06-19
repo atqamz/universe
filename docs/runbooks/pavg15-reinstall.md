@@ -31,10 +31,26 @@ The ISO uses DHCP by default. Verify:
 ping -c 3 github.com
 ```
 
-If the machine is on the tailnet and you need MagicDNS, you can run:
+If the machine is on the tailnet and you need MagicDNS, start `tailscaled` and
+authenticate:
 
 ```bash
-nix run nixpkgs#tailscale -- up --ssh
+export NIX_CONFIG="experimental-features = nix-command flakes"
+nix-shell -p tailscale --run '
+  sudo systemd-run --unit=tailscaled tailscaled
+  sleep 3
+  sudo tailscale up --ssh
+'
+```
+
+If `systemd-run` is unavailable, run the daemon in the background directly:
+
+```bash
+nix-shell -p tailscale --run '
+  nohup sudo tailscaled > /tmp/tailscaled.log 2>&1 &
+  sleep 3
+  sudo tailscale up --ssh
+'
 ```
 
 ## 3. Prepare disk with disko
