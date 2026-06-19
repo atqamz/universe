@@ -37,64 +37,37 @@ If the machine is on the tailnet and you need MagicDNS, you can run:
 nix run nixpkgs#tailscale -- up --ssh
 ```
 
-## 3. Prepare disk
+## 3. Prepare disk with disko
 
-Current pavg15 layout (BTRFS on one NVMe, separate ESP, swap partition). You
-can either reuse the existing subvolumes or wipe and recreate.
+The disk layout is declared in `hosts/pavg15/disko.nix`. It wipes `/dev/nvme0n1`,
+creates an EFI system partition, a LUKS-randomized swap partition, and a single
+BTRFS volume with `root`, `home`, and `nix` subvolumes.
 
-### Option A: reuse existing subvolumes (faster, preserves `/home`)
+**This wipes the disk.** Ensure `/home/atqa` is backed up if you want to keep
+it.
 
 ```bash
 lsblk
-# Example: NVMe at /dev/nvme0n1, ESP at /dev/nvme0n1p1, root subvol at /dev/nvme0n1p2
-mount /dev/disk/by-uuid/8af27f86-7b1c-4981-a94b-435bc553c01e /mnt -o subvol=root
-mkdir -p /mnt/boot /mnt/home /mnt/nix
-mount /dev/disk/by-uuid/37A8-FAF8 /mnt/boot
-mount /dev/disk/by-uuid/8af27f86-7b1c-4981-a94b-435bc553c01e /mnt/home -o subvol=home
-mount /dev/disk/by-uuid/8af27f86-7b1c-4981-a94b-435bc553c01e /mnt/nix -o subvol=nix
-swapon /dev/disk/by-uuid/ffe1203e-f8c7-4fa1-95c7-7406fb87ae29
+# Confirm the NVMe device is /dev/nvme0n1 before continuing.
+nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git/pavg15 --disk main /dev/nvme0n1
 ```
 
-### Option B: full wipe
-
-Only do this if `/home/atqa` is backed up or you intend to restore later.
-
-```bash
-# Wipe existing filesystems and recreate partitions with your preferred tool
-# (fdisk/gdisk/parted), then:
-mkfs.vfat -F 32 -n boot /dev/nvme0n1p1
-mkfs.btrfs -L nixos /dev/nvme0n1p2
-mount /dev/nvme0n1p2 /mnt
-btrfs subvolume create /mnt/root
-btrfs subvolume create /mnt/home
-btrfs subvolume create /mnt/nix
-umount /mnt
-mount /dev/nvme0n1p2 /mnt -o subvol=root
-mkdir -p /mnt/boot /mnt/home /mnt/nix
-mount /dev/nvme0n1p1 /mnt/boot
-mount /dev/nvme0n1p2 /mnt/home -o subvol=home
-mount /dev/nvme0n1p2 /mnt/nix -o subvol=nix
-mkswap /dev/nvme0n1p3
-swapon /dev/nvme0n1p3
-```
-
-## 4. Install
-
-```bash
-# Enable flakes in the installer environment.
-nix-shell -p git nixos-install-tools --run "nixos-install --flake https://github.com/atqamz/universe.git/pavg15"
-```
-
-If HTTPS flake fetch is slow or unavailable, clone first:
+If GitHub rate-limits the flake fetch, clone first:
 
 ```bash
 git clone https://github.com/atqamz/universe.git /tmp/universe
 cd /tmp/universe
-nixos-install --flake .#pavg15
+nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake .#pavg15 --disk main /dev/nvme0n1
 ```
 
-Set the `root` password when prompted (only for emergency; normal login uses
-`atqa` via `sops` secret).
+`disko-install` will partition, format, mount everything at `/mnt`, and then
+run `nixos-install` for you.
+
+## 4. Set root password
+
+`disko-install` runs `nixos-install` internally and prompts for the `root`
+password. Set one for emergency break-glass only; normal login uses `atqa`
+via the `sops` secret.
 
 ## 5. Reboot
 

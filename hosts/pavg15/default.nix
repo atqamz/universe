@@ -1,6 +1,9 @@
 { pkgs, ... }:
 {
-  imports = [ ./hardware.nix ];
+  imports = [
+    ./hardware.nix
+    ./disko.nix
+  ];
 
   networking.hostName = "pavg15";
 
