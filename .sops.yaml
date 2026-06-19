@@ -7,4 +7,4 @@
 creation_rules:
   - path_regex: modules/nixos/secrets/.*\.sops\.yaml$
     pgp: F1F60517602888C8D5E486EB8AD7D4A302EE6771
-    age: age16mzlwjdhj8c3xw475vllqfm998k6ztm6av5y0n3kqujzvs3tz5xqrw5vvu
+    age: age1xrwm2rusdjr0qur7ndsw8my3mq6340wvkjk47ttchugpp5zl6dcqktdt06
