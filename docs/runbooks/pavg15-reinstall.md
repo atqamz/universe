@@ -11,6 +11,9 @@ flake. This is the e2e gate for migrating `sfx14` to NixOS.
 - Tailscale ACL already allows `pavg15` and your tailnet SSH access.
 - `gh` is authenticated in your tailnet (via another machine) so you can open
   PRs/issues if needed.
+- The persistent SSH host key is available on a working tailnet machine (it is
+  backed up in the private vault under `hosts/pavg15/`) so it can be copied to
+  the installer over the tailnet. It is never committed to the public repo.
 
 ## 1. Boot the installer
 
@@ -66,30 +69,49 @@ The full `pavg15` closure is too large to build inside the NixOS minimal ISO's
 tmpfs, so install the `pavg15-minimal` configuration first, then switch to the
 full config after first boot.
 
+### Restore the persistent host SSH key
+
+`sops-nix` decrypts `atqa-password` with the machine's SSH host key
+(`/etc/ssh/ssh_host_ed25519_key`), so that key must already exist *and* be the
+recipient of the secret before first boot. We keep a persistent per-host key so
+the secret is encrypted to it once and never rekeyed across reinstalls. The key
+is kept private (in the vault under `hosts/pavg15/`), never committed to the
+public repo, and copied to the installer over the tailnet at install time.
+
+From a working tailnet machine that has the key checked out, copy both halves to
+the installer (the ISO must be on the tailnet -- see step 2):
+
+```bash
+scp ssh_host_ed25519_key ssh_host_ed25519_key.pub nixos@pavg15:/tmp/
+```
+
+Then on the ISO, lock down the private half:
+
+```bash
+chmod 600 /tmp/ssh_host_ed25519_key
+```
+
+### Install
+
+`--extra-files` copies the host key into the new system before first boot.
+`--system-config` locks `root` so `nixos-install` does not stop on an
+interactive password prompt; break-glass is `atqa` (wheel, passwordless sudo).
+
 ```bash
 lsblk
 # Confirm the NVMe device is /dev/nvme0n1 before continuing.
-nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake https://github.com/atqamz/universe.git#pavg15-minimal --disk main /dev/nvme0n1
+nix run github:nix-community/disko#disko-install -- \
+  --flake github:atqamz/universe#pavg15-minimal --disk main /dev/nvme0n1 \
+  --extra-files /tmp/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key \
+  --extra-files /tmp/ssh_host_ed25519_key.pub /etc/ssh/ssh_host_ed25519_key.pub \
+  --write-efi-boot-entries \
+  --system-config '{"users":{"users":{"root":{"hashedPassword":"!"}}}}'
 ```
 
-If GitHub rate-limits the flake fetch, clone first:
+`disko-install` partitions, formats, mounts at `/mnt`, copies the closure and
+the extra files, installs the bootloader, and writes the EFI boot entry.
 
-```bash
-git clone https://github.com/atqamz/universe.git /tmp/universe
-cd /tmp/universe
-nix run --extra-experimental-features 'nix-command flakes' github:nix-community/disko#disko-install -- --flake .#pavg15-minimal --disk main /dev/nvme0n1
-```
-
-`disko-install` will partition, format, mount everything at `/mnt`, and then
-run `nixos-install` for you.
-
-## 4. Set root password
-
-`disko-install` runs `nixos-install` internally and prompts for the `root`
-password. Set one for emergency break-glass only; normal login uses `atqa`
-via the `sops` secret.
-
-## 5. Reboot
+## 4. Reboot
 
 ```bash
 reboot
@@ -97,20 +119,24 @@ reboot
 
 Remove the USB. The machine should boot into `greetd` → `tuigreet`.
 
-## 6. First login
+## 5. First login
 
-The `atqa` user password is read from `/run/secrets/atqa-password` via
-`sops-nix` using the host SSH key. Type the current password.
+Because the persistent host key was injected at install, `sops-nix` decrypts
+`atqa-password` on first boot. Log in as `atqa` with the initial password
+(`1234`) and change it afterwards.
 
-If login fails, check from a TTY:
+If login fails, check from a TTY that the secret materialised:
 
 ```bash
-journalctl -u systemd-cryptsetup@...
-# or for sops-nix:
-sudo cat /run/secrets/atqa-password
+sudo ls -l /run/secrets-for-users/atqa-password
+journalctl -b -u sops-install-secrets
 ```
 
-## 7. Bootstrap L0/L1 secrets
+If the file is missing, the injected host key does not match the secret's
+recipient -- confirm the key copied to the installer is the same one whose age
+is listed in `.sops.yaml`.
+
+## 6. Bootstrap L0/L1 secrets
 
 Login as `atqa`, open a terminal:
 
@@ -133,7 +159,7 @@ gh auth status
 gpg -K
 ```
 
-## 8. Bootstrap brain / dotai
+## 7. Bootstrap brain / dotai
 
 ```bash
 nix run github:atqamz/universe#brain-bootstrap
@@ -141,7 +167,7 @@ nix run github:atqamz/universe#brain-bootstrap
 
 This clones `~/dotai` and `~/brain` and builds the qmd index.
 
-## 9. Apply full config
+## 8. Apply full config
 
 The ISO installed `pavg15-minimal`. After first boot, switch to the full
 `pavg15` configuration:
@@ -152,7 +178,7 @@ cd ~/universe
 sudo nixos-rebuild switch --flake .#pavg15
 ```
 
-## 10. Verify e2e
+## 9. Verify e2e
 
 Run the built-in check:
 
@@ -173,7 +199,7 @@ It reports pass/fail for:
   enabled
 - `greetd`/`hyprland` session can start (no config errors)
 
-## 11. Authorize Ollama cloud
+## 10. Authorize Ollama cloud
 
 The first boot starts `ollama.service` but it is not signed in. Run:
 
@@ -190,14 +216,14 @@ BRAIN_PROMOTE_DRY_RUN=1 brain-promote
 
 If this succeeds, the daily 04:00 timer will work.
 
-## 12. Optional: connect WARP
+## 11. Optional: connect WARP
 
 ```bash
 warp-cli registration new
 warp-cli connect
 ```
 
-## 13. Final validation
+## 12. Final validation
 
 Reboot once more and confirm everything survives:
 
@@ -219,10 +245,11 @@ nixos-install --flake /tmp/universe#pavg15
 
 ### sops-nix fails to decrypt password
 
-The host SSH key must match the one in `secrets/age/keys.txt.gpg` / the sops
-recipient list. After `secrets-bootstrap`, the imported age key must include the
-host fingerprint. If reinstalling changes host keys, re-encrypt the password
-secret on another machine.
+The injected host key must be the recipient of `atqa-password`. Confirm the age
+of the injected `ssh_host_ed25519_key.pub` (via `ssh-to-age`) matches the `age:`
+recipient in `.sops.yaml`. The persistent host key means this never changes
+across reinstalls -- if it mismatches, the wrong key was copied to the installer.
+Re-run the scp + `--extra-files` step with the vault-backed key.
 
 ### Hyprland session does not start
 
@@ -232,4 +259,4 @@ syntax mismatch.
 
 ### `brain-promote` fails with Unauthorized
 
-Ollama cloud is not signed in. See step 11.
+Ollama cloud is not signed in. See step 10.
