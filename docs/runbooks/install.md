@@ -72,11 +72,13 @@ nix-shell -p tailscale --run '
 the secret before first boot. We keep a persistent per-host key so the secret is
 encrypted to it once and never rekeyed across reinstalls.
 
-From a working tailnet machine that has the vault checked out, copy both halves
-to the installer:
+From a working tailnet machine that has the vault checked out, decrypt the
+passphrase-protected private half and copy both to the installer:
 
 ```bash
-scp ssh_host_ed25519_key ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
+age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > /tmp/ssh_host_ed25519_key
+scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
+shred -u /tmp/ssh_host_ed25519_key
 ```
 
 On the installer, lock down the private half:

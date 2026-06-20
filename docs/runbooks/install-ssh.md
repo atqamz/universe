@@ -40,11 +40,14 @@ user has passwordless sudo.
 
 ## 3. Copy the persistent host key
 
-From the working machine (which has the vault checked out at `~/vault`):
+From the working machine (which has the vault checked out at `~/vault`); the
+private half is passphrase-encrypted, so decrypt it first:
 
 ```bash
-scp ~/vault/hosts/$HOST/ssh_host_ed25519_key{,.pub} nixos@$HOST:/tmp/
+age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > /tmp/ssh_host_ed25519_key
+scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
 ssh nixos@$HOST 'chmod 600 /tmp/ssh_host_ed25519_key'
+shred -u /tmp/ssh_host_ed25519_key
 ```
 
 ## 4. Install (remote)
