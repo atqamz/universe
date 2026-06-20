@@ -12,5 +12,5 @@ let
   };
 in
 {
-  flake.nixosConfigurations = hostVariants "pavg15";
+  flake.nixosConfigurations = hostVariants "pavg15" // hostVariants "sfx14";
 }
