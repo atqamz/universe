@@ -21,10 +21,9 @@
               };
             };
             swap = {
-              size = "16G";
+              size = "32G";
               content = {
                 type = "swap";
-                randomEncryption = true;
               };
             };
             nixos = {
