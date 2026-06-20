@@ -7,6 +7,7 @@ Personal NixOS configuration as a flake.
 | Host   | Description                          |
 | ------ | ------------------------------------ |
 | pavg15 | HP Pavilion Gaming 15 — Hyprland + caelestia |
+| sfx14  | Acer Swift X 14 (SFX14-72G) — Hyprland + caelestia |
 
 ## Layout
 
@@ -20,8 +21,13 @@ Personal NixOS configuration as a flake.
 ## Build
 
 ```bash
-sudo nixos-rebuild switch --flake .#pavg15
+sudo nixos-rebuild switch --flake .#<host>
 ```
+
+## Install
+
+Fresh install / reinstall of a host: `docs/runbooks/install.md` (USB at console)
+or `docs/runbooks/install-ssh.md` (remote over the tailnet).
 
 ## Develop
 
