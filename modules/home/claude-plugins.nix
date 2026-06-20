@@ -5,20 +5,13 @@
   ...
 }:
 let
-  # Use the nix-provided claude so the timer/activation never depend on the
-  # ~/.local self-updater being on PATH. Plugin state lives in ~/.claude/plugins
-  # regardless of which binary writes it, so both stay in sync.
   claudePkg = inputs.claude-code.packages.${pkgs.system}.default;
 
-  # Non-default marketplaces to register (official one is built in). Keep in
-  # sync with extraKnownMarketplaces in dotai/claude/settings.json.
   marketplaces = {
     caveman = "JuliusBrussee/caveman";
     ponytail = "DietrichGebert/ponytail";
   };
 
-  # Plugins we want present and auto-updated. enabledPlugins (in dotai
-  # settings.json) flips them on; this list ensures they are installed + fresh.
   plugins = [
     "gopls-lsp@claude-plugins-official"
     "rust-analyzer-lsp@claude-plugins-official"
@@ -27,9 +20,6 @@ let
     "ponytail@ponytail"
   ];
 
-  # impeccable is a skill (not a plugin): a plain dir under ~/.claude/skills.
-  # We track a checkout in cache and symlink its skill/ subdir into place; the
-  # timer git-pulls it to keep it fresh.
   impeccableRepo = "https://github.com/pbakaus/impeccable.git";
   impeccableCache = "$HOME/.cache/claude-skills/impeccable";
   impeccableSkill = "$HOME/.claude/skills/impeccable";
@@ -64,8 +54,6 @@ let
     map (p: ''claude plugin update "${p}" || log "  update ${p} failed"'') plugins
   );
 
-  # Idempotent ensure-present: runs on every activation, best-effort, never
-  # blocks the switch (all paths swallow failures).
   ensure = pkgs.writeShellApplication {
     name = "claude-plugins-ensure";
     runtimeInputs = runtime;
@@ -74,9 +62,6 @@ let
       kmkt="$HOME/.claude/plugins/known_marketplaces.json"
       inst="$HOME/.claude/plugins/installed_plugins.json"
 
-      # claude shells out to git to add/refresh marketplaces; the user gitconfig
-      # rewrites https->ssh (insteadOf), which needs an ssh key + pinentry that
-      # an unattended activation/timer lacks. Neutralize it to stay on https.
       export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 
       ${mktAddLines}
@@ -97,14 +82,12 @@ let
     '';
   };
 
-  # Refresh marketplaces, plugins, and the impeccable checkout.
   refresh = pkgs.writeShellApplication {
     name = "claude-plugins-update";
     runtimeInputs = runtime;
     text = ''
       log() { logger -t claude-plugins -- "$*"; printf '==> %s\n' "$*"; }
 
-      # See the ensure script: keep claude's git on https, not the ssh rewrite.
       export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 
       claude plugin marketplace update || log "marketplace update failed"
@@ -117,7 +100,6 @@ let
   };
 in
 {
-  # Self-heal on every rebuild; DAG after writeBoundary so ~/.claude exists.
   home.activation.claudePlugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${ensure}/bin/claude-plugins-ensure || true
   '';

@@ -7,7 +7,7 @@
   };
   hardware.nvidia = {
     modesetting.enable = true;
-    open = true; # Turing supports the open kernel modules
+    open = true;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
     prime.offload = {

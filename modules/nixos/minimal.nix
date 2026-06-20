@@ -13,7 +13,6 @@
     ./earlyoom.nix
   ];
 
-  # Enough to network, ssh, bootstrap secrets/brain, and rebuild to full config.
   environment.systemPackages = with pkgs; [
     curl
     htop

@@ -8,8 +8,6 @@ let
   link = config.lib.file.mkOutOfStoreSymlink;
 in
 {
-  # Live symlinks into ~/.claude: editing the dotai checkout is instantly live,
-  # no rebuild. Volatile ~/.claude state (projects/, auth, history) is untouched.
   home.file = {
     ".claude/CLAUDE.md".source = link "${dotai}/CLAUDE.md";
     ".claude/context".source = link "${dotai}/context";
@@ -21,8 +19,6 @@ in
     ".claude/bin/brain-promote".source = link "${dotai}/bin/brain-promote";
   };
 
-  # Expose brain helpers by bare name through the profile bin (always on PATH),
-  # execing the live symlinks so dotai edits stay instantly live.
   home.packages = [
     (pkgs.writeShellScriptBin "brain-recall" ''
       exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"

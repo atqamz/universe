@@ -15,8 +15,6 @@ let
         exit 0
       fi
 
-      # Never clobber local work; a divergent worktree means a Stop-hook push
-      # (Plan 2) or manual edit hasn't landed yet. Skip and notify, never reset.
       if [ -n "$(git -C "$brain" status --porcelain)" ]; then
         notify-send "brain-sync" "local brain changes uncommitted — skipping pull" || true
         echo "brain dirty, skipping pull" >&2

@@ -43,8 +43,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Track upstream releases directly (hourly), staying ahead of the nixpkgs
-    # lag; the auto-update timer bumps these pins like any other input.
     claude-code = {
       url = "github:sadjow/claude-code-nix";
       inputs.nixpkgs.follows = "nixpkgs";

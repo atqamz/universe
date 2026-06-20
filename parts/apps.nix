@@ -34,9 +34,6 @@ _: {
         runtimeInputs = rt;
         text = ''
           vault="${vault}"
-          # Clone/pull the private vault over ssh with the sops-provisioned
-          # read-only deploy key, so no interactive gh auth is needed on a fresh
-          # machine. Falls back to gh if the key is absent (e.g. non-NixOS host).
           key=/run/secrets/vault-deploy-key
           if [ -r "$key" ]; then
             export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
@@ -65,9 +62,6 @@ _: {
         name = "brain-bootstrap";
         runtimeInputs = rt;
         text = ''
-          # Clone over ssh using the gpg-agent auth key (registered on GitHub),
-          # so no interactive gh auth is needed. Pin SSH_AUTH_SOCK to gpg-agent
-          # since an ssh-in session would otherwise inherit sshd's agent.
           SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
           export SSH_AUTH_SOCK
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
@@ -134,8 +128,6 @@ _: {
           check "tailscale daemon running" systemctl is-active tailscaled
           check "tailscale up" tailscale status
           check "ssh daemon active" systemctl is-active sshd
-          # ssh -T to github exits non-zero even on success (no shell), so match
-          # the success banner instead of the exit code.
           # shellcheck disable=SC2016
           check "github ssh auth" bash -c 'SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket) ssh -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
           check "secrets vault cloned" test -d "$HOME/vault/.git"

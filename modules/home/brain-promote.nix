@@ -39,7 +39,6 @@ let
         exit 0
       fi
 
-      # Daily promotion must start from a clean main worktree.
       current=$(git -C "$brain" rev-parse --abbrev-ref HEAD)
       if [ "$current" != "main" ]; then
         notify-send "brain-promote" "brain not on main ($current) — skipping" || true

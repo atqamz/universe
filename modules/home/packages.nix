@@ -5,16 +5,6 @@
   ...
 }:
 let
-  # Unity Editor runs inside unityhub's buildFHSEnv sandbox, so its runtime
-  # deps must live in the FHS env, not home.packages (which never reaches
-  # it). python3: Editor's python-interpreter probe (USD/asset tooling);
-  # shared-mime-info: mime DB the Editor's GTK file dialogs query. Without
-  # these the Editor.log spams "no working python interpreter" and a Gtk
-  # mime-database warning. (librsvg for the SVG pixbuf loader was tried but
-  # dropped: extraLibs/multiPkgs silently discards it on i686, and even via
-  # extraPkgs gdk-pixbuf needs its loaders.cache regenerated to register the
-  # loader -- buildFHSEnv exposes no hook for that. The remaining pixbuf
-  # warning is a cosmetic GTK theme-icon probe with no functional impact.)
   unityhubBase = pkgs.unityhub.override {
     extraPkgs =
       p: with p; [
@@ -23,13 +13,6 @@ let
       ];
   };
 
-  # pavg15 is a hybrid laptop (AMD Renoir iGPU + NVIDIA GTX 1650). The iGPU is
-  # primary, so apps render on Mesa/radeonsi by default -- and Unity's Built-in
-  # RP materials come out magenta on that GL path. Force the Hub, and every
-  # Editor it spawns, onto the NVIDIA dGPU via PRIME render-offload env. The FHS
-  # sandbox inherits the ambient env, so the vars reach the Editor process. The
-  # .desktop Exec is an absolute store path (a PATH-shadowing wrapper would be
-  # bypassed when launched from the app menu), so repoint it at the wrapper too.
   unityhub = pkgs.symlinkJoin {
     name = "unityhub-offload";
     paths = [ unityhubBase ];
@@ -53,31 +36,20 @@ let
   };
 in
 {
-  # mkAfter keeps the original module-merge order, so the home-path
-  # derivation hash stays byte-identical after this split.
   home.packages = lib.mkAfter (
     with pkgs;
     [
       sourcegit
-      # sourcegit's binary is capitalised `SourceGit`; alias the lowercase name.
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed-editor
-      # nixpkgs ships zed's CLI as `zeditor`; alias it to `zed` so `zed .` works.
       (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
-      # NVIDIA-offload-wrapped Unity Hub; see the let block above.
       unityhub
-      # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
-      # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
       unzip
-      # zen-browser is provided by the home module (modules/home/zen.nix).
       inputs.claude-code.packages.${pkgs.system}.default
       inputs.codex-cli.packages.${pkgs.system}.default
       bibata-cursors
       jq
       gh
-      # git-lfs: the nsr game project stores textures as LFS objects. Without
-      # the filter binary on PATH a checkout leaves them as pointer stubs, so
-      # Unity can't import the PNGs (DefaultAsset) and materials render magenta.
       git-lfs
       hyprpicker
       grim

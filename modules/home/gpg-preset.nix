@@ -8,11 +8,6 @@ let
       coreutils
     ];
     text = ''
-      # Preset the gpg key passphrase into gpg-agent so the [A] auth subkey
-      # signs git-over-ssh (github) and the [S] subkey signs commits without an
-      # interactive pinentry. gpg-agent's passphrase cache is cleared on reboot,
-      # so this runs at every login. The passphrase is placed by the vault's
-      # import.sh (private, never in the public repo).
       pp="$HOME/.gnupg/.preset-passphrase"
       if [ ! -r "$pp" ]; then
         echo "no preset passphrase ($pp); run secrets-bootstrap first" >&2

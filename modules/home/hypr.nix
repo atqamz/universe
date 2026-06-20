@@ -1,8 +1,6 @@
 _: {
   services.hyprpolkitagent.enable = true;
 
-  # configType "hyprlang": the HM 26.05 default lua backend has no `bindel`
-  # and wants split bind args, so comma-strings would not parse.
   wayland.windowManager.hyprland =
     let
       terminal = "ghostty";
@@ -11,7 +9,7 @@ _: {
     in
     {
       enable = true;
-      systemd.enable = false; # uwsm owns the session
+      systemd.enable = false;
       configType = "hyprlang";
       settings = {
         monitor = [
@@ -32,16 +30,7 @@ _: {
           layout = "dwindle";
         };
 
-        # Hyprland has no default placement for floating windows, so apps that
-        # request no position open at 0,0 (top-left). Center them on spawn.
         windowrule = [
-          # Hyprland 0.53+ windowrule v3 grammar: comma-separated "key value"
-          # fields. Matchers take a "match:" prefix; the floating matcher prop
-          # is named "float" (not "floating"). "center 1" is the effect.
-          # Only center native Wayland floats: XWayland apps (e.g. Unity) place
-          # their own popups/menus anchored to a position, and forcing those to
-          # center yanks dropdown menus to mid-screen. match:xwayland 0 skips
-          # them so their placement is respected.
           "center 1, match:float 1, match:xwayland 0"
         ];
 
@@ -51,9 +40,6 @@ _: {
           touchpad.natural_scroll = true;
         };
 
-        # Hyprland 0.51+ dropped gestures:workspace_swipe for the `gesture`
-        # keyword: "<fingers>, <direction>, <action>" (legacy/hyprlang parser).
-        # horizontal = swipe either way to move between workspaces.
         gesture = [
           "3, horizontal, workspace"
         ];
