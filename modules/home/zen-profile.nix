@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   recipient = "age14ye9kvq4prahqgjntj5tv2gfg2d8kxsv79vfusxzzw8ssezfyqeq8hh94e";
 
@@ -18,7 +18,7 @@ let
 
     profile_dir() {
       local root rel
-      root="$(zen_root)"
+      root="$(zen_root)" || exit 1
       rel="$(grep -m1 '^Default=' "$root/installs.ini" 2>/dev/null | sed 's/^Default=//')"
       [ -z "$rel" ] && rel="$(awk '
         function flush(){ if (p != "") { if (f == "") f = p; if (d == "1") c = p } }
@@ -49,7 +49,10 @@ let
 
   pull = pkgs.writeShellApplication {
     name = "zen-profile-pull";
-    runtimeInputs = with pkgs; [
+    runtimeInputs = [
+      config.programs.zen-browser.finalPackage
+    ]
+    ++ (with pkgs; [
       git
       gh
       gnupg
@@ -60,15 +63,33 @@ let
       gawk
       gnused
       procps
-    ];
+    ]);
     text = ''
       ${common}
       IDENTITY="$HOME/.config/zen-profile/identity"
+
+      ensure_profile() {
+        for r in "$HOME/.zen" "$HOME/.config/zen" "$HOME/.var/app/app.zen_browser.zen/zen"; do
+          [ -f "$r/profiles.ini" ] && return 0
+        done
+        echo "zen-profile: no local profile, seeding headlessly"
+        zen-beta --headless >/dev/null 2>&1 &
+        seed_pid=$!
+        for _ in $(seq 1 30); do
+          [ -f "$HOME/.config/zen/profiles.ini" ] && break
+          sleep 1
+        done
+        kill "$seed_pid" 2>/dev/null || true
+        wait "$seed_pid" 2>/dev/null || true
+        [ -f "$HOME/.config/zen/profiles.ini" ] || die "headless profile seed failed"
+      }
+
       if zen_running; then die "close Zen before pull (last-push-wins clobbers live session)"; fi
       [ -f "$IDENTITY" ] || die "no identity at $IDENTITY — provision from vault"
       ensure_repo
       git -C "$REPO" pull --ff-only
       [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet — run zen-profile-push first"
+      ensure_profile
       pdir="$(profile_dir)"
       tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
       age -d -i "$IDENTITY" -o "$tmp" "$REPO/$BLOB"
