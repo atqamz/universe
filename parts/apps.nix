@@ -144,7 +144,6 @@ _: {
           check "brain-promote timer enabled" systemctl --user is-enabled brain-promote.timer
           check "brain-sync timer enabled" systemctl --user is-enabled brain-sync.timer
           check "secrets-sync timer enabled" systemctl --user is-enabled secrets-sync.timer
-          check "flake-autoupdate timer enabled" systemctl --user is-enabled flake-autoupdate.timer
           check "universe repo cloned" test -d "$HOME/universe/.git"
           check "greetd active" systemctl is-active greetd
           check "claude-code on PATH" command -v claude
