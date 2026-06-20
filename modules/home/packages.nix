@@ -59,6 +59,8 @@ in
     with pkgs;
     [
       sourcegit
+      # sourcegit's binary is capitalised `SourceGit`; alias the lowercase name.
+      (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed-editor
       # nixpkgs ships zed's CLI as `zeditor`; alias it to `zed` so `zed .` works.
       (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
