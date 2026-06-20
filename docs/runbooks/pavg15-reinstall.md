@@ -198,8 +198,7 @@ It reports pass/fail for:
 - `brain-bootstrap` state present (`~/brain/.git`, `~/dotai/.git`, qmd index)
 - `ollama.service` is active and `/api/tags` responds
 - `brain-promote` dry-run reaches ollama and completes
-- `secrets-sync`, `brain-sync`, `flake-autoupdate`, `brain-promote` timers are
-  enabled
+- `secrets-sync`, `brain-sync`, `brain-promote` timers are enabled
 - `greetd`/`hyprland` session can start (no config errors)
 
 ## 10. Authorize Ollama cloud
