@@ -1,10 +1,5 @@
 { pkgs, ... }:
 let
-  # qmd self-installs into a machine-local npm prefix on first run. The spike
-  # (docs/superpowers/notes/qmd-nixos-spike.md) confirmed node-llama-cpp's
-  # prebuilt native addon loads against the nixpkgs node, so no FHS sandbox is
-  # needed (and bwrap fails where user namespaces are restricted). We only set
-  # LD_LIBRARY_PATH so the prebuilt .node finds libstdc++ at dlopen time.
   qmd = pkgs.writeShellApplication {
     name = "qmd";
     runtimeInputs = [ pkgs.nodejs_22 ];

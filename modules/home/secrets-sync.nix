@@ -18,7 +18,6 @@ let
         exit 0
       fi
 
-      # Never clobber un-exported local key material.
       if [ -n "$(git -C "$vault" status --porcelain)" ]; then
         notify-send "secrets-sync" "local vault changes — run 'nix run .#secrets-export'" || true
         echo "vault dirty, skipping pull" >&2
@@ -28,7 +27,6 @@ let
       git -C "$vault" pull --ff-only
       ( cd "$vault" && ./scripts/import.sh )
 
-      # Fast-forward the password store too, if present.
       if [ -d "$HOME/.password-store/.git" ]; then
         git -C "$HOME/.password-store" pull --ff-only || true
       fi

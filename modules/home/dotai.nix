@@ -4,25 +4,27 @@
   ...
 }:
 let
-  dotai = "${config.home.homeDirectory}/dotai/claude";
+  root = "${config.home.homeDirectory}/dotai";
+  claude = "${root}/claude";
   link = config.lib.file.mkOutOfStoreSymlink;
 in
 {
-  # Live symlinks into ~/.claude: editing the dotai checkout is instantly live,
-  # no rebuild. Volatile ~/.claude state (projects/, auth, history) is untouched.
   home.file = {
-    ".claude/CLAUDE.md".source = link "${dotai}/CLAUDE.md";
-    ".claude/context".source = link "${dotai}/context";
-    ".claude/settings.json".source = link "${dotai}/settings.json";
-    ".claude/fetch-usage.sh".source = link "${dotai}/fetch-usage.sh";
-    ".claude/statusline-command.sh".source = link "${dotai}/statusline-command.sh";
-    ".claude/hooks/brain-capture.sh".source = link "${dotai}/hooks/brain-capture.sh";
-    ".claude/bin/brain-recall".source = link "${dotai}/bin/brain-recall";
-    ".claude/bin/brain-promote".source = link "${dotai}/bin/brain-promote";
+    ".claude/CLAUDE.md".source = link "${root}/CLAUDE.md";
+    ".claude/AGENTS.md".source = link "${root}/AGENTS.md";
+    ".claude/settings.json".source = link "${claude}/settings.json";
+    ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
+    ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
+    ".claude/hooks/brain-capture.sh".source = link "${claude}/hooks/brain-capture.sh";
+    ".claude/bin/brain-recall".source = link "${claude}/bin/brain-recall";
+    ".claude/bin/brain-promote".source = link "${claude}/bin/brain-promote";
+
+    ".gemini/GEMINI.md".source = link "${root}/GEMINI.md";
+    ".gemini/AGENTS.md".source = link "${root}/AGENTS.md";
+
+    ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
   };
 
-  # Expose brain helpers by bare name through the profile bin (always on PATH),
-  # execing the live symlinks so dotai edits stay instantly live.
   home.packages = [
     (pkgs.writeShellScriptBin "brain-recall" ''
       exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"

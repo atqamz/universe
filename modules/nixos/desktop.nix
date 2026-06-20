@@ -16,8 +16,6 @@
 
     printing.enable = true;
 
-    # udisks2: lets udiskie (home) mount removable drives without root.
-    # gvfs: gio back-ends so yazi can open smb:// / sftp:// network shares.
     udisks2.enable = true;
     gvfs.enable = true;
   };

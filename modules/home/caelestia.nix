@@ -16,9 +16,6 @@
     };
   };
 
-  # caelestia self-mutates shell.json at runtime; an immutable store symlink
-  # makes that fail with "Read-only file system". Seed a writable copy and
-  # re-assert declarative keys via jq.
   home.activation.caelestiaShellJson = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     cfgDir="$HOME/.config/caelestia"
     f="$cfgDir/shell.json"

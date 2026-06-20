@@ -1,10 +1,7 @@
 { pkgs, ... }:
 let
-  # age recipient; identity lives at ~/.config/zen-profile/identity
-  # (provisioned from the vault on multi-host setups).
   recipient = "age14ye9kvq4prahqgjntj5tv2gfg2d8kxsv79vfusxzzw8ssezfyqeq8hh94e";
 
-  # Shared bash: resolve Zen profile dir, detect running browser.
   common = ''
     REPO="$HOME/.local/share/zen-profile"
     BLOB="zen-profile.tar.age"
@@ -22,9 +19,7 @@ let
     profile_dir() {
       local root rel
       root="$(zen_root)"
-      # 1. installs.ini Default= — the actively-launched profile (multi-profile case).
       rel="$(grep -m1 '^Default=' "$root/installs.ini" 2>/dev/null | sed 's/^Default=//')"
-      # 2. else profiles.ini — profile flagged Default=1, else the first profile.
       [ -z "$rel" ] && rel="$(awk '
         function flush(){ if (p != "") { if (f == "") f = p; if (d == "1") c = p } }
         /^\[/ { flush(); p=""; d=""; next }
@@ -45,8 +40,6 @@ let
 
     ensure_repo() {
       [ -d "$REPO/.git" ] && return 0
-      # Clone over ssh via the gpg-agent auth key so headless hosts with no
-      # interactive gh auth (e.g. a fresh NixOS reinstall) can still fetch.
       local sock
       sock="$(gpgconf --list-dirs agent-ssh-socket)"
       GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" SSH_AUTH_SOCK="$sock" \
@@ -100,13 +93,11 @@ let
     ];
     text = ''
       ${common}
-      # Files synced (relative to the profile dir). Full profile incl layout.
       FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
       if zen_running; then die "close Zen before push"; fi
       ensure_repo
       pdir="$(profile_dir)"
       tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
-      # recovery.jsonlz4 may be absent; only archive files that exist.
       present=()
       for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
       [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
@@ -128,7 +119,6 @@ in
     push
   ];
 
-  # Auto-pull on login (manual push). Not live; safe because Zen isn't up yet.
   systemd.user.services.zen-profile-pull = {
     Unit.Description = "Pull Zen profile from sync repo";
     Service = {

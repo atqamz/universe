@@ -1,16 +1,12 @@
-# nix build artifacts
 result
 result-*
 build.log
 
-# home-manager backups
 *.bak
 
-# git-hooks.nix generated config (symlink into the nix store)
 .pre-commit-config.yaml
 
-# direnv
 .direnv/
 
-# superpowers working docs (specs/plans/notes kept local, not tracked)
+.superpowers/
 docs/superpowers/

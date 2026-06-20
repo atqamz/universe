@@ -5,7 +5,6 @@ _: {
     ./brain-sync.nix
     ./qmd.nix
     ./secrets-sync.nix
-    ./flake-autoupdate.nix
   ];
 
   home = {
