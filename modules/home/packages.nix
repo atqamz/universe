@@ -60,12 +60,14 @@ in
     [
       sourcegit
       zed-editor
+      # nixpkgs ships zed's CLI as `zeditor`; alias it to `zed` so `zed .` works.
+      (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
       # NVIDIA-offload-wrapped Unity Hub; see the let block above.
       unityhub
       # Unity Hub shells out to `unzip` for type=ZIP module installs (Android
       # SDK/NDK Tools, OpenJDK); without it on PATH those installs fail.
       unzip
-      inputs.zen-browser.packages.${pkgs.system}.default
+      # zen-browser is provided by the home module (modules/home/zen.nix).
       inputs.claude-code.packages.${pkgs.system}.default
       inputs.codex-cli.packages.${pkgs.system}.default
       bibata-cursors
