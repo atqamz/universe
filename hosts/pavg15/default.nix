@@ -18,6 +18,7 @@
     git
     vim
     wget
+    fastfetch
   ];
 
   system.stateVersion = "26.05";
