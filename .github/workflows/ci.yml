@@ -6,6 +6,12 @@ on:
       - "**.md"
       - "docs/**"
       - ".gitignore"
+  push:
+    branches: [master]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,10 +21,20 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v31
+      - uses: actions/checkout@v7.0.0
+      - uses: jlumbroso/free-disk-space@v1.3.1
+      - uses: cachix/install-nix-action@v31.10.6
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size: 8G
+      - uses: cachix/cachix-action@v17
+        with:
+          name: atqamz-universe
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: flake check
         run: nix flake check --print-build-logs
