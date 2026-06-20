@@ -1,6 +1,16 @@
-{ inputs, ... }:
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
 {
   imports = [ inputs.zen-browser.homeModules.beta ];
+
+  # The beta package's binary is `zen-beta`; alias `zen` so `zen <url>` works.
+  home.packages = [
+    (pkgs.writeShellScriptBin "zen" ''exec ${config.programs.zen-browser.finalPackage}/bin/zen-beta "$@"'')
+  ];
 
   programs.zen-browser = {
     enable = true;
