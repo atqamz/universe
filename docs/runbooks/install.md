@@ -117,7 +117,7 @@ reboot
 
 Remove the USB. The minimal config has no display manager, so the machine boots
 to a text login console (getty). The graphical `greetd` -> `tuigreet` greeter
-appears only after the full config is applied in step 9.
+appears only after the full config is applied in step 8.
 
 ## 6. First login
 
@@ -136,16 +136,15 @@ Missing file -> the injected host key is not the secret's recipient. Confirm its
 age (`ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`) matches the `age:` entry
 for this host in `.sops.yaml`.
 
-## 7. Bootstrap L0/L1 secrets
+## 7. Bootstrap (vault + brain/dotai/dotfiles)
 
 ```bash
-nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#secrets-bootstrap
+nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#bootstrap
 ```
 
-Clones `~/vault` and runs `import.sh`, populating age/GPG/SSH keys, git signing
-config, and the gpg preset passphrase (`~/.gnupg/.preset-passphrase`, 0400) so
-the `gpg-preset` login service unlocks the auth/sign subkeys headlessly after
-each reboot. Verify:
+Clones `~/vault` and runs `import.sh` (age/GPG/SSH keys, git signing, gpg preset
+passphrase), then clones `~/dotai`, `~/brain`, `~/dotfiles` over ssh, then builds the
+qmd index. Verify:
 
 ```bash
 ssh-add -l
@@ -153,23 +152,23 @@ gh auth status
 gpg -K
 ```
 
-## 8. Bootstrap brain / dotai
+## 7a. Authenticate gh + git over ssh
 
 ```bash
-nix run github:atqamz/universe#brain-bootstrap
+gh auth login --hostname github.com --git-protocol ssh
 ```
 
-Clones `~/dotai` and `~/brain` and builds the qmd index.
+Both `gh` and `git` now use ssh (the gpg `[A]` auth subkey); no https.
 
-## 9. Apply full config
+## 8. Apply full config
 
 ```bash
-cd ~/universe || git clone https://github.com/atqamz/universe.git ~/universe
+cd ~/universe || git clone git@github.com:atqamz/universe.git ~/universe
 cd ~/universe
 sudo nixos-rebuild switch --flake .#$HOST
 ```
 
-## 10. Verify e2e
+## 9. Verify e2e
 
 ```bash
 nix run .#bootstrap-check
@@ -179,7 +178,7 @@ It reports pass/fail for the `atqa` user and groups, tailscale, sshd, the
 secrets/brain bootstrap state, `ollama.service`, the `brain-promote` dry-run, the
 sync timers, and a clean `greetd`/`hyprland` start.
 
-## 11. Authorize Ollama cloud
+## 10. Authorize Ollama cloud
 
 ```bash
 ollama signin
@@ -192,7 +191,7 @@ systemctl --user restart ollama
 BRAIN_PROMOTE_DRY_RUN=1 brain-promote
 ```
 
-## 12. Verify hibernate
+## 11. Verify hibernate
 
 ```bash
 systemctl hibernate
@@ -201,7 +200,7 @@ systemctl hibernate
 Power back on; the prior session should resume. Hibernate uses the plain 32G
 swap partition (`boot.resumeDevice = /dev/disk/by-partlabel/disk-main-swap`).
 
-## 13. Final validation
+## 12. Final validation
 
 ```bash
 sudo reboot
@@ -235,7 +234,7 @@ mismatch, or wrong PRIME bus IDs in `hosts/$HOST/default.nix`.
 
 ### `brain-promote` fails with Unauthorized
 
-Ollama cloud is not signed in. See step 11.
+Ollama cloud is not signed in. See step 10.
 
 ### `github ssh auth` fails after a reboot
 
@@ -248,7 +247,7 @@ systemctl --user status gpg-preset
 ls -l ~/.gnupg/.preset-passphrase
 ```
 
-Missing file -> `secrets-bootstrap` did not place it; the vault must contain
+Missing file -> `bootstrap` did not place it; the vault must contain
 `gpg/passphrase.sops.txt`.
 
 ### Hibernate does not resume

@@ -30,10 +30,11 @@ _: {
       };
 
       bootstrap = pkgs.writeShellApplication {
-        name = "secrets-bootstrap";
+        name = "bootstrap";
         runtimeInputs = rt;
         text = ''
           vault="${vault}"
+
           key=/run/secrets/vault-deploy-key
           if [ -r "$key" ]; then
             export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
@@ -53,19 +54,12 @@ _: {
             echo "==> updating vault"
             git -C "$vault" pull --ff-only
           fi
-          cd "$vault" || exit 1
-          ./scripts/import.sh
-        '';
-      };
+          ( cd "$vault" && ./scripts/import.sh )
 
-      brainBootstrap = pkgs.writeShellApplication {
-        name = "brain-bootstrap";
-        runtimeInputs = rt;
-        text = ''
           SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
           export SSH_AUTH_SOCK
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-          for repo in dotai brain; do
+          for repo in dotai brain dotfiles; do
             dest="$HOME/$repo"
             if [ ! -d "$dest/.git" ]; then
               echo "==> cloning $repo"
@@ -75,6 +69,7 @@ _: {
               git -C "$dest" pull --ff-only
             fi
           done
+
           if command -v qmd >/dev/null 2>&1; then
             echo "==> building brain index (qmd)"
             qmd collection add "$HOME/brain" --name brain 2>/dev/null || true
@@ -135,6 +130,7 @@ _: {
           check "gpg key present" gpg -K
           check "dotai cloned" test -d "$HOME/dotai/.git"
           check "brain cloned" test -d "$HOME/brain/.git"
+          check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
           # shellcheck disable=SC2016
           check "brain on main" bash -c 'cd "$HOME/brain" && test "$(git rev-parse --abbrev-ref HEAD)" = main'
           check "brain qmd index exists" test -f "$HOME/.cache/qmd/index.sqlite"
@@ -170,13 +166,9 @@ _: {
           type = "app";
           program = "${export}/bin/secrets-export";
         };
-        secrets-bootstrap = {
+        bootstrap = {
           type = "app";
-          program = "${bootstrap}/bin/secrets-bootstrap";
-        };
-        brain-bootstrap = {
-          type = "app";
-          program = "${brainBootstrap}/bin/brain-bootstrap";
+          program = "${bootstrap}/bin/bootstrap";
         };
         bootstrap-check = {
           type = "app";

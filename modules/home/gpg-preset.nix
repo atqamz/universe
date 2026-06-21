@@ -10,7 +10,7 @@ let
     text = ''
       pp="$HOME/.gnupg/.preset-passphrase"
       if [ ! -r "$pp" ]; then
-        echo "no preset passphrase ($pp); run secrets-bootstrap first" >&2
+        echo "no preset passphrase ($pp); run 'nix run .#bootstrap' first" >&2
         exit 0
       fi
       gpg-connect-agent /bye >/dev/null 2>&1 || true

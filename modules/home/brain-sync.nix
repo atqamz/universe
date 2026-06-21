@@ -11,7 +11,7 @@ let
     text = ''
       brain="${brain}"
       if [ ! -d "$brain/.git" ]; then
-        echo "brain not bootstrapped; run: nix run .#brain-bootstrap" >&2
+        echo "brain not bootstrapped; run: nix run .#bootstrap" >&2
         exit 0
       fi
 
