@@ -2,10 +2,7 @@
 # Claude Code detailed statusline
 #
 # Line 1: Model (context size)
-# Line 2: tokens (pct%) | dir (branch)
-#
-# Usage limits (5hr + weekly) live in the waybar custom/claude_usage
-# module now — no point showing them twice.
+# Line 2: tokens (pct%) | dir (branch) | 5hr% weekly% reset
 
 COLOR="blue"
 
@@ -114,9 +111,37 @@ fi
 # Line 1: Model (context size)
 line1="${C_ACCENT}${model}${C_GRAY} (${ctx_label})${C_RESET}"
 
-# Line 2: progress bar pct% | dir (branch)
+# Line 2: progress bar pct% | dir (branch) | 5hr% weekly% reset
 dir_part="${C_GRAY}${dir}"
 [ -n "$branch" ] && dir_part="${dir_part} (${branch})"
-line2="${C_CTX}${pct_prefix}${tokens_label} (${pct}%)${C_RESET} ${C_GRAY}|${C_RESET} ${dir_part}${C_RESET}"
+
+# -- Usage limits (5hr + weekly + reset) --------------------------------------
+
+I_CLOCK=$''
+I_CAL=$''
+I_RELOAD=$''
+
+usage_part=""
+usage_script="$(dirname "${BASH_SOURCE[0]}")/fetch-usage.sh"
+if [ -f "$usage_script" ]; then
+    # shellcheck source=/dev/null
+    source "$usage_script"
+    usage_json=$(fetch_usage_data 2>/dev/null)
+    if [ -n "$usage_json" ] && [ -z "$(echo "$usage_json" | jq -r '.error // empty' 2>/dev/null)" ]; then
+        s_pct=$(echo "$usage_json" | jq -r 'if .sessionUsage == null then "" else (.sessionUsage | floor) end' 2>/dev/null)
+        w_pct=$(echo "$usage_json" | jq -r 'if .weeklyUsage == null then "" else (.weeklyUsage | floor) end' 2>/dev/null)
+        reset_at=$(echo "$usage_json" | jq -r '.sessionResetAt // empty' 2>/dev/null)
+        reset_hm=""
+        [ -n "$reset_at" ] && reset_hm=$(date -d "$reset_at" +%H.%M 2>/dev/null)
+        if [ -n "$s_pct" ] || [ -n "$w_pct" ] || [ -n "$reset_hm" ]; then
+            usage_part=" ${C_GRAY}|${C_RESET}"
+            [ -n "$s_pct" ] && usage_part="${usage_part} ${C_GRAY}${I_CLOCK} ${s_pct}%${C_RESET}"
+            [ -n "$w_pct" ] && usage_part="${usage_part} ${C_GRAY}${I_CAL} ${w_pct}%${C_RESET}"
+            [ -n "$reset_hm" ] && usage_part="${usage_part} ${C_GRAY}${I_RELOAD} ${reset_hm}${C_RESET}"
+        fi
+    fi
+fi
+
+line2="${C_CTX}${pct_prefix}${tokens_label} (${pct}%)${C_RESET} ${C_GRAY}|${C_RESET} ${dir_part}${C_RESET}${usage_part}"
 
 printf '%b\n%b\n' "$line1" "$line2"
