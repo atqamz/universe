@@ -27,7 +27,7 @@ sudo nixos-rebuild switch --flake .#<host>
 ## Install
 
 Fresh install / reinstall of a host: `docs/runbooks/install.md` (USB at console)
-or `docs/runbooks/install-ssh.md` (remote over the tailnet).
+or `docs/runbooks/install-anywhere.md` (remote over the tailnet).
 
 ## Develop
 

@@ -8,7 +8,7 @@ export HOST=sfx14   # or pavg15
 ```
 
 Works for any host defined in the flake. The remote tailnet-driven variant is in
-`install-ssh.md`.
+`install-anywhere.md`.
 
 ## 0. Back up /home (destructive)
 
