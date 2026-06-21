@@ -13,6 +13,7 @@ _: {
     ./zen.nix
     ./zen-profile.nix
     ./dotai.nix
+    ./git.nix
     ./claude-plugins.nix
     ./brain-sync.nix
     ./brain-promote.nix
