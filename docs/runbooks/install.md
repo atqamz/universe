@@ -51,7 +51,7 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 nix-shell -p tailscale --run '
   sudo systemd-run --unit=tailscaled tailscaled
   sleep 3
-  sudo tailscale up --ssh --qr
+  sudo tailscale up --ssh --qr --advertise-tags=tag:universe
 '
 ```
 
@@ -61,7 +61,7 @@ If `systemd-run` is unavailable, run the daemon directly:
 nix-shell -p tailscale --run '
   nohup sudo tailscaled > /tmp/tailscaled.log 2>&1 &
   sleep 3
-  sudo tailscale up --ssh --qr
+  sudo tailscale up --ssh --qr --advertise-tags=tag:universe
 '
 ```
 
