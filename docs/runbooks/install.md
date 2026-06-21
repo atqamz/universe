@@ -77,7 +77,7 @@ passphrase-protected private half and copy both to the installer:
 
 ```bash
 age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > /tmp/ssh_host_ed25519_key
-scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
+scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@nixos:/tmp/
 shred -u /tmp/ssh_host_ed25519_key
 ```
 
