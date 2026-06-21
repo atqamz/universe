@@ -13,14 +13,14 @@ in
       monitors =
         if isSfx14 then
           [
-            "eDP-1,2400x1500@120,0x0,1"
-            "DP-1,2400x1500@120,-2400x0,1"
+            "eDP-1,2160x1350@120,0x0,1"
+            "DP-1,2160x1350@60,-2160x0,1"
           ]
         else
           [ "eDP-1,1920x1080@60,auto,1" ];
       moveBinds = lib.optionals isSfx14 [
-        "${mod} SHIFT, comma, exec, hyprctl keyword monitor DP-1,2400x1500@120,-2400x0,1"
-        "${mod} SHIFT, period, exec, hyprctl keyword monitor DP-1,2400x1500@120,2400x0,1"
+        "${mod} SHIFT, comma, exec, hyprctl keyword monitor DP-1,2160x1350@60,-2160x0,1"
+        "${mod} SHIFT, period, exec, hyprctl keyword monitor DP-1,2160x1350@60,2160x0,1"
       ];
       touchDevices = lib.optionals isSfx14 [
         {
