@@ -13,14 +13,14 @@ in
       monitors =
         if isSfx14 then
           [
-            "eDP-1,1920x1200@60,0x0,1"
-            "DP-1,1920x1200@60,-1920x0,1"
+            "eDP-1,2400x1500@120,0x0,1"
+            "DP-1,2400x1500@120,-2400x0,1"
           ]
         else
           [ "eDP-1,1920x1080@60,auto,1" ];
       moveBinds = lib.optionals isSfx14 [
-        "${mod} SHIFT, comma, exec, hyprctl keyword monitor DP-1,1920x1200@60,-1920x0,1"
-        "${mod} SHIFT, period, exec, hyprctl keyword monitor DP-1,1920x1200@60,1920x0,1"
+        "${mod} SHIFT, comma, exec, hyprctl keyword monitor DP-1,2400x1500@120,-2400x0,1"
+        "${mod} SHIFT, period, exec, hyprctl keyword monitor DP-1,2400x1500@120,2400x0,1"
       ];
       touchDevices = lib.optionals isSfx14 [
         {
@@ -56,6 +56,13 @@ in
           gaps_out = 8;
           border_size = 2;
           layout = "dwindle";
+        };
+
+        animations = {
+          enabled = true;
+          animation = [
+            "workspaces, 1, 6, default, slidevert"
+          ];
         };
 
         windowrule = [
