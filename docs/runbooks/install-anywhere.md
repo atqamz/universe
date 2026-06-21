@@ -66,8 +66,18 @@ cd ~/universe
 nix run github:nix-community/nixos-anywhere -- \
   --flake .#$HOST \
   --extra-files "$tmp" \
-  --target-host nixos@$TARGET
+  --target-host nixos@$TARGET < /dev/null
 ```
+
+The `< /dev/null` matters. Tailscale SSH authenticates by tailnet identity, so the
+installer accepts the `none` auth method. `nixos-anywhere` calls `ssh-copy-id`,
+whose version-detection probe (`ssh ... -o PreferredAuthentications=,` with no
+remote command) assumes auth will fail and ssh will exit. Here auth *succeeds*, so
+the probe instead opens an interactive login shell; with a terminal on stdin it
+never gets EOF and hangs forever at `### Uploading install SSH keys ###`. Redirecting
+stdin from `/dev/null` gives the probe immediate EOF so it exits and the install
+proceeds. There are no interactive prompts in this flow (passwordless sudo, no disk
+encryption), so closing stdin is safe.
 
 The disk device comes from `hosts/$HOST/disko.nix` (`device = "/dev/nvme0n1"`);
 confirm it matches the target before running. `nixos-anywhere` reboots the host
