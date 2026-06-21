@@ -7,6 +7,8 @@
 let
   claudePkg = inputs.claude-code.packages.${pkgs.system}.default;
 
+  nodeShim = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
+
   marketplaces = {
     caveman = "JuliusBrussee/caveman";
     ponytail = "DietrichGebert/ponytail";
@@ -26,7 +28,8 @@ let
 
   runtime = with pkgs; [
     claudePkg
-    nodejs_22
+    bun
+    nodeShim
     git
     coreutils
     gnugrep
@@ -100,6 +103,8 @@ let
   };
 in
 {
+  home.packages = [ nodeShim ];
+
   home.activation.claudePlugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${ensure}/bin/claude-plugins-ensure || true
   '';

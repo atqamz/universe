@@ -49,6 +49,8 @@ in
       inputs.codex-cli.packages.${pkgs.system}.default
       bibata-cursors
       jq
+      bun
+      (writeShellScriptBin "npx" ''exec ${bun}/bin/bunx "$@"'')
       age
       sops
       gh
