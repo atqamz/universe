@@ -49,6 +49,8 @@ in
       inputs.codex-cli.packages.${pkgs.system}.default
       bibata-cursors
       jq
+      age
+      sops
       gh
       git-lfs
       hyprpicker
