@@ -4,10 +4,6 @@ Same install as `install.md`, driven from another working machine over the
 tailnet for when a console isn't convenient. Only boot + install differ;
 post-boot bootstrap is identical -- continue from `install.md` step 6.
 
-```bash
-export HOST=sfx14
-```
-
 ## 0. Back up /home (destructive)
 
 Same as `install.md` step 0. The disk wipe is irreversible.
@@ -32,7 +28,12 @@ console is no longer needed.
 ## 2. Verify ssh from the working machine
 
 ```bash
-ssh nixos@$HOST true
+export TARGET=nixos # or machine name registered on tailscale, can be "nixos-1"
+export HOST=sfx14   # or pavg15
+```
+
+```bash
+ssh nixos@$TARGET true
 ```
 
 Tailscale SSH authenticates by tailnet identity; no password. The live `nixos`
@@ -65,7 +66,7 @@ cd ~/universe
 nix run github:nix-community/nixos-anywhere -- \
   --flake .#$HOST \
   --extra-files "$tmp" \
-  --target-host nixos@$HOST
+  --target-host nixos@$TARGET
 ```
 
 The disk device comes from `hosts/$HOST/disko.nix` (`device = "/dev/nvme0n1"`);
