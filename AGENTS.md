@@ -13,4 +13,5 @@ Repo-specific rules. Global rules apply unless overridden here.
 - No comments in `.nix`. Code speaks. Stricter than global: none at all, not even "why".
 - Keep `# shellcheck disable=` pragmas — `writeShellApplication` runs shellcheck at build.
 - Before commit: `nix fmt`, then `nix flake check`.
+- "Ship" means: commit + push + PR + merge if green + apply
 - Cachix auth token only in GH secret `CACHIX_AUTH_TOKEN`.
