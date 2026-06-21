@@ -5,7 +5,7 @@
   ...
 }:
 let
-  claudePkg = inputs.claude-code.packages.${pkgs.system}.default;
+  claudePkg = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   nodeShim = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
 
