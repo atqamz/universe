@@ -51,7 +51,7 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 nix-shell -p tailscale --run '
   sudo systemd-run --unit=tailscaled tailscaled
   sleep 3
-  sudo tailscale up --ssh --qr
+  sudo tailscale up --ssh --qr --advertise-tags=tag:universe
 '
 ```
 
@@ -61,7 +61,7 @@ If `systemd-run` is unavailable, run the daemon directly:
 nix-shell -p tailscale --run '
   nohup sudo tailscaled > /tmp/tailscaled.log 2>&1 &
   sleep 3
-  sudo tailscale up --ssh --qr
+  sudo tailscale up --ssh --qr --advertise-tags=tag:universe
 '
 ```
 
@@ -77,7 +77,7 @@ passphrase-protected private half and copy both to the installer:
 
 ```bash
 age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > /tmp/ssh_host_ed25519_key
-scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
+scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@nixos:/tmp/
 shred -u /tmp/ssh_host_ed25519_key
 ```
 
