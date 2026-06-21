@@ -1,4 +1,8 @@
-_: {
+{ hostname, lib, ... }:
+let
+  isSfx14 = hostname == "sfx14";
+in
+{
   services.hyprpolkitagent.enable = true;
 
   wayland.windowManager.hyprland =
@@ -6,16 +10,40 @@ _: {
       terminal = "ghostty";
       fileExplorer = "ghostty -e yazi";
       mod = "SUPER";
+      monitors =
+        if isSfx14 then
+          [
+            "eDP-1,1920x1200@60,0x0,1"
+            "DP-1,1920x1200@60,-1920x0,1"
+          ]
+        else
+          [ "eDP-1,1920x1080@60,auto,1" ];
+      moveBinds = lib.optionals isSfx14 [
+        "${mod} SHIFT, comma, exec, hyprctl keyword monitor DP-1,1920x1200@60,-1920x0,1"
+        "${mod} SHIFT, period, exec, hyprctl keyword monitor DP-1,1920x1200@60,1920x0,1"
+      ];
+      touchDevices = lib.optionals isSfx14 [
+        {
+          name = "ilitek-ilitek-tp";
+          output = "DP-1";
+        }
+        {
+          name = "ilitek-ilitek-tp-mouse";
+          output = "DP-1";
+          enabled = true;
+        }
+        {
+          name = "syna7db5:00-06cb:ceb1-touchpad";
+          accel_profile = "custom 0.5 0.0 1.0 2.0 3.0";
+        }
+      ];
     in
     {
       enable = true;
       systemd.enable = false;
       configType = "hyprlang";
       settings = {
-        monitor = [
-          "eDP-1,preferred,auto,1"
-          "HDMI-A-1,preferred,auto,auto"
-        ];
+        monitor = monitors;
 
         env = [
           "HYPRCURSOR_THEME,Bibata-Modern-Classic"
@@ -38,7 +66,13 @@ _: {
           kb_layout = "us";
           follow_mouse = 1;
           touchpad.natural_scroll = true;
+        }
+        // lib.optionalAttrs isSfx14 {
+          touchdevice.output = "DP-1";
+          tablet.output = "DP-1";
         };
+
+        device = touchDevices;
 
         gesture = [
           "3, horizontal, workspace"
@@ -100,7 +134,8 @@ _: {
           ",XF86AudioPlay, global, caelestia:mediaToggle"
           ",Print, global, caelestia:screenshotClip"
           "${mod} SHIFT, S, global, caelestia:screenshot"
-        ];
+        ]
+        ++ moveBinds;
 
         bindm = [
           "${mod}, mouse:272, movewindow"
