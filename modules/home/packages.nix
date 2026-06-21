@@ -43,6 +43,7 @@ in
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed-editor
       (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
+      brave
       unityhub
       unzip
       inputs.claude-code.packages.${pkgs.system}.default
