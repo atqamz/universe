@@ -29,49 +29,52 @@ nix-shell -p tailscale --run '
 Authenticate via the QR / URL. Once `tailscale status` shows the installer, the
 console is no longer needed.
 
-## 2. From the working machine: ssh in
+## 2. Verify ssh from the working machine
 
 ```bash
-ssh nixos@$HOST
+ssh nixos@$HOST true
 ```
 
 Tailscale SSH authenticates by tailnet identity; no password. The live `nixos`
 user has passwordless sudo.
 
-## 3. Copy the persistent host key
+## 3. Install (remote, one shot)
 
-From the working machine (which has the vault checked out at `~/vault`); the
-private half is passphrase-encrypted, so decrypt it first:
+Run entirely from the working machine, which has the vault at `~/vault` and an
+`~/universe` checkout. The persistent host key is staged into a temp dir
+mirroring its target path and handed to `nixos-anywhere --extra-files`, which
+copies it into the new system before first boot so `sops-nix` can decrypt
+`atqa-password`. The private half is passphrase-encrypted in the vault, so
+decrypt it first.
 
-```bash
-age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > /tmp/ssh_host_ed25519_key
-scp /tmp/ssh_host_ed25519_key ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub nixos@$HOST:/tmp/
-ssh nixos@$HOST 'chmod 600 /tmp/ssh_host_ed25519_key'
-shred -u /tmp/ssh_host_ed25519_key
-```
-
-## 4. Install (remote)
-
-```bash
-ssh nixos@$HOST '
-  lsblk
-  sudo nix run github:nix-community/disko#disko-install -- \
-    --flake github:atqamz/universe#'"$HOST"'-minimal --disk main /dev/nvme0n1 \
-    --extra-files /tmp/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key \
-    --extra-files /tmp/ssh_host_ed25519_key.pub /etc/ssh/ssh_host_ed25519_key.pub \
-    --write-efi-boot-entries \
-    --system-config "{\"users\":{\"users\":{\"root\":{\"hashedPassword\":\"!\"}}}}"
-'
-```
-
-Confirm `lsblk` shows the NVMe as `/dev/nvme0n1` before committing.
-
-## 5. Reboot
+`nixos-anywhere` detects the already-booted installer and **skips kexec**, so
+nothing drops the network -- the install runs over the existing tailnet ssh,
+WiFi included. It partitions and mounts the real disk via `disko`, then copies
+the full closure (built on the working machine) straight to the mounted target
+store. No ISO tmpfs limit, so there is no `-minimal` stage here: the full
+`.#$HOST` config installs directly.
 
 ```bash
-ssh nixos@$HOST sudo reboot
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+install -d -m755 "$tmp/etc/ssh"
+age -d ~/vault/hosts/$HOST/ssh_host_ed25519_key.age > "$tmp/etc/ssh/ssh_host_ed25519_key"
+chmod 600 "$tmp/etc/ssh/ssh_host_ed25519_key"
+cp ~/vault/hosts/$HOST/ssh_host_ed25519_key.pub "$tmp/etc/ssh/ssh_host_ed25519_key.pub"
+
+cd ~/universe
+nix run github:nix-community/nixos-anywhere -- \
+  --flake .#$HOST \
+  --extra-files "$tmp" \
+  --target-host nixos@$HOST
 ```
 
-The tailnet connection drops. After the machine boots to its text login console,
-continue from **`install.md` step 6 (First login)** -- the rest is identical
-(greetd appears only once the full config is applied in install.md step 9).
+The disk device comes from `hosts/$HOST/disko.nix` (`device = "/dev/nvme0n1"`);
+confirm it matches the target before running. `nixos-anywhere` reboots the host
+itself once the install finishes.
+
+## 4. Continue bootstrap
+
+The tailnet connection drops on the reboot. After the machine boots to its text
+login console, continue from **`install.md` step 6 (First login)** -- the rest
+is identical (greetd appears only once the full config is applied in install.md
+step 9).
