@@ -20,6 +20,7 @@ _: {
     ./qmd.nix
     ./passmenu.nix
     ./fuzzel.nix
+    ./readline.nix
   ];
 
   home = {
