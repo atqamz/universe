@@ -39,7 +39,7 @@ in
     Unit.Description = "Periodic brain sync";
     Timer = {
       OnStartupSec = "2min";
-      OnUnitActiveSec = "1d";
+      OnUnitActiveSec = "5min";
       Persistent = true;
     };
     Install.WantedBy = [ "timers.target" ];
