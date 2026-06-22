@@ -14,6 +14,7 @@ _: {
     ./secrets.nix
     ./locale.nix
     ./warp.nix
+    ./auto-upgrade.nix
     ./gaming.nix
   ];
 }
