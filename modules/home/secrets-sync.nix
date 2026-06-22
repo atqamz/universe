@@ -14,7 +14,7 @@ let
     text = ''
       vault="${vault}"
       if [ ! -d "$vault/.git" ]; then
-        echo "vault not bootstrapped; run: nix run .#secrets-bootstrap" >&2
+        echo "vault not bootstrapped; run: nix run .#bootstrap" >&2
         exit 0
       fi
 
