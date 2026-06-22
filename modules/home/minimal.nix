@@ -4,7 +4,8 @@ _: {
     ./brain-promote.nix
     ./brain-sync.nix
     ./qmd.nix
-    ./secrets-sync.nix
+    ./vault-sync.nix
+    ./password-store-sync.nix
   ];
 
   home = {

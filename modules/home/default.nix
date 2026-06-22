@@ -7,7 +7,8 @@ _: {
     ./cursor.nix
     ./ghostty.nix
     ./file-management.nix
-    ./secrets-sync.nix
+    ./vault-sync.nix
+    ./password-store-sync.nix
     ./gpg-preset.nix
     ./gtk.nix
     ./zen.nix
@@ -18,6 +19,8 @@ _: {
     ./claude-plugins.nix
     ./brain-sync.nix
     ./brain-promote.nix
+    ./dotfiles-sync.nix
+    ./dotai-sync.nix
     ./qmd.nix
     ./passmenu.nix
     ./fuzzel.nix

@@ -139,9 +139,13 @@ _: {
           check "brain-promote on PATH" command -v brain-promote
           check "brain-promote timer enabled" systemctl --user is-enabled brain-promote.timer
           check "brain-sync timer enabled" systemctl --user is-enabled brain-sync.timer
-          check "secrets-sync timer enabled" systemctl --user is-enabled secrets-sync.timer
+          check "dotfiles-sync timer enabled" systemctl --user is-enabled dotfiles-sync.timer
+          check "dotai-sync timer enabled" systemctl --user is-enabled dotai-sync.timer
+          check "vault-sync timer enabled" systemctl --user is-enabled vault-sync.timer
+          check "password-store-sync timer enabled" systemctl --user is-enabled password-store-sync.timer
+          check "nixos-upgrade timer enabled" systemctl is-enabled nixos-upgrade.timer
           check "zen identity present" test -f "$HOME/.config/zen-profile/identity"
-          check "zen-profile-pull timer enabled" systemctl --user is-enabled zen-profile-pull.timer
+          check "zen-profile-sync timer enabled" systemctl --user is-enabled zen-profile-sync.timer
           check "universe repo cloned" test -d "$HOME/universe/.git"
           check "greetd active" systemctl is-active greetd
           check "claude-code on PATH" command -v claude
