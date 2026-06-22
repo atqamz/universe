@@ -2,12 +2,9 @@
 let
   vault = "$HOME/vault";
   sync = pkgs.writeShellApplication {
-    name = "secrets-sync";
+    name = "vault-sync";
     runtimeInputs = with pkgs; [
       git
-      gnupg
-      sops
-      age
       coreutils
       libnotify
     ];
@@ -19,31 +16,29 @@ let
       fi
 
       if [ -n "$(git -C "$vault" status --porcelain)" ]; then
-        notify-send "secrets-sync" "local vault changes — run 'nix run .#secrets-export'" || true
+        notify-send "vault-sync" "local vault changes uncommitted — skipping pull" || true
         echo "vault dirty, skipping pull" >&2
         exit 0
       fi
 
-      git -C "$vault" pull --ff-only
-      ( cd "$vault" && ./scripts/import.sh )
+      git -C "$vault" pull --ff-only || \
+        notify-send "vault-sync" "vault pull not fast-forward — diverged, skipping" || true
 
-      if [ -d "$HOME/.password-store/.git" ]; then
-        git -C "$HOME/.password-store" pull --ff-only || true
-      fi
+      ( cd "$vault" && ./scripts/import.sh )
     '';
   };
 in
 {
-  systemd.user.services.secrets-sync = {
-    Unit.Description = "Pull canonical vault and import secrets";
+  systemd.user.services.vault-sync = {
+    Unit.Description = "Pull secrets vault and import";
     Service = {
       Type = "oneshot";
-      ExecStart = "${sync}/bin/secrets-sync";
+      ExecStart = "${sync}/bin/vault-sync";
     };
   };
 
-  systemd.user.timers.secrets-sync = {
-    Unit.Description = "Periodic secrets vault sync";
+  systemd.user.timers.vault-sync = {
+    Unit.Description = "Periodic vault sync";
     Timer = {
       OnStartupSec = "2min";
       OnUnitActiveSec = "1d";

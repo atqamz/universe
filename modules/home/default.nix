@@ -7,7 +7,8 @@ _: {
     ./cursor.nix
     ./ghostty.nix
     ./file-management.nix
-    ./secrets-sync.nix
+    ./vault-sync.nix
+    ./password-store-sync.nix
     ./gpg-preset.nix
     ./gtk.nix
     ./zen.nix
