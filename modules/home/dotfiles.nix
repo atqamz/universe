@@ -22,6 +22,7 @@ in
     ".config/fish".source = link "${root}/fish";
     ".config/fastfetch".source = link "${root}/fastfetch";
     ".config/zed".source = link "${root}/zed";
+    ".config/caelestia/shell.json".source = link "${root}/caelestia/shell.json";
     ".local/share/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/autoexec.cfg".source =
       link "${root}/cs2/autoexec.cfg";
   };
