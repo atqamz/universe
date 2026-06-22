@@ -140,14 +140,14 @@ in
     push
   ];
 
-  systemd.user.services.zen-profile-pull = {
+  systemd.user.services.zen-profile-sync = {
     Unit.Description = "Pull Zen profile from sync repo";
     Service = {
       Type = "oneshot";
       ExecStart = "${pull}/bin/zen-profile-pull";
     };
   };
-  systemd.user.timers.zen-profile-pull = {
+  systemd.user.timers.zen-profile-sync = {
     Unit.Description = "Pull Zen profile on startup";
     Timer = {
       OnStartupSec = "1min";
