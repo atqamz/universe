@@ -5,6 +5,9 @@ let
     name = "vault-sync";
     runtimeInputs = with pkgs; [
       git
+      gnupg
+      sops
+      age
       coreutils
       libnotify
     ];
