@@ -15,7 +15,7 @@ let
         exit 0
       fi
 
-      if [ -n "$(git -C "$brain" status --porcelain)" ]; then
+      if [ -n "$(git -C "$brain" status --porcelain --untracked-files=no)" ]; then
         notify-send "brain-sync" "local brain changes uncommitted — skipping pull" || true
         echo "brain dirty, skipping pull" >&2
         exit 0

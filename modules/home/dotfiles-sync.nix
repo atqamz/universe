@@ -15,7 +15,7 @@ let
         exit 0
       fi
 
-      if [ -n "$(git -C "$dotfiles" status --porcelain)" ]; then
+      if [ -n "$(git -C "$dotfiles" status --porcelain --untracked-files=no)" ]; then
         notify-send "dotfiles-sync" "local dotfiles changes uncommitted — skipping pull" || true
         echo "dotfiles dirty, skipping pull" >&2
         exit 0
