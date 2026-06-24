@@ -65,6 +65,7 @@ in
       brightnessctl
       pavucontrol
       obs-studio
+      vlc
     ]
   );
 }
