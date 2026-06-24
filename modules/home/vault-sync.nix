@@ -18,7 +18,7 @@ let
         exit 0
       fi
 
-      if [ -n "$(git -C "$vault" status --porcelain)" ]; then
+      if [ -n "$(git -C "$vault" status --porcelain --untracked-files=no)" ]; then
         notify-send "vault-sync" "local vault changes uncommitted — skipping pull" || true
         echo "vault dirty, skipping pull" >&2
         exit 0

@@ -15,7 +15,7 @@ let
         exit 0
       fi
 
-      if [ -n "$(git -C "$dotai" status --porcelain)" ]; then
+      if [ -n "$(git -C "$dotai" status --porcelain --untracked-files=no)" ]; then
         notify-send "dotai-sync" "local dotai changes uncommitted — skipping pull" || true
         echo "dotai dirty, skipping pull" >&2
         exit 0
