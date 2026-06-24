@@ -64,6 +64,7 @@ in
       fuzzel
       brightnessctl
       pavucontrol
+      obs-studio
     ]
   );
 }
