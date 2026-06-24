@@ -2,7 +2,7 @@
 {
   system.autoUpgrade = {
     enable = true;
-    flake = "github:atqamz/universe#${config.networking.hostName}";
+    flake = "git+https://github.com/atqamz/universe#${config.networking.hostName}";
     dates = "*:0/5";
     randomizedDelaySec = "60";
     flags = [
