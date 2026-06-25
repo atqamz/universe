@@ -16,6 +16,7 @@ in
     ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
     ".claude/hooks/brain-capture.sh".source = link "${claude}/hooks/brain-capture.sh";
+    ".claude/hooks/ground-rules.sh".source = link "${claude}/hooks/ground-rules.sh";
     ".claude/bin/brain-recall".source = link "${claude}/bin/brain-recall";
     ".claude/bin/brain-promote".source = link "${claude}/bin/brain-promote";
 
