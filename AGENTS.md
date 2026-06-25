@@ -1,8 +1,6 @@
 # AGENTS.md
 
-Global operating rules for AI coding agents. Model-agnostic canonical source. `CLAUDE.md` and `GEMINI.md` are thin `@AGENTS.md` imports.
-
-Defaults. Project-level instruction file overrides.
+Global operating rules for AI coding agents. Model-agnostic canonical source. `CLAUDE.md` is a thin `@AGENTS.md` import. Defaults — project-level instruction file overrides.
 
 ## Force-read filename convention
 
@@ -10,9 +8,8 @@ Agent tools auto-load ("force-read") one instruction file at session start, by f
 
 - `CLAUDE.md` — Claude Code
 - `AGENTS.md` — Codex, GitHub Copilot, Cursor, Zed; cross-vendor standard
-- `GEMINI.md` — Gemini CLI
 
-Keep canonical rules in `AGENTS.md`: broadest support, read verbatim. `CLAUDE.md` and `GEMINI.md` are one-line `@AGENTS.md` imports so all tools share one source. `AGENTS.md` read raw (Codex no `@import` expand); `CLAUDE.md` + `GEMINI.md` expand `@path`. Same filenames at project root override these globals.
+Canonical rules live in `AGENTS.md`: broadest support, read verbatim. `CLAUDE.md` is a one-line `@AGENTS.md` import so all tools share one source — read raw by Codex (no `@import` expand), `@path`-expanded by Claude. Same filenames at project root override these globals.
 
 ## Git
 
@@ -42,20 +39,20 @@ Keep canonical rules in `AGENTS.md`: broadest support, read verbatim. `CLAUDE.md
 
 ## Coding
 
-- Read before write. Project convention beat personal.
+- Read before write. Project convention beats personal.
 - Errors explicit. Propagate with context.
 - Names clear, descriptive, match project.
-- Add/update tests when suite exist. Run before done.
+- Add/update tests when suite exists. Run before done.
 - Respect project lint/format. Run if available.
 - No new dep without discussion. Prefer stdlib.
-- Code speaks for itself: clear names, small units, structure carry intent. Comment only where code genuinely needs extra attention — non-obvious "why" code can't express, or functional pragma (e.g. `# shellcheck disable`). Never "what". Delete stale/redundant comments on sight.
+- Comments: code speaks — clear names, small units, structure carry intent. Default none. Add one ONLY for a non-obvious "why" code can't express (workaround, constraint, gotcha) or a functional pragma (`# shellcheck disable`, `# type: ignore`, `# noqa`). Never "what", never restate code, never banner/divider/section headers, never narrate steps (`// fetch user then validate`), never docstring a self-evident function, never TODO/placeholder filler. Delete stale/redundant/obvious comments on sight, including pre-existing ones in any file you touch.
 - Follow existing file structure. Reorganize only if task.
 
 ## Communication
 
 - Direct. No hedge, no over-qualify.
 - Don't plan on unknowns. Ask until clear, then plan.
-- Ask when ambiguous. One question beat wrong assumption.
+- Ask when ambiguous. One question beats wrong assumption.
 - No confirmation theater. Told → do.
 - Design/discussion intent ("discuss"/"let's think"/open "how") → discuss only: propose, compare, recommend. No edits/mutating cmds till explicit go ("do it"/"go"). Named/mechanical → told → do.
 - Show what changed. Brief summary after edits. No full file echo.
@@ -73,15 +70,15 @@ Keep canonical rules in `AGENTS.md`: broadest support, read verbatim. `CLAUDE.md
 
 ## Context discipline
 
-- Most tools auto-summarize near context limit. Don't nag to compact or clear on token count alone — keep working.
+- Most tools auto-summarize near context limit. Don't nag to compact/clear on token count alone — keep working.
 - Suggest fresh context only when next task genuinely unrelated (no shared state). Suggest compaction only when actively losing needed earlier context, not preemptively.
 - Prefer self-contained chunks: finish a logical unit before next. Clean handoffs, not a token ceiling.
 - Don't pre-load unneeded context: read the slice you need, not whole files; targeted search over broad dump.
 
 ## Memory
 
-- Canonical memory is `~/brain` (git, auto-pulled). Supersedes per-project memory. Do not write per-project memory.
-- Capture automatic: a Stop hook digests each session into `~/brain/log/`. Do not hand-write `log/`.
+- Canonical memory is `~/brain` (git, auto-pulled). Supersedes per-project memory. Don't write per-project memory.
+- Capture automatic: a Stop hook digests each session into `~/brain/log/`. Don't hand-write `log/`.
 - Recall: when a prompt might be answered from past work, consult brain — read `~/brain/index.md`, open matching `~/brain/notes/<slug>.md`, cite it. Use `brain-recall <query>` (qmd-ranked, grep fallback) when available. Don't bulk-read; index first, then the one matching note.
 - `notes/` is canon (trust it); `log/` append-only provenance (verify, don't cite blindly).
 - Canon (`notes/`) changes only via reviewed PR on `brain` repo. Propose promotions from `log/` via PR; don't edit `notes/` casually.
