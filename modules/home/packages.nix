@@ -81,6 +81,7 @@ in
       unzip
       claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
+      rtk
       bibata-cursors
       jq
       age
