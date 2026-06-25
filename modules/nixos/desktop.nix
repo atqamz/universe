@@ -1,8 +1,11 @@
 { pkgs, ... }:
 {
-  programs.hyprland = {
-    enable = true;
-    withUWSM = true;
+  programs = {
+    hyprland = {
+      enable = true;
+      withUWSM = true;
+    };
+    nix-ld.enable = true;
   };
 
   services = {
