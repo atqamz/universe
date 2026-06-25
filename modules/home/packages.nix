@@ -5,6 +5,8 @@
   ...
 }:
 let
+  dotnetSdk = pkgs.dotnet-sdk_10;
+
   unityhubBase = pkgs.unityhub.override {
     extraPkgs =
       p: with p; [
@@ -51,6 +53,7 @@ in
       bibata-cursors
       jq
       bun
+      dotnetSdk
       (writeShellScriptBin "npx" ''exec ${bun}/bin/bunx "$@"'')
       age
       sops
@@ -68,4 +71,6 @@ in
       vlc
     ]
   );
+
+  home.sessionVariables.DOTNET_ROOT = "${dotnetSdk.unwrapped}/share/dotnet";
 }
