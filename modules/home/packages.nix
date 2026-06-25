@@ -82,6 +82,7 @@ in
       claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
+      codedb
       bibata-cursors
       jq
       age

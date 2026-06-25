@@ -1,6 +1,7 @@
 _: {
   imports = [
     ./nix.nix
+    ./overlays.nix
     ./boot.nix
     ./network.nix
     ./gpu.nix
