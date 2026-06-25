@@ -17,6 +17,7 @@ _: {
     ./dotfiles.nix
     ./git.nix
     ./claude-plugins.nix
+    ./rtk.nix
     ./brain-sync.nix
     ./brain-promote.nix
     ./dotfiles-sync.nix
