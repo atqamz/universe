@@ -103,8 +103,6 @@ let
   };
 in
 {
-  home.packages = [ nodeShim ];
-
   home.activation.claudePlugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${ensure}/bin/claude-plugins-ensure || true
   '';

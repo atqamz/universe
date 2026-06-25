@@ -7,6 +7,38 @@
 let
   dotnetSdk = pkgs.dotnet-sdk_10;
 
+  zed = pkgs.symlinkJoin {
+    name = "zed";
+    paths = [ pkgs.zed-editor ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm -f $out/bin/zeditor
+      makeWrapper ${pkgs.zed-editor}/bin/zeditor $out/bin/zeditor \
+        --set DOTNET_ROOT ${dotnetSdk.unwrapped}/share/dotnet
+      ln -s zeditor $out/bin/zed
+    '';
+  };
+
+  claudeNode = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
+
+  claude = pkgs.symlinkJoin {
+    name = "claude";
+    paths = [ inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm -f $out/bin/claude
+      makeWrapper ${
+        inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default
+      }/bin/claude $out/bin/claude \
+        --prefix PATH : ${
+          lib.makeBinPath [
+            claudeNode
+            pkgs.bun
+          ]
+        }
+    '';
+  };
+
   unityhubBase = pkgs.unityhub.override {
     extraPkgs =
       p: with p; [
@@ -43,18 +75,14 @@ in
     [
       sourcegit
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
-      zed-editor
-      (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
+      zed
       brave
       unityhub
       unzip
-      inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default
+      claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
       bibata-cursors
       jq
-      bun
-      dotnetSdk
-      (writeShellScriptBin "npx" ''exec ${bun}/bin/bunx "$@"'')
       age
       sops
       gh
@@ -71,6 +99,4 @@ in
       vlc
     ]
   );
-
-  home.sessionVariables.DOTNET_ROOT = "${dotnetSdk.unwrapped}/share/dotnet";
 }
