@@ -26,6 +26,7 @@
     printf '%s' "$base" | ${pkgs.jq}/bin/jq \
       '.general.idle.lockBeforeSleep=false
        | .general.idle.timeouts=[]
+       | .general.apps.explorer=["thunar"]
        | .paths.wallpaperDir="~/Pictures/Wallpapers"' \
       > "$f.tmp" && run mv "$f.tmp" "$f"
   '';
