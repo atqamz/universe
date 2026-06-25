@@ -45,7 +45,10 @@ Canonical rules live in `AGENTS.md`: broadest support, read verbatim. `CLAUDE.md
 - Add/update tests when suite exists. Run before done.
 - Respect project lint/format. Run if available.
 - No new dep without discussion. Prefer stdlib.
-- Comments: code speaks — clear names, small units, structure carry intent. Default none. Add one ONLY for a non-obvious "why" code can't express (workaround, constraint, gotcha) or a functional pragma (`# shellcheck disable`, `# type: ignore`, `# noqa`). Never "what", never restate code, never banner/divider/section headers, never narrate steps (`// fetch user then validate`), never docstring a self-evident function, never TODO/placeholder filler. Delete stale/redundant/obvious comments on sight, including pre-existing ones in any file you touch.
+- Comments: write ZERO by default. Code speaks — clear names and small units carry intent. Only two allowed:
+  - a "why" the code cannot show (workaround, constraint, gotcha, link to issue);
+  - a functional pragma (`# shellcheck disable`, `# type: ignore`, `# noqa`).
+  If a comment is neither, delete it. Banned: restating code, "what" narration (`// fetch user`), banners/dividers/section headers, docstrings on self-evident functions, TODO/placeholder filler. Uncertain whether it qualifies → it does not, omit it. Delete stale/obvious comments in any file you touch, including pre-existing.
 - Follow existing file structure. Reorganize only if task.
 
 ## Communication
