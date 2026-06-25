@@ -19,9 +19,6 @@ in
     ".claude/bin/brain-recall".source = link "${claude}/bin/brain-recall";
     ".claude/bin/brain-promote".source = link "${claude}/bin/brain-promote";
 
-    ".gemini/GEMINI.md".source = link "${root}/GEMINI.md";
-    ".gemini/AGENTS.md".source = link "${root}/AGENTS.md";
-
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
   };
 
