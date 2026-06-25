@@ -80,6 +80,8 @@ in
       brave
       unityhub
       unzip
+      p7zip
+      unar
       claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
