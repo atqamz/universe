@@ -18,6 +18,7 @@ _: {
     ./git.nix
     ./claude-plugins.nix
     ./rtk.nix
+    ./mise.nix
     ./codedb.nix
     ./brain-sync.nix
     ./brain-promote.nix
