@@ -102,6 +102,7 @@ in
       pavucontrol
       obs-studio
       vlc
+      btop
     ]
   );
 }
