@@ -133,6 +133,25 @@ let
       echo "zen-profile: pushed"
     '';
   };
+
+  pushOnStop = pkgs.writeShellApplication {
+    name = "zen-profile-push-onstop";
+    runtimeInputs = [
+      push
+      pkgs.procps
+      pkgs.coreutils
+    ];
+    text = ''
+      zen_alive() {
+        pgrep -x zen >/dev/null 2>&1 && return 0
+        pgrep -f '\.zen-wrapped' >/dev/null 2>&1 && return 0
+        pgrep -if 'zen-browser' >/dev/null 2>&1 && return 0
+        return 1
+      }
+      for _ in $(seq 1 60); do zen_alive || break; sleep 1; done
+      zen-profile-push
+    '';
+  };
 in
 {
   home.packages = [
@@ -140,19 +159,36 @@ in
     push
   ];
 
-  systemd.user.services.zen-profile-sync = {
-    Unit.Description = "Pull Zen profile from sync repo";
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${pull}/bin/zen-profile-pull";
+  systemd.user = {
+    services.zen-profile-sync = {
+      Unit.Description = "Pull Zen profile from sync repo";
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${pull}/bin/zen-profile-pull";
+      };
     };
-  };
-  systemd.user.timers.zen-profile-sync = {
-    Unit.Description = "Pull Zen profile on startup";
-    Timer = {
-      OnStartupSec = "1min";
-      Persistent = true;
+    timers.zen-profile-sync = {
+      Unit.Description = "Pull Zen profile on startup";
+      Timer = {
+        OnStartupSec = "1min";
+        Persistent = true;
+      };
+      Install.WantedBy = [ "timers.target" ];
     };
-    Install.WantedBy = [ "timers.target" ];
+
+    services.zen-profile-push = {
+      Unit = {
+        Description = "Push Zen profile on logout";
+        After = [ "gpg-agent.service" ];
+      };
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/true";
+        ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
+        TimeoutStopSec = "120s";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
   };
 }
