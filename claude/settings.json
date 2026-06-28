@@ -73,14 +73,14 @@
   "effortLevel": "high",
   "autoCompactWindow": 200000,
   "voice": {
-    "enabled": true,
+    "enabled": false,
     "mode": "hold"
   },
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "normal",
   "autoCompactEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true,
+  "voiceEnabled": false,
   "mcpServers": {
     "qmd": {
       "command": "qmd",
