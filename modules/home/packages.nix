@@ -105,6 +105,7 @@ in
       btop
       tmux
       neovim
+      handy
     ]
   );
 }
