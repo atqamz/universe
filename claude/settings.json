@@ -47,7 +47,8 @@
     "caveman@caveman": true,
     "superpowers@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "impeccable@impeccable": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
@@ -60,6 +61,12 @@
       "source": {
         "source": "github",
         "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
       }
     }
   },
