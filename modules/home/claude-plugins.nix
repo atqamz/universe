@@ -12,6 +12,7 @@ let
   marketplaces = {
     caveman = "JuliusBrussee/caveman";
     ponytail = "DietrichGebert/ponytail";
+    impeccable = "pbakaus/impeccable";
   };
 
   plugins = [
@@ -20,11 +21,10 @@ let
     "superpowers@claude-plugins-official"
     "caveman@caveman"
     "ponytail@ponytail"
+    "impeccable@impeccable"
   ];
 
-  standaloneSkills = {
-    impeccable = "https://github.com/pbakaus/impeccable/tree/main/skill";
-  };
+  standaloneSkills = { };
 
   runtime = with pkgs; [
     claudePkg
