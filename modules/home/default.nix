@@ -5,7 +5,7 @@ _: {
     ./clipboard.nix
     ./hypr.nix
     ./cursor.nix
-    ./ghostty.nix
+    ./wezterm.nix
     ./file-management.nix
     ./vault-sync.nix
     ./password-store-sync.nix
