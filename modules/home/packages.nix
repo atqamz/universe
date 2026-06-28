@@ -103,6 +103,8 @@ in
       obs-studio
       vlc
       btop
+      tmux
+      neovim
     ]
   );
 }
