@@ -1,3 +1,1 @@
-@AGENTS.md
-
-@RTK.md
+AGENTS.md
