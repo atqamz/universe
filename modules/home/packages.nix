@@ -78,6 +78,7 @@ in
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed
       brave
+      ladybird
       unityhub
       unzip
       p7zip
