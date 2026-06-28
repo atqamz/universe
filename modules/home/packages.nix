@@ -87,6 +87,7 @@ in
       inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
       codedb
+      no-mistakes
       bibata-cursors
       jq
       age
