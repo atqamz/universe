@@ -21,6 +21,7 @@ in
     ".claude/bin/brain-promote".source = link "${claude}/bin/brain-promote";
 
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
+    ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
   };
 
   home.packages = [

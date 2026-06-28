@@ -84,6 +84,7 @@ in
       unar
       claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
+      inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
       codedb
       bibata-cursors
