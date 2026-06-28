@@ -22,9 +22,9 @@ let
     "ponytail@ponytail"
   ];
 
-  impeccableRepo = "https://github.com/pbakaus/impeccable.git";
-  impeccableCache = "$HOME/.cache/claude-skills/impeccable";
-  impeccableSkill = "$HOME/.claude/skills/impeccable";
+  standaloneSkills = {
+    impeccable = "https://github.com/pbakaus/impeccable/tree/main/skill";
+  };
 
   runtime = with pkgs; [
     claudePkg
@@ -57,6 +57,19 @@ let
     map (p: ''claude plugin update "${p}" || log "  update ${p} failed"'') plugins
   );
 
+  skillInstallLines = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: src: ''
+      if [ ! -e "$HOME/.claude/skills/.managed-${name}" ]; then
+        log "add skill ${name} (${src})"
+        if bunx skills add "${src}" -g -a claude-code -y; then
+          touch "$HOME/.claude/skills/.managed-${name}"
+        else
+          log "  add ${name} failed"
+        fi
+      fi
+    '') standaloneSkills
+  );
+
   ensure = pkgs.writeShellApplication {
     name = "claude-plugins-ensure";
     runtimeInputs = runtime;
@@ -71,17 +84,15 @@ let
 
       ${pluginInstallLines}
 
-      if [ ! -e "${impeccableSkill}" ]; then
-        log "clone impeccable skill"
-        if [ ! -d "${impeccableCache}/.git" ]; then
-          mkdir -p "$(dirname "${impeccableCache}")"
-          git clone --quiet "${impeccableRepo}" "${impeccableCache}" \
-            || log "  impeccable clone failed"
-        fi
-        if [ -d "${impeccableCache}/skill" ]; then
-          ln -sfn "${impeccableCache}/skill" "${impeccableSkill}"
-        fi
+      if [ -L "$HOME/.claude/skills/impeccable" ]; then
+        log "migrate impeccable from git clone to skills CLI"
+        rm -f "$HOME/.claude/skills/impeccable"
+        rm -rf "$HOME/.cache/claude-skills/impeccable"
       fi
+
+      mkdir -p "$HOME/.claude/skills"
+
+      ${skillInstallLines}
     '';
   };
 
@@ -96,9 +107,7 @@ let
       claude plugin marketplace update || log "marketplace update failed"
       ${pluginUpdateLines}
 
-      if [ -d "${impeccableCache}/.git" ]; then
-        git -C "${impeccableCache}" pull --quiet || log "impeccable pull failed"
-      fi
+      bunx skills update -g -y || log "skills update failed"
     '';
   };
 in
