@@ -85,6 +85,7 @@ in
       claude
       inputs.codex-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
       inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
+      inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
       codedb
       no-mistakes
@@ -105,7 +106,6 @@ in
       obs-studio
       vlc
       btop
-      tmux
       neovim
       handy
     ]
