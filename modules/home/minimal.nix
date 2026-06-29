@@ -1,6 +1,6 @@
 _: {
   imports = [
-    ./dotai.nix
+    ./dotagents.nix
     ./vault-sync.nix
     ./password-store-sync.nix
   ];

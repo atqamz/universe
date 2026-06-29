@@ -136,14 +136,14 @@ Missing file -> the injected host key is not the secret's recipient. Confirm its
 age (`ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`) matches the `age:` entry
 for this host in `.sops.yaml`.
 
-## 7. Bootstrap (vault + brain/dotai/dotfiles)
+## 7. Bootstrap (vault + brain/dotagents/dotfiles)
 
 ```bash
 nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#bootstrap
 ```
 
 Clones `~/vault` and runs `import.sh` (age/GPG/SSH keys, git signing, gpg preset
-passphrase), then clones `~/dotai`, `~/brain`, `~/dotfiles` over ssh, then builds the
+passphrase), then clones `~/dotagents`, `~/brain`, `~/dotfiles` over ssh, then builds the
 qmd index. Verify:
 
 ```bash

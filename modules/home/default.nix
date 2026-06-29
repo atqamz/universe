@@ -15,7 +15,7 @@ _: {
     ./gtk.nix
     ./zen.nix
     ./zen-profile.nix
-    ./dotai.nix
+    ./dotagents.nix
     ./dotfiles.nix
     ./git.nix
     ./claude-plugins.nix
@@ -24,7 +24,7 @@ _: {
     ./qt.nix
     ./codedb.nix
     ./dotfiles-sync.nix
-    ./dotai-sync.nix
+    ./dotagents-sync.nix
     ./passmenu.nix
     ./fuzzel.nix
     ./readline.nix
