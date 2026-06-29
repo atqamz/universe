@@ -47,6 +47,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Direct. No hedge, no confirmation theater. Told -> do.
 - Design/discussion intent ("discuss", "let's think", open "how") -> discuss only: propose, compare, recommend. No edits or mutating commands until explicit go. Named or mechanical task -> do it.
 - Show what changed, brief. No full-file echo. Skip preamble and repeated info.
+- When referencing a file path in a response, always give the full absolute path (e.g. `/home/atqa/github/yes2games/nsr/docs/foo.md`), never a relative one.
 
 ## Security
 
@@ -59,3 +60,5 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Canonical memory is `~/brain` (git, auto-pulled). Don't write per-project memory.
 - Recall: read `~/brain/index.md`, open the matching `notes/<slug>.md`, cite it. Use `brain-recall <query>` when available. Don't bulk-read.
 - `notes/` is canon. `log/` is append-only provenance (a Stop hook writes it; don't hand-write). Canon changes via reviewed PR only.
+
+@RTK.md
