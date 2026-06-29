@@ -22,6 +22,10 @@
       "description": "NixOS system and home configs - fish, hypr, fastfetch, zed, cs2, herdr, caelestia"
     }
   },
+  "compaction": {
+    "auto": true,
+    "preserve_recent_tokens": 200000
+  },
   "permission": {
     "*": "allow",
     "doom_loop": "ask",
