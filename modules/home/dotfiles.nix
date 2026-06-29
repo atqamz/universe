@@ -22,10 +22,6 @@ in
     ".config/hypr".source = link "${root}/hypr";
     ".config/fish".source = link "${root}/fish";
     ".config/zed".source = link "${root}/zed";
-    ".ssh/config" = {
-      source = link "${root}/ssh/config";
-      force = true;
-    };
     ".config/herdr/config.toml" = {
       source = link "${root}/herdr/config.toml";
       force = true;
