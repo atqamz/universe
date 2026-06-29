@@ -15,10 +15,10 @@ in
     ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
     ".claude/hooks/ground-rules.sh".source = link "${claude}/hooks/ground-rules.sh";
-    ".claude/RTK.md".source = link "${claude}/RTK.md";
+    ".claude/RTK.md".source = link "${root}/RTK.md";
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
-    ".config/opencode/RTK.md".source = link "${claude}/RTK.md";
+    ".config/opencode/RTK.md".source = link "${root}/RTK.md";
     ".config/opencode/opencode.jsonc".source = link "${root}/opencode/opencode.jsonc";
   };
 }
