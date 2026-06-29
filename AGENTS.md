@@ -55,10 +55,4 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - `git status` shows a sensitive file -> warn before adding.
 - Never read, modify, or display private key material.
 
-## Memory
-
-- Canonical memory is `~/brain` (git, auto-pulled). Don't write per-project memory.
-- Recall: read `~/brain/index.md`, open the matching `notes/<slug>.md`, cite it. Use `brain-recall <query>` when available. Don't bulk-read.
-- `notes/` is canon. `log/` is append-only provenance (a Stop hook writes it; don't hand-write). Canon changes via reviewed PR only.
-
 @RTK.md
