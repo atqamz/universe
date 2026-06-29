@@ -18,5 +18,6 @@ in
     ".claude/skills/lavish/SKILL.md".source = link "${claude}/skills/lavish/SKILL.md";
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
+    ".config/opencode/opencode.jsonc".source = link "${root}/opencode/opencode.jsonc";
   };
 }
