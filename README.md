@@ -2,7 +2,7 @@
 
 Model-agnostic operating config for AI coding agents. `AGENTS.md` holds the canonical rules; `CLAUDE.md` is a symlink to it so every agent shares one source.
 
-Claude-specific tooling (settings, hooks, statusline, bin) lives under `claude/`. Symlinked live by `universe` home-manager config (`modules/home/dotai.nix`) via `mkOutOfStoreSymlink`, so edits are instantly live with no rebuild. Memory lives in the separate `brain` repo.
+Claude-specific tooling (settings, hooks, statusline, bin) lives under `claude/`. Symlinked live by `universe` home-manager config (`modules/home/dotai.nix`) via `mkOutOfStoreSymlink`, so edits are instantly live with no rebuild.
 
 ## Force-read convention
 

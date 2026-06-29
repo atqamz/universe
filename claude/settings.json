@@ -1,92 +1,85 @@
 {
-  "permissions": {
-    "defaultMode": "auto"
-  },
-  "model": "opus",
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/atqa/.claude/hooks/ground-rules.sh"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/atqa/.claude/hooks/brain-capture.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
-  },
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 200000,
+  "editorMode": "normal",
+  "effortLevel": "high",
   "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": true,
     "caveman@caveman": true,
-    "superpowers@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "impeccable@impeccable": true,
     "ponytail@ponytail": true,
-    "impeccable@impeccable": true
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
       "source": {
-        "source": "github",
-        "repo": "JuliusBrussee/caveman"
-      }
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
+        "repo": "JuliusBrussee/caveman",
+        "source": "github"
       }
     },
     "impeccable": {
       "source": {
-        "source": "github",
-        "repo": "pbakaus/impeccable"
+        "repo": "pbakaus/impeccable",
+        "source": "github"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "repo": "DietrichGebert/ponytail",
+        "source": "github"
       }
     }
   },
-  "effortLevel": "high",
-  "autoCompactWindow": 200000,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "rtk hook claude",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash '/home/atqa/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "/home/atqa/.claude/hooks/ground-rules.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ]
+  },
+  "model": "opus",
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "skipAutoPermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "command": "bash \"/home/atqa/.claude/statusline-command.sh\"",
+    "type": "command"
+  },
   "voice": {
     "enabled": false,
     "mode": "hold"
   },
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "normal",
-  "autoCompactEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "voiceEnabled": false,
-  "mcpServers": {
-    "qmd": {
-      "command": "qmd",
-      "args": [
-        "mcp"
-      ]
-    }
-  }
+  "voiceEnabled": false
 }
