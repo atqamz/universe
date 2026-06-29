@@ -23,11 +23,8 @@ _: {
     ./mise.nix
     ./qt.nix
     ./codedb.nix
-    ./brain-sync.nix
-    ./brain-promote.nix
     ./dotfiles-sync.nix
     ./dotai-sync.nix
-    ./qmd.nix
     ./passmenu.nix
     ./fuzzel.nix
     ./readline.nix

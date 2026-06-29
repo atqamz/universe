@@ -59,7 +59,7 @@ _: {
           SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
           export SSH_AUTH_SOCK
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-          for repo in dotai brain dotfiles; do
+          for repo in dotai dotfiles; do
             dest="$HOME/$repo"
             if [ ! -d "$dest/.git" ]; then
               echo "==> cloning $repo"
@@ -69,14 +69,6 @@ _: {
               git -C "$dest" pull --ff-only
             fi
           done
-
-          if command -v qmd >/dev/null 2>&1; then
-            echo "==> building brain index (qmd)"
-            qmd collection add "$HOME/brain" --name brain 2>/dev/null || true
-            qmd embed
-          else
-            echo "==> qmd not installed; skipping index build (grep recall still works)"
-          fi
         '';
       };
 
@@ -129,16 +121,7 @@ _: {
           check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
           check "gpg key present" gpg -K
           check "dotai cloned" test -d "$HOME/dotai/.git"
-          check "brain cloned" test -d "$HOME/brain/.git"
           check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
-          # shellcheck disable=SC2016
-          check "brain on main" bash -c 'cd "$HOME/brain" && test "$(git rev-parse --abbrev-ref HEAD)" = main'
-          check "brain qmd index exists" test -f "$HOME/.cache/qmd/index.sqlite"
-          check "ollama service active" systemctl --user is-active ollama.service
-          check "ollama api reachable" curl -fsS http://127.0.0.1:11434/api/tags
-          check "brain-promote on PATH" command -v brain-promote
-          check "brain-promote timer enabled" systemctl --user is-enabled brain-promote.timer
-          check "brain-sync timer enabled" systemctl --user is-enabled brain-sync.timer
           check "dotfiles-sync timer enabled" systemctl --user is-enabled dotfiles-sync.timer
           check "dotai-sync timer enabled" systemctl --user is-enabled dotai-sync.timer
           check "vault-sync timer enabled" systemctl --user is-enabled vault-sync.timer

@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   ...
 }:
 let
@@ -15,18 +14,9 @@ in
     ".claude/settings.json".source = link "${claude}/settings.json";
     ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
-    ".claude/hooks/brain-capture.sh".source = link "${claude}/hooks/brain-capture.sh";
     ".claude/hooks/ground-rules.sh".source = link "${claude}/hooks/ground-rules.sh";
-    ".claude/bin/brain-recall".source = link "${claude}/bin/brain-recall";
-    ".claude/bin/brain-promote".source = link "${claude}/bin/brain-promote";
     ".claude/skills/lavish/SKILL.md".source = link "${claude}/skills/lavish/SKILL.md";
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
   };
-
-  home.packages = [
-    (pkgs.writeShellScriptBin "brain-recall" ''
-      exec "${config.home.homeDirectory}/.claude/bin/brain-recall" "$@"
-    '')
-  ];
 }
