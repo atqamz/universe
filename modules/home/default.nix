@@ -11,6 +11,7 @@ _: {
     ./password-store-sync.nix
     ./gpg-preset.nix
     ./secret-service.nix
+    ./direnv.nix
     ./gtk.nix
     ./zen.nix
     ./zen-profile.nix
