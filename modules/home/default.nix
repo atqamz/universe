@@ -10,6 +10,7 @@ _: {
     ./vault-sync.nix
     ./password-store-sync.nix
     ./gpg-preset.nix
+    ./secret-service.nix
     ./gtk.nix
     ./zen.nix
     ./zen-profile.nix
