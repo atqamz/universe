@@ -6,6 +6,6 @@ Claude-specific tooling (settings, hooks, statusline, bin) lives under `claude/`
 
 ## Force-read convention
 
-Agent tools auto-load one instruction file at session start, by filename: `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex, opencode, Copilot, Cursor, Zed; the cross-vendor standard). Canonical rules live in `AGENTS.md` for the broadest support, with `CLAUDE.md` symlinked to it.
+Agent tools auto-load one instruction file at session start, by filename: `CLAUDE.md` (Claude Code), `AGENTS.md` (opencode, Copilot, Cursor, Zed; the cross-vendor standard). Canonical rules live in `AGENTS.md` for the broadest support, with `CLAUDE.md` symlinked to it.
 
-Global locations, all symlinked to this `AGENTS.md` by `dotai.nix`: `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`. Same filenames at a project root override these globals.
+Global locations, all symlinked to this `AGENTS.md` by `dotai.nix`: `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md`. Same filenames at a project root override these globals.
