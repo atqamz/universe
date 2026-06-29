@@ -23,25 +23,6 @@ let
         jq -n --arg bin "${bin}" '{mcpServers: {codedb: {command: $bin, args: ["mcp"]}}}' > "$tmp" || { rm -f "$tmp"; exit 1; }
       fi
       mv "$tmp" "$claudeCfg"
-
-      codexCfg="$HOME/.codex/config.toml"
-      if [ -f "$codexCfg" ]; then
-        ctmp=$(mktemp)
-        awk '
-          /^\[mcp_servers\.codedb\]/ { skip=1; next }
-          skip && /^\[/ { skip=0 }
-          skip { next }
-          { print }
-        ' "$codexCfg" > "$ctmp"
-        {
-          echo ""
-          echo "[mcp_servers.codedb]"
-          echo "command = \"${bin}\""
-          echo 'args = ["mcp"]'
-          echo "startup_timeout_sec = 30"
-        } >> "$ctmp"
-        mv "$ctmp" "$codexCfg"
-      fi
     '';
   };
 in
@@ -51,7 +32,7 @@ in
   '';
 
   systemd.user.services.codedb-register = {
-    Unit.Description = "Register codedb MCP server for Claude Code and Codex";
+    Unit.Description = "Register codedb MCP server for Claude Code";
     Service = {
       Type = "oneshot";
       ExecStart = "${ensure}/bin/codedb-register";
