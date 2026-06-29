@@ -3,7 +3,7 @@
   ...
 }:
 let
-  root = "${config.home.homeDirectory}/dotai";
+  root = "${config.home.homeDirectory}/dotagents";
   claude = "${root}/claude";
   link = config.lib.file.mkOutOfStoreSymlink;
 in

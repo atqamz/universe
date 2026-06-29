@@ -59,7 +59,7 @@ _: {
           SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
           export SSH_AUTH_SOCK
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-          for repo in dotai dotfiles; do
+          for repo in dotagents dotfiles; do
             dest="$HOME/$repo"
             if [ ! -d "$dest/.git" ]; then
               echo "==> cloning $repo"
@@ -120,10 +120,10 @@ _: {
           check "secrets vault cloned" test -d "$HOME/vault/.git"
           check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
           check "gpg key present" gpg -K
-          check "dotai cloned" test -d "$HOME/dotai/.git"
+          check "dotagents cloned" test -d "$HOME/dotagents/.git"
           check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
           check "dotfiles-sync timer enabled" systemctl --user is-enabled dotfiles-sync.timer
-          check "dotai-sync timer enabled" systemctl --user is-enabled dotai-sync.timer
+          check "dotagents-sync timer enabled" systemctl --user is-enabled dotagents-sync.timer
           check "vault-sync timer enabled" systemctl --user is-enabled vault-sync.timer
           check "password-store-sync timer enabled" systemctl --user is-enabled password-store-sync.timer
           check "nixos-upgrade timer enabled" systemctl is-enabled nixos-upgrade.timer
