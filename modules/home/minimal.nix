@@ -1,9 +1,6 @@
 _: {
   imports = [
     ./dotai.nix
-    ./brain-promote.nix
-    ./brain-sync.nix
-    ./qmd.nix
     ./vault-sync.nix
     ./password-store-sync.nix
   ];
