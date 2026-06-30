@@ -20,5 +20,6 @@ in
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
     ".config/opencode/RTK.md".source = link "${root}/RTK.md";
     ".config/opencode/opencode.jsonc".source = link "${root}/opencode/opencode.jsonc";
+    ".config/opencode/skills".source = link "${root}/adapters/opencode/skills";
   };
 }
