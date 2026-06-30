@@ -10,12 +10,9 @@ let
   nodeShim = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
 
   plugins = [
-    "gopls-lsp@claude-plugins-official"
-    "rust-analyzer-lsp@claude-plugins-official"
     "superpowers@claude-plugins-official"
     "caveman@caveman"
     "ponytail@ponytail"
-    "impeccable@impeccable"
   ];
 
   runtime = with pkgs; [
