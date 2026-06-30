@@ -5,22 +5,13 @@
   "effortLevel": "high",
   "enabledPlugins": {
     "caveman@caveman": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "impeccable@impeccable": true,
     "ponytail@ponytail": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
       "source": {
         "repo": "JuliusBrussee/caveman",
-        "source": "github"
-      }
-    },
-    "impeccable": {
-      "source": {
-        "repo": "pbakaus/impeccable",
         "source": "github"
       }
     },
