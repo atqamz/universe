@@ -3,6 +3,7 @@
   imports = [
     ./hardware.nix
     ./disko.nix
+    ../../modules/nixos/hermes-isolated.nix
   ];
 
   networking.hostName = "sfx14";
