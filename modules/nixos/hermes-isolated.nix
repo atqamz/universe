@@ -1,4 +1,5 @@
-_: {
+{ pkgs, ... }:
+{
   users.groups.hermes = { };
 
   users.users.hermes = {
@@ -27,6 +28,7 @@ _: {
       Environment = [
         "HOME=/var/lib/hermes-isolated"
         "HERMES_HOME=/var/lib/hermes-isolated/state/hermes-agent"
+        "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:/run/current-system/sw/bin"
       ];
       ExecStart = "/var/lib/hermes-isolated/.local/bin/hermes gateway run";
       Restart = "always";
