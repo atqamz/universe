@@ -105,6 +105,7 @@ in
       pavucontrol
       obs-studio
       vlc
+      filezilla
       btop
       tmux
       neovim
