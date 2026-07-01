@@ -22,6 +22,30 @@
       "description": "NixOS system and home configs - fish, hypr, fastfetch, zed, cs2, herdr, caelestia"
     }
   },
+  "provider": {
+    "9router": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "9router",
+      "options": {
+        "baseURL": "https://router.luckynee.com/v1",
+        "apiKey": "{env:NINEROUTER_API_KEY}"
+      },
+      "models": {
+        "kr/claude-sonnet-4.6": { "name": "Claude Sonnet 4.6" },
+        "kr/claude-sonnet-4.6-thinking": { "name": "Claude Sonnet 4.6 Thinking", "reasoning": true },
+        "kr/claude-opus-4.8": { "name": "Claude Opus 4.8" },
+        "kr/claude-sonnet-5": { "name": "Claude Sonnet 5" },
+        "ollama/glm-5": { "name": "GLM 5" },
+        "ollama/glm-4.7-flash": { "name": "GLM 4.7 Flash" },
+        "ollama/qwen3.5": { "name": "Qwen 3.5" },
+        "ollama/minimax-m3": { "name": "MiniMax M3" },
+        "ollama/deepseek-v4-flash": { "name": "DeepSeek V4 Flash" },
+        "ollama/deepseek-v4-pro": { "name": "DeepSeek V4 Pro" },
+        "ollama/glm-5.2": { "name": "GLM 5.2" },
+        "cx/gpt-5.5": { "name": "GPT 5.5" }
+      }
+    }
+  },
   "compaction": {
     "auto": true,
     "preserve_recent_tokens": 200000
