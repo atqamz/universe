@@ -28,7 +28,7 @@ let
         stashed=""
 
         if [ -n "$dirty" ]; then
-          if git stash -u -q 2>/dev/null; then
+          if git stash -u -q >/dev/null 2>&1; then
             stashed=1
           else
             echo "skip $name: stash failed"
@@ -36,16 +36,16 @@ let
           fi
         fi
 
-        if ! git pull --ff-only -q 2>/dev/null; then
+        if ! git pull --ff-only -q >/dev/null 2>&1; then
           echo "skip $name: pull failed (diverged or error)"
           if [ -n "$stashed" ]; then
-            git stash pop -q 2>/dev/null || true
+            git stash pop -q >/dev/null 2>&1 || true
           fi
           continue
         fi
 
         if [ -n "$stashed" ]; then
-          if ! git stash pop -q 2>/dev/null; then
+          if ! git stash pop -q >/dev/null 2>&1; then
             echo "warn $name: stash pop conflict, stash kept"
             continue
           fi
