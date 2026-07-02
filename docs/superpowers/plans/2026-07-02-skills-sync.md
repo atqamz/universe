@@ -14,8 +14,8 @@ RTK remains outside the skills manifest and is initialized with its native Claud
 
 - Do not include `rtk-ai/rtk` in the skills manifest.
 - Keep real RTK binary behavior through existing `rtk` package, `@RTK.md`, and `Prefer rtk <cmd>` guidance in `/home/atqa/dotagents/AGENTS.md`.
-- Initialize RTK for OpenCode with `rtk init -g --opencode`.
-- Keep existing Claude RTK hook healthy with `rtk init -g --auto-patch` if verification shows it missing or stale.
+- Initialize RTK for Claude with `rtk init -g --auto-patch`.
+- Initialize RTK for OpenCode with `rtk init -g --opencode --auto-patch`.
 - Keep always-on caveman and ponytail policy in `/home/atqa/dotagents/AGENTS.md`.
 - Run `bunx skills` commands sequentially, never parallel, to avoid Bun cache extraction races.
 - Use `bunx --yes skills add "$source" -g -a opencode -a claude-code --skill '*' -y` for each manifest source.
@@ -316,7 +316,7 @@ Run:
 
 ```bash
 rtk init -g --auto-patch
-rtk init -g --opencode
+rtk init -g --opencode --auto-patch
 ```
 
 Expected: Claude hook remains configured and RTK installs an OpenCode plugin.
