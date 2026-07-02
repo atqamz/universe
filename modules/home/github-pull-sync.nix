@@ -19,24 +19,28 @@ let
 
         cd "$repo" || continue
 
-        upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || {
+        if ! git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
           echo "skip $name: no upstream"
           continue
-        }
+        fi
 
         dirty=$(git status --porcelain 2>/dev/null)
         stashed=""
 
         if [ -n "$dirty" ]; then
-          git stash -u -q 2>/dev/null && stashed=1 || {
+          if git stash -u -q 2>/dev/null; then
+            stashed=1
+          else
             echo "skip $name: stash failed"
             continue
-          }
+          fi
         fi
 
         if ! git pull --ff-only -q 2>/dev/null; then
           echo "skip $name: pull failed (diverged or error)"
-          [ -n "$stashed" ] && git stash pop -q 2>/dev/null || true
+          if [ -n "$stashed" ]; then
+            git stash pop -q 2>/dev/null || true
+          fi
           continue
         fi
 
