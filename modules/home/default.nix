@@ -18,13 +18,13 @@ _: {
     ./dotagents.nix
     ./dotfiles.nix
     ./git.nix
-    ./claude-plugins.nix
     ./rtk.nix
     ./mise.nix
     ./qt.nix
     ./codedb.nix
     ./dotfiles-sync.nix
     ./dotagents-sync.nix
+    ./skills-sync.nix
     ./passmenu.nix
     ./fuzzel.nix
     ./readline.nix
