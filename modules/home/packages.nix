@@ -83,7 +83,11 @@ in
       p7zip
       unar
       claude
-      opencode
+      (pkgs.opencode.overrideAttrs (_: {
+        installPhase =
+          builtins.replaceStrings [ "--set OPENCODE_DISABLE_AUTOUPDATE true" ] [ "" ]
+            pkgs.opencode.installPhase;
+      }))
       inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
       inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
