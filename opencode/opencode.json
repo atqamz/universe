@@ -50,11 +50,6 @@
     "auto": true,
     "preserve_recent_tokens": 200000
   },
-  "plugin": [
-    "./plugins/caveman/plugin.js",
-    "superpowers@git+https://github.com/obra/superpowers.git",
-    "@dietrichgebert/ponytail"
-  ],
   "permission": {
     "*": "allow",
     "doom_loop": "ask",
