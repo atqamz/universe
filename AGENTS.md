@@ -19,6 +19,8 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
   If you see one, even if not caused by your current work, still get it fixed.
 - Prefer `rtk <cmd>` for dev CLI ops when available (token-optimized proxy).
+- Do not install missing tools globally.
+  Use the project devshell when available; otherwise use `nix shell nixpkgs#<pkg> -c <cmd>` for one-off CLI access.
 
 ## Coding
 
