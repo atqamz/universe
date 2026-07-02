@@ -28,7 +28,7 @@
       "name": "9router",
       "options": {
         "baseURL": "https://router.luckynee.com/v1",
-        "apiKey": "{env:NINEROUTER_API_KEY}"
+        "apiKey": "{file:/run/secrets/ninerouter-api-key}"
       },
       "models": {
         "kr/claude-sonnet-4.6": { "name": "Claude Sonnet 4.6" },
