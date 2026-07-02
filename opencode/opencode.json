@@ -31,18 +31,43 @@
         "apiKey": "{file:/run/secrets/ninerouter-api-key}"
       },
       "models": {
-        "kr/claude-sonnet-4.6": { "name": "kr/claude-sonnet-4.6" },
-        "kr/claude-sonnet-4.6-thinking": { "name": "kr/claude-sonnet-4.6-thinking", "reasoning": true },
-        "kr/claude-opus-4.8": { "name": "kr/claude-opus-4.8" },
-        "kr/claude-sonnet-5": { "name": "kr/claude-sonnet-5" },
-        "ollama/minimax-m3": { "name": "ollama/minimax-m3" },
-        "ollama/deepseek-v4-flash": { "name": "ollama/deepseek-v4-flash" },
-        "ollama/deepseek-v4-pro": { "name": "ollama/deepseek-v4-pro" },
-        "ollama/glm-5.2": { "name": "ollama/glm-5.2" },
-        "ollama/kimi-k2.7-code": { "name": "ollama/kimi-k2.7-code" },
-        "cx/gpt-5.5": { "name": "cx/gpt-5.5" },
-        "glm-5.2-visual": { "name": "glm-5.2-visual" },
-        "atqa-gpt-glm": { "name": "atqa-gpt-glm" }
+        "atqa-gpt-glm": {
+          "name": "atqa-gpt-glm"
+        },
+        "cx/gpt-5.5": {
+          "name": "cx/gpt-5.5"
+        },
+        "glm-5.2-visual": {
+          "name": "glm-5.2-visual"
+        },
+        "kr/claude-opus-4.8": {
+          "name": "kr/claude-opus-4.8"
+        },
+        "kr/claude-sonnet-4.6": {
+          "name": "kr/claude-sonnet-4.6"
+        },
+        "kr/claude-sonnet-4.6-thinking": {
+          "name": "kr/claude-sonnet-4.6-thinking",
+          "reasoning": true
+        },
+        "kr/claude-sonnet-5": {
+          "name": "kr/claude-sonnet-5"
+        },
+        "ollama/deepseek-v4-flash": {
+          "name": "ollama/deepseek-v4-flash"
+        },
+        "ollama/deepseek-v4-pro": {
+          "name": "ollama/deepseek-v4-pro"
+        },
+        "ollama/glm-5.2": {
+          "name": "ollama/glm-5.2"
+        },
+        "ollama/kimi-k2.7-code": {
+          "name": "ollama/kimi-k2.7-code"
+        },
+        "ollama/minimax-m3": {
+          "name": "ollama/minimax-m3"
+        }
       }
     }
   },
