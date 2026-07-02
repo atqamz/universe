@@ -31,18 +31,18 @@
         "apiKey": "{file:/run/secrets/ninerouter-api-key}"
       },
       "models": {
-        "kr/claude-sonnet-4.6": { "name": "Claude Sonnet 4.6" },
-        "kr/claude-sonnet-4.6-thinking": { "name": "Claude Sonnet 4.6 Thinking", "reasoning": true },
-        "kr/claude-opus-4.8": { "name": "Claude Opus 4.8" },
-        "kr/claude-sonnet-5": { "name": "Claude Sonnet 5" },
-        "ollama/glm-5": { "name": "GLM 5" },
-        "ollama/glm-4.7-flash": { "name": "GLM 4.7 Flash" },
-        "ollama/qwen3.5": { "name": "Qwen 3.5" },
-        "ollama/minimax-m3": { "name": "MiniMax M3" },
-        "ollama/deepseek-v4-flash": { "name": "DeepSeek V4 Flash" },
-        "ollama/deepseek-v4-pro": { "name": "DeepSeek V4 Pro" },
-        "ollama/glm-5.2": { "name": "GLM 5.2" },
-        "cx/gpt-5.5": { "name": "GPT 5.5" }
+        "kr/claude-sonnet-4.6": { "name": "kr/claude-sonnet-4.6" },
+        "kr/claude-sonnet-4.6-thinking": { "name": "kr/claude-sonnet-4.6-thinking", "reasoning": true },
+        "kr/claude-opus-4.8": { "name": "kr/claude-opus-4.8" },
+        "kr/claude-sonnet-5": { "name": "kr/claude-sonnet-5" },
+        "ollama/minimax-m3": { "name": "ollama/minimax-m3" },
+        "ollama/deepseek-v4-flash": { "name": "ollama/deepseek-v4-flash" },
+        "ollama/deepseek-v4-pro": { "name": "ollama/deepseek-v4-pro" },
+        "ollama/glm-5.2": { "name": "ollama/glm-5.2" },
+        "ollama/kimi-k2.7-code": { "name": "ollama/kimi-k2.7-code" },
+        "cx/gpt-5.5": { "name": "cx/gpt-5.5" },
+        "glm-5.2-visual": { "name": "glm-5.2-visual" },
+        "atqa-gpt-glm": { "name": "atqa-gpt-glm" }
       }
     }
   },
