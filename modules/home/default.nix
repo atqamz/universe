@@ -25,6 +25,7 @@ _: {
     ./dotfiles-sync.nix
     ./dotagents-sync.nix
     ./skills-sync.nix
+    ./ninerouter-models-sync.nix
     ./passmenu.nix
     ./fuzzel.nix
     ./readline.nix
