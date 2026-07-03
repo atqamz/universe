@@ -77,7 +77,9 @@ in
       sourcegit
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed
-      brave
+      (brave.override {
+        commandLineArgs = "--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoEncoder,WaylandWindowDecorations,PulseaudioLoopbackForScreenShare";
+      })
       unityhub
       unzip
       p7zip
