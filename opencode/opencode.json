@@ -37,6 +37,9 @@
         "cx/gpt-5.5": {
           "name": "cx/gpt-5.5"
         },
+        "cx/gpt-5.5-xhigh": {
+          "name": "cx/gpt-5.5-xhigh"
+        },
         "glm-5.2-visual": {
           "name": "glm-5.2-visual"
         },
@@ -52,6 +55,40 @@
         },
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
+        },
+        "kr/claude-sonnet-5-agentic": {
+          "name": "kr/claude-sonnet-5-agentic"
+        },
+        "kr/claude-sonnet-5-thinking": {
+          "name": "kr/claude-sonnet-5-thinking",
+          "reasoning": true
+        },
+        "kr/claude-sonnet-5-thinking-agentic": {
+          "name": "kr/claude-sonnet-5-thinking-agentic"
+        },
+        "nvidia/deepseek-ai/deepseek-v4-flash": {
+          "name": "nvidia/deepseek-ai/deepseek-v4-flash"
+        },
+        "nvidia/deepseek-ai/deepseek-v4-pro": {
+          "name": "nvidia/deepseek-ai/deepseek-v4-pro"
+        },
+        "nvidia/minimaxai/minimax-m2.7": {
+          "name": "nvidia/minimaxai/minimax-m2.7"
+        },
+        "nvidia/minimaxai/minimax-m3": {
+          "name": "nvidia/minimaxai/minimax-m3"
+        },
+        "nvidia/moonshotai/kimi-k2.6": {
+          "name": "nvidia/moonshotai/kimi-k2.6"
+        },
+        "nvidia/nemotron-3-ultra-550b-a55b": {
+          "name": "nvidia/nemotron-3-ultra-550b-a55b"
+        },
+        "nvidia/parakeet-ctc-1.1b-asr": {
+          "name": "nvidia/parakeet-ctc-1.1b-asr"
+        },
+        "nvidia/z-ai/glm-5.2": {
+          "name": "nvidia/z-ai/glm-5.2"
         },
         "ollama/deepseek-v4-flash": {
           "name": "ollama/deepseek-v4-flash"
