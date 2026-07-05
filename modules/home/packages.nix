@@ -78,6 +78,7 @@ let
         stdenv.cc.cc.lib
         vulkan-loader
         libGL
+        libGLU
         fontconfig.lib
         freetype
         zlib
@@ -212,4 +213,27 @@ in
       handy
     ]
   );
+
+  xdg.desktopEntries = {
+    occt = {
+      name = "OCCT";
+      genericName = "GPU and CPU stress test";
+      exec = "occt";
+      terminal = false;
+      categories = [
+        "System"
+        "Utility"
+      ];
+    };
+    furmark = {
+      name = "FurMark";
+      genericName = "GPU stress test";
+      exec = "furmark";
+      terminal = false;
+      categories = [
+        "System"
+        "Utility"
+      ];
+    };
+  };
 }
