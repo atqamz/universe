@@ -155,6 +155,9 @@ let
       export __GLX_VENDOR_LIBRARY_NAME=nvidia
       export __VK_LAYER_NV_optimus=NVIDIA_only
       export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+      if [ -n "''${DISPLAY:-}" ] && [ -z "$(${pkgs.xrdb}/bin/xrdb -query 2>/dev/null)" ]; then
+        echo "Xft.dpi: 96" | ${pkgs.xrdb}/bin/xrdb -merge 2>/dev/null || true
+      fi
       dir="''${XDG_DATA_HOME:-$HOME/.local/share}/furmark"
       mkdir -p "$dir"
       cp -rn --preserve=mode ${furmarkApp}/. "$dir"/
