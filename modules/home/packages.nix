@@ -85,16 +85,16 @@ let
         icu
         libxkbcommon
         wayland
-        xorg.libX11
-        xorg.libXext
-        xorg.libXrender
-        xorg.libXrandr
-        xorg.libXfixes
-        xorg.libXcursor
-        xorg.libXi
-        xorg.libxcb
-        xorg.libICE
-        xorg.libSM
+        libx11
+        libxext
+        libxrender
+        libxrandr
+        libxfixes
+        libxcursor
+        libxi
+        libxcb
+        libice
+        libsm
       ]
     );
 
