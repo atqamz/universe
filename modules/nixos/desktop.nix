@@ -10,6 +10,10 @@ let
 in
 {
   programs = {
+    appimage = {
+      enable = true;
+      binfmt = true;
+    };
     hyprland = {
       enable = true;
       withUWSM = true;
