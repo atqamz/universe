@@ -29,7 +29,13 @@ in
 
   networking.hostName = "sfx14";
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot = {
+    kernelPackages = pkgs.linuxPackages_latest;
+    loader.systemd-boot.configurationLimit = 5;
+    extraModulePackages = [ config.boot.kernelPackages.acer-wmi-battery ];
+    kernelModules = [ "acer_wmi_battery" ];
+    extraModprobeConfig = "options acer_wmi_battery enable_health_mode=1";
+  };
 
   hardware.nvidia.prime = {
     intelBusId = "PCI:0:2:0";
