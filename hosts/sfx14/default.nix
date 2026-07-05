@@ -31,7 +31,7 @@ in
 
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
-    loader.systemd-boot.configurationLimit = 5;
+    loader.systemd-boot.configurationLimit = 3;
     extraModulePackages = [ config.boot.kernelPackages.acer-wmi-battery ];
     kernelModules = [ "acer_wmi_battery" ];
     extraModprobeConfig = "options acer_wmi_battery enable_health_mode=1";

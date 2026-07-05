@@ -147,20 +147,24 @@ let
     '';
   };
 
-  furmark = pkgs.writeShellScriptBin "furmark" ''
-    export __NV_PRIME_RENDER_OFFLOAD=1
-    export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
-    export __GLX_VENDOR_LIBRARY_NAME=nvidia
-    export __VK_LAYER_NV_optimus=NVIDIA_only
-    export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
-    dir="''${XDG_DATA_HOME:-$HOME/.local/share}/furmark"
-    mkdir -p "$dir"
-    cp -rn --preserve=mode ${furmarkApp}/. "$dir"/
-    chmod -R u+w "$dir"
-    export LD_LIBRARY_PATH="$dir/dylibs":${gpuLibPath}
-    cd "$dir"
-    exec ./furmark "$@"
-  '';
+  mkFurmark =
+    name: exe:
+    pkgs.writeShellScriptBin name ''
+      export __NV_PRIME_RENDER_OFFLOAD=1
+      export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
+      export __GLX_VENDOR_LIBRARY_NAME=nvidia
+      export __VK_LAYER_NV_optimus=NVIDIA_only
+      export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+      dir="''${XDG_DATA_HOME:-$HOME/.local/share}/furmark"
+      mkdir -p "$dir"
+      cp -rn --preserve=mode ${furmarkApp}/. "$dir"/
+      chmod -R u+w "$dir"
+      export LD_LIBRARY_PATH="$dir/dylibs":${gpuLibPath}
+      cd "$dir"
+      exec ./${exe} "$@"
+    '';
+  furmark = mkFurmark "furmark" "furmark";
+  furmarkGui = mkFurmark "furmark-gui" "FurMark_GUI";
 in
 {
   home.packages = lib.mkAfter (
@@ -208,6 +212,7 @@ in
       nvitop
       occt
       furmark
+      furmarkGui
       tmux
       neovim
       handy
@@ -228,7 +233,7 @@ in
     furmark = {
       name = "FurMark";
       genericName = "GPU stress test";
-      exec = "furmark";
+      exec = "furmark-gui";
       terminal = false;
       categories = [
         "System"
