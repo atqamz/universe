@@ -15,5 +15,4 @@
       enableOffloadCmd = true;
     };
   };
-  services.lact.enable = true;
 }
