@@ -53,11 +53,11 @@ in
     enable = true;
     useTimer = true;
     p1 = {
-      limit = 35;
+      limit = 25;
       window = 28.0;
     };
     p2 = {
-      limit = 35;
+      limit = 25;
       window = 2.44;
     };
   };
