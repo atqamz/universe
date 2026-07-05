@@ -1,4 +1,25 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  gpuOffset = pkgs.writeText "gpu-offset.py" ''
+    import pynvml
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+    pynvml.nvmlDeviceSetGpcClkVfOffset(handle, 200)
+    pynvml.nvmlShutdown()
+  '';
+  gpuUndervolt = pkgs.writeShellApplication {
+    name = "gpu-undervolt";
+    runtimeInputs = [
+      config.hardware.nvidia.package.bin
+      (pkgs.python3.withPackages (ps: [ ps.nvidia-ml-py ]))
+    ];
+    text = ''
+      nvidia-smi -pm 1
+      nvidia-smi -lgc 210,1540
+      python3 ${gpuOffset}
+    '';
+  };
+in
 {
   imports = [
     ./hardware.nix
@@ -21,6 +42,17 @@
     wget
     fastfetch
   ];
+
+  systemd.services.gpu-undervolt = {
+    description = "NVIDIA undervolt: lock 1540MHz + 200MHz clock offset (~650mV)";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "systemd-modules-load.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${gpuUndervolt}/bin/gpu-undervolt";
+    };
+  };
 
   system.stateVersion = "26.05";
 }
