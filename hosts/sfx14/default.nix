@@ -49,6 +49,19 @@ in
     fastfetch
   ];
 
+  services.undervolt = {
+    enable = true;
+    useTimer = true;
+    p1 = {
+      limit = 35;
+      window = 28.0;
+    };
+    p2 = {
+      limit = 35;
+      window = 2.44;
+    };
+  };
+
   systemd.services.gpu-undervolt = {
     description = "NVIDIA undervolt: lock 1540MHz + 200MHz clock offset (~650mV)";
     wantedBy = [ "multi-user.target" ];
