@@ -56,16 +56,6 @@
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
         },
-        "kr/claude-sonnet-5-agentic": {
-          "name": "kr/claude-sonnet-5-agentic"
-        },
-        "kr/claude-sonnet-5-thinking": {
-          "name": "kr/claude-sonnet-5-thinking",
-          "reasoning": true
-        },
-        "kr/claude-sonnet-5-thinking-agentic": {
-          "name": "kr/claude-sonnet-5-thinking-agentic"
-        },
         "nvidia/deepseek-ai/deepseek-v4-flash": {
           "name": "nvidia/deepseek-ai/deepseek-v4-flash"
         },
