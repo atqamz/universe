@@ -69,6 +69,97 @@ let
       fi
     '';
   };
+
+  gpuLibPath =
+    "/run/opengl-driver/lib:/run/opengl-driver-32/lib:"
+    + lib.makeLibraryPath (
+      with pkgs;
+      [
+        stdenv.cc.cc.lib
+        vulkan-loader
+        libGL
+        fontconfig.lib
+        freetype
+        zlib
+        openssl
+        icu
+        libxkbcommon
+        wayland
+        xorg.libX11
+        xorg.libXext
+        xorg.libXrender
+        xorg.libXrandr
+        xorg.libXfixes
+        xorg.libXcursor
+        xorg.libXi
+        xorg.libxcb
+        xorg.libICE
+        xorg.libSM
+      ]
+    );
+
+  occtBin = pkgs.runCommand "occt-17.0.3" { } ''
+    install -Dm755 ${
+      pkgs.fetchurl {
+        name = "occt-17.0.3";
+        url = "https://www.ocbase.com/download/edition:Personal/version:17.0.3/os:Linux";
+        hash = "sha256-ouXU9Qr11dltWmEATlJyG30odWbGjwtwHBBxe4DxFh4=";
+      }
+    } $out/bin/OCCT
+  '';
+
+  occt = pkgs.writeShellScriptBin "occt" ''
+    export __NV_PRIME_RENDER_OFFLOAD=1
+    export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
+    export __GLX_VENDOR_LIBRARY_NAME=nvidia
+    export __VK_LAYER_NV_optimus=NVIDIA_only
+    export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.zfs
+        pkgs.rocmPackages.rocm-smi
+      ]
+    }:$PATH
+    export LD_LIBRARY_PATH=${lib.makeLibraryPath [ pkgs.rocmPackages.rocm-smi ]}:${gpuLibPath}
+    dir="''${XDG_DATA_HOME:-$HOME/.local/share}/occt"
+    mkdir -p "$dir"
+    if [ "$(cat "$dir/.version" 2>/dev/null)" != "17.0.3" ]; then
+      install -m755 ${occtBin}/bin/OCCT "$dir/OCCT"
+      echo 17.0.3 > "$dir/.version"
+    fi
+    cd "$dir"
+    exec ./OCCT "$@"
+  '';
+
+  furmarkApp = pkgs.stdenv.mkDerivation {
+    pname = "furmark-app";
+    version = "2.10.2";
+    src = pkgs.fetchurl {
+      url = "https://gpumagick.com/downloads/files/2025/fm2/2_10_dbc69dd0a08da5ff09169a4fc759ddaa/FurMark_2.10.2_linux64.7z";
+      hash = "sha256-s9AEj9r7kBhPGPU365HgxS9tEyrm7UjLtoxD21pCrts=";
+    };
+    nativeBuildInputs = [ pkgs.p7zip ];
+    unpackPhase = "7z x $src";
+    installPhase = ''
+      mkdir -p $out
+      cp -r FurMark_linux64/. $out/
+    '';
+  };
+
+  furmark = pkgs.writeShellScriptBin "furmark" ''
+    export __NV_PRIME_RENDER_OFFLOAD=1
+    export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
+    export __GLX_VENDOR_LIBRARY_NAME=nvidia
+    export __VK_LAYER_NV_optimus=NVIDIA_only
+    export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+    dir="''${XDG_DATA_HOME:-$HOME/.local/share}/furmark"
+    mkdir -p "$dir"
+    cp -rn --preserve=mode ${furmarkApp}/. "$dir"/
+    chmod -R u+w "$dir"
+    export LD_LIBRARY_PATH="$dir/dylibs":${gpuLibPath}
+    cd "$dir"
+    exec ./furmark "$@"
+  '';
 in
 {
   home.packages = lib.mkAfter (
@@ -113,6 +204,9 @@ in
       vlc
       filezilla
       btop
+      nvitop
+      occt
+      furmark
       tmux
       neovim
       handy
