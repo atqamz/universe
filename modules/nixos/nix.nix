@@ -12,6 +12,12 @@ _: {
     connect-timeout = 5;
     stalled-download-timeout = 20;
     download-attempts = 2;
+    auto-optimise-store = true;
+  };
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
   };
   nixpkgs.config.allowUnfree = true;
 }
