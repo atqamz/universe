@@ -199,6 +199,7 @@ in
       age
       sops
       gh
+      firebase-tools
       git-lfs
       hyprpicker
       grim
