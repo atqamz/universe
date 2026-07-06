@@ -1,8 +1,48 @@
 {
-  "autoCompactEnabled": true,
-  "autoCompactWindow": 200000,
-  "editorMode": "normal",
-  "effortLevel": "high",
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/home/atqa/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/atqa/.claude/hooks/ground-rules.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
+  },
   "enabledPlugins": {
     "caveman@caveman": true,
     "ponytail@ponytail": true,
@@ -11,66 +51,25 @@
   "extraKnownMarketplaces": {
     "caveman": {
       "source": {
-        "repo": "JuliusBrussee/caveman",
-        "source": "github"
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
       }
     },
     "ponytail": {
       "source": {
-        "repo": "DietrichGebert/ponytail",
-        "source": "github"
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
       }
     }
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "rtk hook claude",
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash"
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "bash '/home/atqa/.claude/hooks/herdr-agent-state.sh' session",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "*"
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "command": "/home/atqa/.claude/hooks/ground-rules.sh",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ]
-  },
-  "model": "opus",
-  "permissions": {
-    "defaultMode": "auto"
-  },
-  "skipAutoPermissionPrompt": true,
-  "skipDangerousModePermissionPrompt": true,
-  "statusLine": {
-    "command": "bash \"/home/atqa/.claude/statusline-command.sh\"",
-    "type": "command"
-  },
+  "autoCompactWindow": 200000,
   "voice": {
     "enabled": false,
     "mode": "hold"
   },
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "normal",
+  "autoCompactEnabled": true,
+  "skipAutoPermissionPrompt": true,
   "voiceEnabled": false
 }
