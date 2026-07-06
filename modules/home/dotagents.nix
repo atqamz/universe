@@ -20,11 +20,11 @@ in
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
     ".config/opencode/RTK.md".source = link "${root}/RTK.md";
-    ".config/opencode/opencode.json".source = link "${root}/opencode/opencode.json";
   };
 
-  home.activation.claudeWritableSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "${home}/.claude"
+  home.activation.writableAgentSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "${home}/.claude" "${home}/.config/opencode"
     run ln -sf "${claude}/settings.json" "${home}/.claude/settings.json"
+    run ln -sf "${root}/opencode/opencode.json" "${home}/.config/opencode/opencode.json"
   '';
 }
