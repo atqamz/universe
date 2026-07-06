@@ -12,8 +12,8 @@ let
       case "''${1:-}" in
         on)
           systemctl stop undervolt.timer undervolt.service
-          echo 42000000 >"$rapl/constraint_0_power_limit_uw"
-          echo 54000000 >"$rapl/constraint_1_power_limit_uw"
+          echo 38000000 >"$rapl/constraint_0_power_limit_uw"
+          echo 44000000 >"$rapl/constraint_1_power_limit_uw"
           epp performance
           nvidia-smi -lgc 210,1300
           ;;
