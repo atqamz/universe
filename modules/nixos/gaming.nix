@@ -16,7 +16,6 @@ let
           echo 38000000 >"$rapl/constraint_1_power_limit_uw"
           epp performance
           nvidia-smi -lgc 210,1300
-          nvidia-smi -pl 35
           ;;
         off)
           systemctl restart gpu-undervolt.service
