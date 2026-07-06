@@ -53,8 +53,8 @@ in
     gamemode = {
       enable = true;
       settings.custom = {
-        start = "/run/wrappers/bin/sudo ${gamingPower}/bin/gaming-power on";
-        end = "/run/wrappers/bin/sudo ${gamingPower}/bin/gaming-power off";
+        start = "/run/wrappers/bin/sudo /run/current-system/sw/bin/gaming-power on";
+        end = "/run/wrappers/bin/sudo /run/current-system/sw/bin/gaming-power off";
       };
     };
   };
@@ -64,7 +64,7 @@ in
       users = [ "atqa" ];
       commands = [
         {
-          command = "${gamingPower}/bin/gaming-power";
+          command = "/run/current-system/sw/bin/gaming-power";
           options = [ "NOPASSWD" ];
         }
       ];
