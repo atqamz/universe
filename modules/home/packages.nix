@@ -200,6 +200,7 @@ in
       sops
       gh
       firebase-tools
+      google-cloud-sdk
       git-lfs
       hyprpicker
       grim
