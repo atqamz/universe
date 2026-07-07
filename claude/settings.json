@@ -26,17 +26,6 @@
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/atqa/.claude/hooks/ground-rules.sh"
-          }
-        ]
-      }
     ]
   },
   "statusLine": {

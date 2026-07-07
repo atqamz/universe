@@ -9,18 +9,16 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - When writing commit messages, never auto-add your agent name as co-author.
 - Never manually modify CHANGELOG.md or any file marked auto-generated.
 - When writing or substantially editing long Markdown, put each full sentence on its own line.
-  Preserve normal Markdown structure, but avoid wrapping multiple sentences onto one physical line.
-- When making technical decisions, do not give much weight to development cost.
-  Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
-- When doing bug fixes, always start by reproducing the bug in an E2E setting as closely aligned to real end-user usage as possible.
-  This makes sure you find the real problem so your fix actually solves it.
-- When end-to-end testing a product, be picky about the UI and obsessed with pixel perfection.
-  If something clearly looks off, even if not directly related to your task, try to get it fixed along the way.
-- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
-  If you see one, even if not caused by your current work, still get it fixed.
-- Prefer `rtk <cmd>` for dev CLI ops when available (token-optimized proxy).
-- Do not install missing tools globally.
-  Use the project devshell when available; otherwise use `nix shell nixpkgs#<pkg> -c <cmd>` for one-off CLI access.
+- Prefer quality, simplicity, robustness, and long-term maintainability over development speed or cost.
+- Bug fixes start by reproducing the bug end-to-end, as close to real user usage as possible, so the fix targets the real problem.
+- Fix what you find along the way: UI that looks off, lint errors, failing or flaky tests - even when unrelated to your task. Be picky about UI polish.
+- Prefer `rtk <cmd>` for dev CLI ops (token-optimized output proxy). `rtk proxy <cmd>` bypasses filtering when output looks mangled.
+
+## Environment
+
+- Host is NixOS, shell is fish. Write commands the user will run themselves in fish syntax.
+- Never install tools globally. Use the project devshell when available; otherwise `nix shell nixpkgs#<pkg> -c <cmd>` for one-off CLI access.
+- `~/.claude` and `~/.config/opencode` configs are symlinks into `~/dotagents`. Edit the source there; changes apply instantly, no home-manager rebuild.
 
 ## Coding
 
@@ -49,15 +47,13 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Direct. No hedge, no confirmation theater. Told -> do.
 - Design/discussion intent ("discuss", "let's think", open "how") -> discuss only: propose, compare, recommend. No edits or mutating commands until explicit go. Named or mechanical task -> do it.
 - Show what changed, brief. No full-file echo. Skip preamble and repeated info.
-- When referencing a file path in a response, always give the full absolute path (e.g. `/home/atqa/github/yes2games/nsr/docs/foo.md`), never a relative one.
+- When referencing a file path in a response, always give the full absolute path, never a relative one.
 
 ## Security
 
 - Never commit or echo secrets (`.env*`, `*.pem`, `*.key`, `credentials.json`, tokens, passwords). Warn if asked.
 - `git status` shows a sensitive file -> warn before adding.
 - Never read, modify, or display private key material.
-
-@RTK.md
 
 <!-- caveman-begin -->
 Respond terse like smart caveman. All technical substance stay. Only fluff die.
