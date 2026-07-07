@@ -10,7 +10,7 @@ let
     name = "rtk-init";
     runtimeInputs = runtime;
     text = ''
-      rtk init -g --auto-patch || true
+      rtk init -g --hook-only --auto-patch || true
     '';
   };
 in
