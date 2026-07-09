@@ -46,39 +46,14 @@
         "kr/claude-opus-4.8": {
           "name": "kr/claude-opus-4.8"
         },
-        "kr/claude-sonnet-4.6": {
-          "name": "kr/claude-sonnet-4.6"
-        },
-        "kr/claude-sonnet-4.6-thinking": {
-          "name": "kr/claude-sonnet-4.6-thinking",
-          "reasoning": true
-        },
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
-        },
-        "nvidia/deepseek-ai/deepseek-v4-flash": {
-          "name": "nvidia/deepseek-ai/deepseek-v4-flash"
-        },
-        "nvidia/deepseek-ai/deepseek-v4-pro": {
-          "name": "nvidia/deepseek-ai/deepseek-v4-pro"
-        },
-        "nvidia/minimaxai/minimax-m2.7": {
-          "name": "nvidia/minimaxai/minimax-m2.7"
-        },
-        "nvidia/minimaxai/minimax-m3": {
-          "name": "nvidia/minimaxai/minimax-m3"
-        },
-        "nvidia/moonshotai/kimi-k2.6": {
-          "name": "nvidia/moonshotai/kimi-k2.6"
         },
         "nvidia/nemotron-3-ultra-550b-a55b": {
           "name": "nvidia/nemotron-3-ultra-550b-a55b"
         },
         "nvidia/parakeet-ctc-1.1b-asr": {
           "name": "nvidia/parakeet-ctc-1.1b-asr"
-        },
-        "nvidia/z-ai/glm-5.2": {
-          "name": "nvidia/z-ai/glm-5.2"
         },
         "ollama/deepseek-v4-flash": {
           "name": "ollama/deepseek-v4-flash"
