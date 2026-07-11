@@ -25,7 +25,8 @@ let
     postBuild = ''
       rm -f $out/bin/zeditor
       makeWrapper ${pkgs.zed-editor}/bin/zeditor $out/bin/zeditor \
-        --set DOTNET_ROOT ${dotnetSdk.unwrapped}/share/dotnet
+        --set DOTNET_ROOT ${dotnetSdk.unwrapped}/share/dotnet \
+        --prefix PATH : ${lib.makeBinPath [ pkgs.nil ]}
       ln -s zeditor $out/bin/zed
     '';
   };
