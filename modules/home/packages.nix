@@ -7,6 +7,17 @@
 let
   dotnetSdk = pkgs.dotnet-sdk_10;
 
+  primeEnv = {
+    __NV_PRIME_RENDER_OFFLOAD = "1";
+    __NV_PRIME_RENDER_OFFLOAD_PROVIDER = "NVIDIA-G0";
+    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+    __VK_LAYER_NV_optimus = "NVIDIA_only";
+  };
+  primeExports = lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${v}") primeEnv);
+  primeWrapperArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "--set ${k} ${v}") primeEnv);
+
+  occtVersion = "17.0.3";
+
   zed = pkgs.symlinkJoin {
     name = "zed";
     paths = [ pkgs.zed-editor ];
@@ -40,10 +51,7 @@ let
     postBuild = ''
       rm -f $out/bin/unityhub
       makeWrapper ${unityhubBase}/bin/unityhub $out/bin/unityhub \
-        --set __NV_PRIME_RENDER_OFFLOAD 1 \
-        --set __NV_PRIME_RENDER_OFFLOAD_PROVIDER NVIDIA-G0 \
-        --set __GLX_VENDOR_LIBRARY_NAME nvidia \
-        --set __VK_LAYER_NV_optimus NVIDIA_only \
+        ${primeWrapperArgs} \
         --prefix PATH : ${lib.makeBinPath [ pkgs.ffmpeg ]}
 
       desktop=$out/share/applications/unityhub.desktop
@@ -85,21 +93,18 @@ let
       ]
     );
 
-  occtBin = pkgs.runCommand "occt-17.0.3" { } ''
+  occtBin = pkgs.runCommand "occt-${occtVersion}" { } ''
     install -Dm755 ${
       pkgs.fetchurl {
-        name = "occt-17.0.3";
-        url = "https://www.ocbase.com/download/edition:Personal/version:17.0.3/os:Linux";
+        name = "occt-${occtVersion}";
+        url = "https://www.ocbase.com/download/edition:Personal/version:${occtVersion}/os:Linux";
         hash = "sha256-ouXU9Qr11dltWmEATlJyG30odWbGjwtwHBBxe4DxFh4=";
       }
     } $out/bin/OCCT
   '';
 
   occt = pkgs.writeShellScriptBin "occt" ''
-    export __NV_PRIME_RENDER_OFFLOAD=1
-    export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
-    export __GLX_VENDOR_LIBRARY_NAME=nvidia
-    export __VK_LAYER_NV_optimus=NVIDIA_only
+    ${primeExports}
     export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
     export PATH=${
       lib.makeBinPath [
@@ -110,9 +115,9 @@ let
     export LD_LIBRARY_PATH=${lib.makeLibraryPath [ pkgs.rocmPackages.rocm-smi ]}:${gpuLibPath}
     dir="''${XDG_DATA_HOME:-$HOME/.local/share}/occt"
     mkdir -p "$dir"
-    if [ "$(cat "$dir/.version" 2>/dev/null)" != "17.0.3" ]; then
+    if [ "$(cat "$dir/.version" 2>/dev/null)" != "${occtVersion}" ]; then
       install -m755 ${occtBin}/bin/OCCT "$dir/OCCT"
-      echo 17.0.3 > "$dir/.version"
+      echo ${occtVersion} > "$dir/.version"
     fi
     cd "$dir"
     exec ./OCCT "$@"
@@ -136,10 +141,7 @@ let
   mkFurmark =
     name: exe:
     pkgs.writeShellScriptBin name ''
-      export __NV_PRIME_RENDER_OFFLOAD=1
-      export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G0
-      export __GLX_VENDOR_LIBRARY_NAME=nvidia
-      export __VK_LAYER_NV_optimus=NVIDIA_only
+      ${primeExports}
       export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
       if [ -n "''${DISPLAY:-}" ] && [ -z "$(${pkgs.xrdb}/bin/xrdb -query 2>/dev/null)" ]; then
         echo "Xft.dpi: 96" | ${pkgs.xrdb}/bin/xrdb -merge 2>/dev/null || true
