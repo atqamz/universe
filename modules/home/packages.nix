@@ -19,25 +19,11 @@ let
     '';
   };
 
-  claudeNode = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
+  nodeShim = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
 
-  claude = pkgs.symlinkJoin {
-    name = "claude";
-    paths = [ inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    postBuild = ''
-      rm -f $out/bin/claude
-      makeWrapper ${
-        inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default
-      }/bin/claude $out/bin/claude \
-        --prefix PATH : ${
-          lib.makeBinPath [
-            claudeNode
-            pkgs.bun
-          ]
-        }
-    '';
-  };
+  npxShim = pkgs.writeShellScriptBin "npx" ''exec ${pkgs.bun}/bin/bunx "$@"'';
+
+  claude = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   unityhubBase = pkgs.unityhub.override {
     extraPkgs =
@@ -176,7 +162,6 @@ in
       sourcegit
       (writeShellScriptBin "sourcegit" ''exec ${sourcegit}/bin/SourceGit "$@"'')
       zed
-      vscode
       (brave.override {
         commandLineArgs = "--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoEncoder,WaylandWindowDecorations,PulseaudioLoopbackForScreenShare";
       })
@@ -184,6 +169,9 @@ in
       unzip
       p7zip
       unar
+      bun
+      nodeShim
+      npxShim
       claude
       (pkgs.opencode.overrideAttrs (_: {
         installPhase =
@@ -216,6 +204,7 @@ in
       filezilla
       btop
       nvitop
+      bitwarden-cli
       occt
       furmark
       furmarkGui
