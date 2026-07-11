@@ -7,8 +7,7 @@ _: {
     ./cursor.nix
     ./wezterm.nix
     ./file-management.nix
-    ./vault-sync.nix
-    ./password-store-sync.nix
+    ./repo-pull-sync.nix
     ./gpg-preset.nix
     ./secret-service.nix
     ./direnv.nix
@@ -22,8 +21,6 @@ _: {
     ./mise.nix
     ./qt.nix
     ./codedb.nix
-    ./dotfiles-sync.nix
-    ./dotagents-sync.nix
     ./skills-sync.nix
     ./ninerouter-models-sync.nix
     ./github-pull-sync.nix

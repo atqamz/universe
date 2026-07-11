@@ -1,8 +1,7 @@
 _: {
   imports = [
     ./dotagents.nix
-    ./vault-sync.nix
-    ./password-store-sync.nix
+    ./repo-pull-sync.nix
   ];
 
   home = {
