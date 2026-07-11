@@ -10,8 +10,8 @@ Each host builds a full variant and a stripped `-minimal` variant.
 
 | Host   | Machine                              | Desktop              |
 | ------ | ------------------------------------ | -------------------- |
-| pavg15 | HP Pavilion Gaming 15-ec1047ax (AMD) | Hyprland + caelestia |
-| sfx14  | Acer Swift X SFX14-72G-79PY          | Hyprland + caelestia |
+| pavg15 | HP Pavilion Gaming 15-ec1047ax | Hyprland + caelestia |
+| sfx14  | Acer Swift X SFX14-72G-79PY    | Hyprland + caelestia |
 
 ## Layout
 
