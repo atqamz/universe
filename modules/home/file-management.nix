@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   programs.yazi = {
     enable = true;
@@ -35,4 +40,13 @@
   };
 
   home.sessionVariables.GTK_USE_PORTAL = "1";
+
+  home.activation.writableMimeApps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    file="${config.home.homeDirectory}/.config/mimeapps.list"
+    if [ -L "$file" ]; then
+      target="$(${pkgs.coreutils}/bin/readlink -f "$file")"
+      ${pkgs.coreutils}/bin/cp --remove-destination "$target" "$file"
+      ${pkgs.coreutils}/bin/chmod u+w "$file"
+    fi
+  '';
 }
