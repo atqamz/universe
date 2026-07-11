@@ -150,12 +150,35 @@ if [ -f "$usage_script" ]; then
     fi
 fi
 
-# Line 2: 5hr% weekly% reset | brain tokens
-brain_seg="${C_GRAY}${I_BRAIN}${C_RESET} ${C_CTX}${pct_prefix}${tokens_label}${C_RESET}"
-if [ -n "$usage_core" ]; then
-    line2="${usage_core} ${C_GRAY}|${C_RESET} ${brain_seg}"
-else
-    line2="${brain_seg}"
+# -- Effort / reasoning -------------------------------------------------------
+
+EFFORT=$(echo "$input" | jq -r '.effort.level // empty')
+THINKING=$(echo "$input" | jq -r '.thinking.enabled')
+FAST=$(echo "$input" | jq -r '.fast_mode')
+
+effort_seg=""
+if [ -n "$EFFORT" ]; then
+    case "$EFFORT" in
+        low)        C_EFF="$C_GRAY" ;;
+        medium)     C_EFF='\033[32m' ;;
+        high)       C_EFF='\033[33m' ;;
+        xhigh|max)  C_EFF='\033[31m' ;;
+        *)          C_EFF="$C_GRAY" ;;
+    esac
+    effort_seg="${C_EFF}${EFFORT}${C_RESET}"
+    [ "$FAST" = "true" ] && effort_seg="${effort_seg} ${C_ACCENT}fast${C_RESET}"
+    [ "$THINKING" = "false" ] && effort_seg="${effort_seg} ${C_GRAY}nothink${C_RESET}"
 fi
+
+# -- Output line 2 ------------------------------------------------------------
+# 5hr% weekly% reset | effort | brain tokens
+brain_seg="${C_GRAY}${I_BRAIN}${C_RESET} ${C_CTX}${pct_prefix}${tokens_label}${C_RESET}"
+
+line2=""
+for seg in "$usage_core" "$effort_seg" "$brain_seg"; do
+    [ -z "$seg" ] && continue
+    [ -n "$line2" ] && line2="${line2} ${C_GRAY}|${C_RESET} "
+    line2="${line2}${seg}"
+done
 
 printf '%b\n%b\n' "$line1" "$line2"

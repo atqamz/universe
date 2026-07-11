@@ -7,10 +7,12 @@ Symlinked live from my NixOS config ([universe](https://github.com/atqamz/univer
 
 ## Layout
 
-- `AGENTS.md` - the canonical rules; `CLAUDE.md` is a symlink to it so every agent shares one source
+- `AGENTS.md` - the canonical rules, including the always-on caveman and ponytail modes; `CLAUDE.md` is a symlink to it so every agent shares one source
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
 - `opencode/` - opencode config (`opencode.json`)
-- `skills/manifest.txt` - the skill set, installed by universe's `skills-sync` timer via `npx skills`
+- `skills/manifest.txt` - the skill set, installed for both agents by universe's `skills-sync` timer via `bunx skills`
+
+Plugin-free by design: no Claude-only plugins. Behavior rules live in `AGENTS.md` (both agents read it), on-demand tooling comes from skills. Nothing is tied to one agent.
 
 ## Force-read convention
 

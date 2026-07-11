@@ -32,25 +32,6 @@
     "type": "command",
     "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
   },
-  "enabledPlugins": {
-    "caveman@caveman": true,
-    "ponytail@ponytail": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "caveman": {
-      "source": {
-        "source": "github",
-        "repo": "JuliusBrussee/caveman"
-      }
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
-      }
-    }
-  },
   "autoCompactWindow": 200000,
   "voice": {
     "enabled": false,
