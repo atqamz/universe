@@ -8,10 +8,10 @@ Hyprland + [caelestia](https://github.com/caelestia-dots/shell) desktop across t
 
 Each host builds a full variant and a stripped `-minimal` variant.
 
-| Host   | Machine                     | Desktop              |
-| ------ | --------------------------- | -------------------- |
-| pavg15 | HP Pavilion Gaming 15 (AMD) | Hyprland + caelestia |
-| sfx14  | Acer Swift X 14 (SFX14-72G) | Hyprland + caelestia |
+| Host   | Machine                              | Desktop              |
+| ------ | ------------------------------------ | -------------------- |
+| pavg15 | HP Pavilion Gaming 15-ec1047ax (AMD) | Hyprland + caelestia |
+| sfx14  | Acer Swift X SFX14-72G-79PY          | Hyprland + caelestia |
 
 ## Layout
 
