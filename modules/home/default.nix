@@ -2,6 +2,7 @@ _: {
   imports = [
     ./packages.nix
     ./caelestia.nix
+    ./caelestia-theme.nix
     ./clipboard.nix
     ./hypr.nix
     ./cursor.nix
@@ -25,7 +26,6 @@ _: {
     ./ninerouter-models-sync.nix
     ./github-pull-sync.nix
     ./passmenu.nix
-    ./fuzzel.nix
     ./readline.nix
   ];
 
