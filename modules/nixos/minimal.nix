@@ -16,5 +16,11 @@
   environment.systemPackages = with pkgs; [
     curl
     htop
+    git
+    vim
+    wget
+    fastfetch
   ];
+
+  system.stateVersion = "26.05";
 }

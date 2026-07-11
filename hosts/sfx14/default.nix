@@ -53,14 +53,12 @@ in
 {
   imports = [
     ./hardware.nix
-    ./disko.nix
-    ../../modules/nixos/hermes-isolated.nix
+    ../disko.nix
   ];
 
   networking.hostName = "sfx14";
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
     loader.systemd-boot.configurationLimit = 3;
     extraModulePackages = [ config.boot.kernelPackages.acer-wmi-battery ];
     kernelModules = [ "acer_wmi_battery" ];
@@ -72,13 +70,7 @@ in
     nvidiaBusId = "PCI:1:0:0";
   };
 
-  environment.systemPackages = with pkgs; [
-    git
-    vim
-    wget
-    fastfetch
-    gamingPower
-  ];
+  environment.systemPackages = [ gamingPower ];
 
   programs.gamemode.settings.custom = {
     start = "/run/wrappers/bin/sudo /run/current-system/sw/bin/gaming-power on";
@@ -132,6 +124,4 @@ in
       ExecStart = "${gpuUndervolt}/bin/gpu-undervolt";
     };
   };
-
-  system.stateVersion = "26.05";
 }

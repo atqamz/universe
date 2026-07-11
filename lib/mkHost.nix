@@ -1,7 +1,6 @@
 { inputs }:
 {
   hostname,
-  system ? "x86_64-linux",
   nixosModule ? ../modules/nixos,
   homeModule ? ../modules/home,
 }:
@@ -14,7 +13,7 @@ inputs.nixpkgs.lib.nixosSystem {
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
     {
-      nixpkgs.hostPlatform = system;
+      nixpkgs.hostPlatform = "x86_64-linux";
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
