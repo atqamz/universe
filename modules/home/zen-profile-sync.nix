@@ -54,7 +54,6 @@ let
     ]
     ++ (with pkgs; [
       git
-      gh
       gnupg
       age
       gnutar
@@ -85,10 +84,10 @@ let
       }
 
       if zen_running; then die "close Zen before pull (last-push-wins clobbers live session)"; fi
-      [ -f "$IDENTITY" ] || die "no identity at $IDENTITY — provision from vault"
+      [ -f "$IDENTITY" ] || die "no identity at $IDENTITY - provision from vault"
       ensure_repo
       git -C "$REPO" pull --ff-only
-      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet — run zen-profile-push first"
+      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet - run zen-profile-push first"
       ensure_profile
       pdir="$(profile_dir)"
       tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
@@ -102,7 +101,6 @@ let
     name = "zen-profile-push";
     runtimeInputs = with pkgs; [
       git
-      gh
       gnupg
       age
       gnutar
@@ -128,7 +126,7 @@ let
       if git -C "$REPO" diff --cached --quiet; then
         echo "zen-profile: no changes"; exit 0
       fi
-      git -C "$REPO" commit -m "update from $(hostname) $(date -u +%Y-%m-%dT%H:%MZ)"
+      git -C "$REPO" commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
       git -C "$REPO" push
       echo "zen-profile: pushed"
     '';

@@ -13,7 +13,7 @@ _: {
     ./direnv.nix
     ./gtk.nix
     ./zen.nix
-    ./zen-profile.nix
+    ./zen-profile-sync.nix
     ./dotagents.nix
     ./dotfiles.nix
     ./git.nix
