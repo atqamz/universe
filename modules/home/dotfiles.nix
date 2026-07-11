@@ -20,9 +20,7 @@ in
 
   home.file = {
     ".config/hypr".source = link "${root}/hypr";
-    ".config/fish".source = link "${root}/fish";
     ".config/zed".source = link "${root}/zed";
-    ".config/Code/User".source = link "${root}/vscode/User";
     ".config/herdr/config.toml" = {
       source = link "${root}/herdr/config.toml";
       force = true;

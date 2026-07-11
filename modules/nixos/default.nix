@@ -1,21 +1,12 @@
 _: {
   imports = [
-    ./nix.nix
-    ./overlays.nix
-    ./boot.nix
-    ./network.nix
-    ./gpu.nix
-    ./desktop.nix
-    ./portal.nix
+    ./minimal.nix
     ./audio.nix
-    ./power.nix
-    ./earlyoom.nix
-    ./users.nix
-    ./gnupg.nix
-    ./secrets.nix
-    ./locale.nix
-    ./warp.nix
     ./auto-upgrade.nix
+    ./desktop.nix
     ./gaming.nix
+    ./overlays.nix
+    ./portal.nix
+    ./warp.nix
   ];
 }
