@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  pinentry-auto = pkgs.writeShellScriptBin "pinentry" ''
+  pinentryAuto = pkgs.writeShellScriptBin "pinentry" ''
     if [ -n "''${WAYLAND_DISPLAY:-}" ] || [ -n "''${DISPLAY:-}" ]; then
       exec ${pkgs.pinentry-qt}/bin/pinentry-qt "$@"
     fi
@@ -11,7 +11,7 @@ in
   programs.gnupg.agent = {
     enable = true;
     enableSSHSupport = true;
-    pinentryPackage = pinentry-auto;
+    pinentryPackage = pinentryAuto;
     settings = {
       "allow-preset-passphrase" = "";
       default-cache-ttl = 86400;
