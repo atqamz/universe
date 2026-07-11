@@ -3,7 +3,7 @@ _: {
     { pkgs, ... }:
     let
       vault = "$HOME/vault";
-      rt = with pkgs; [
+      secretsTools = with pkgs; [
         git
         gh
         gnupg
@@ -14,7 +14,7 @@ _: {
 
       export = pkgs.writeShellApplication {
         name = "secrets-export";
-        runtimeInputs = rt;
+        runtimeInputs = secretsTools;
         text = ''
           vault="${vault}"
           cd "$vault" || exit 1
@@ -31,7 +31,7 @@ _: {
 
       bootstrap = pkgs.writeShellApplication {
         name = "bootstrap";
-        runtimeInputs = rt;
+        runtimeInputs = secretsTools;
         text = ''
           vault="${vault}"
 
@@ -88,11 +88,8 @@ _: {
           gawk
         ];
         text = ''
-          set -euo pipefail
-
           pass=0
           fail=0
-          results=""
 
           check() {
             name="$1"
@@ -100,18 +97,16 @@ _: {
             if "$@" >/dev/null 2>&1; then
               echo "PASS: $name"
               pass=$((pass + 1))
-              results="$results\nPASS: $name"
             else
               echo "FAIL: $name"
               fail=$((fail + 1))
-              results="$results\nFAIL: $name"
             fi
           }
 
           echo "== bootstrap-check =="
 
           check "user atqa exists" id -u atqa
-          check "user atqa is in wheel" groups atqa | grep -q wheel
+          check "user atqa is in wheel" bash -c 'groups atqa | grep -q wheel'
           check "tailscale daemon running" systemctl is-active tailscaled
           check "tailscale up" tailscale status
           check "ssh daemon active" systemctl is-active sshd
