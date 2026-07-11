@@ -1,12 +1,12 @@
 _: {
   imports = [
     ./minimal.nix
-    ./overlays.nix
-    ./desktop.nix
-    ./portal.nix
     ./audio.nix
-    ./warp.nix
     ./auto-upgrade.nix
+    ./desktop.nix
     ./gaming.nix
+    ./overlays.nix
+    ./portal.nix
+    ./warp.nix
   ];
 }
