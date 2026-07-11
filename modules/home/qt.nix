@@ -1,7 +1,13 @@
-{
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
+let
+  ctSettings = {
+    Appearance = {
+      style = "adwaita-dark";
+      icon_theme = "Papirus-Dark";
+      standard_dialogs = "xdgdesktopportal";
+    };
+  };
+in
 {
   qt = {
     enable = true;
@@ -13,19 +19,7 @@
         pkgs.adwaita-qt6
       ];
     };
-    qt5ctSettings = {
-      Appearance = {
-        style = "adwaita-dark";
-        icon_theme = "Papirus-Dark";
-        standard_dialogs = "xdgdesktopportal";
-      };
-    };
-    qt6ctSettings = {
-      Appearance = {
-        style = "adwaita-dark";
-        icon_theme = "Papirus-Dark";
-        standard_dialogs = "xdgdesktopportal";
-      };
-    };
+    qt5ctSettings = ctSettings;
+    qt6ctSettings = ctSettings;
   };
 }
