@@ -22,7 +22,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 
 ## Environment
 
-- Host is NixOS, shell is fish. Write commands the user will run themselves in fish syntax.
+- Host is NixOS, shell is bash. Write commands the user will run themselves in bash syntax.
 - Never install tools globally. Use the project devshell when available; otherwise `nix shell nixpkgs#<pkg> -c <cmd>` for one-off CLI access.
 - `~/.claude` and `~/.config/opencode` configs are symlinks into `~/dotagents`. Edit the source there; changes apply instantly, no home-manager rebuild.
 
