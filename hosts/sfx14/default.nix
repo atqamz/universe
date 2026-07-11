@@ -24,22 +24,23 @@ let
     runtimeInputs = [
       config.hardware.nvidia.package.bin
       pkgs.systemd
+      pkgs.power-profiles-daemon
     ];
     text = ''
       rapl=/sys/class/powercap/intel-rapl:0
       epp() { for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo "$1" >"$f"; done; }
       case "''${1:-}" in
         on)
-          systemctl stop undervolt.timer undervolt.service
-          echo 32000000 >"$rapl/constraint_0_power_limit_uw"
-          echo 36000000 >"$rapl/constraint_1_power_limit_uw"
-          epp performance
+          echo 25000000 >"$rapl/constraint_0_power_limit_uw"
+          echo 30000000 >"$rapl/constraint_1_power_limit_uw"
+          powerprofilesctl set balanced
+          epp balance_performance
           nvidia-smi -lgc 210,1300
           ;;
         off)
           systemctl restart gpu-undervolt.service
-          systemctl restart undervolt.service
           systemctl start undervolt.timer
+          powerprofilesctl set balanced
           epp balance_power
           ;;
         *)
@@ -92,10 +93,12 @@ in
   systemd.services.cpu-epp = {
     description = "bias CPU to balance_power EPP by default";
     wantedBy = [ "multi-user.target" ];
+    after = [ "power-profiles-daemon.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = pkgs.writeShellScript "cpu-epp" ''
+        ${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced
         for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo balance_power >"$f"; done
       '';
     };
