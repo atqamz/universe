@@ -57,6 +57,11 @@
       url = "github:ogulcancelik/herdr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    mirufm = {
+      url = "github:atqamz/mirufm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
