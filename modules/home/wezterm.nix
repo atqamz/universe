@@ -13,7 +13,7 @@ _: {
         window_close_confirmation = 'NeverPrompt',
         hide_tab_bar_if_only_one_tab = true,
         enable_wayland = true,
-        enable_ssh_agent = false,
+        mux_enable_ssh_agent = false,
       }
     '';
   };
