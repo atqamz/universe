@@ -41,7 +41,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 
 - GPG sign always. Never `--no-gpg-sign`, never `--no-verify`. Never force-push the default branch.
 - Trunk-based. Branch `<issue#>-<slug>` from default. No direct commit to `master`/`main` unless asked.
-- New repos: default branch `master`, never `main`. Repos cloned from upstream keep their own convention.
+- New repos: default branch `main`. Repos cloned from upstream keep their own convention.
 - Worktrees: always via `treehouse` (creates and recycles them). Never hand-manage `git worktree add`/`remove`.
 - One logical change per commit. Imperative, lowercase start, no trailing period.
 - No planning jargon in commits, PRs, or issues (no phase/step/milestone/part-X/task-id). Say what the change does.
