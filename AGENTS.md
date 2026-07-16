@@ -46,6 +46,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - One logical change per commit. Imperative, lowercase start, no trailing period.
 - No planning jargon in commits, PRs, or issues (no phase/step/milestone/part-X/task-id). Say what the change does.
 - `gh` CLI for all GitHub ops. No raw curl, no web UI. PR body: `## Summary` (1-3 bullets), `Fixes #N`, `## Test plan`.
+- Auto-close: every PR that resolves a same-repo issue MUST use a closing keyword (`Closes`/`Fixes`/`Resolves #N`) in its body so GitHub closes the issue on merge; a bare mention (`#N`) links but never closes. Closing keywords are same-repo only - GitHub never auto-closes cross-repo, so for a cross-repo or multi-repo tracking issue reference it as `owner/repo#N` and close it by hand once every part has landed.
 - No push, PR, or commit unless asked; applies to subagents too - every commit-capable subagent prompt states it. Merge `gh pr merge --merge` only. Assignee `atqamz` on every PR and issue.
 - Planning/spec scratch docs (specs, plans, handovers) stay untracked. Never commit them to a product repo.
 - Post-merge: delete remote and local branch (treehouse recycles the worktree).
