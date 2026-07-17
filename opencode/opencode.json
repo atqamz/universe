@@ -67,6 +67,45 @@
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
         },
+        "kr/gpt-5.6-luna": {
+          "name": "kr/gpt-5.6-luna"
+        },
+        "kr/gpt-5.6-luna-agentic": {
+          "name": "kr/gpt-5.6-luna-agentic"
+        },
+        "kr/gpt-5.6-luna-thinking": {
+          "name": "kr/gpt-5.6-luna-thinking",
+          "reasoning": true
+        },
+        "kr/gpt-5.6-luna-thinking-agentic": {
+          "name": "kr/gpt-5.6-luna-thinking-agentic"
+        },
+        "kr/gpt-5.6-sol": {
+          "name": "kr/gpt-5.6-sol"
+        },
+        "kr/gpt-5.6-sol-agentic": {
+          "name": "kr/gpt-5.6-sol-agentic"
+        },
+        "kr/gpt-5.6-sol-thinking": {
+          "name": "kr/gpt-5.6-sol-thinking",
+          "reasoning": true
+        },
+        "kr/gpt-5.6-sol-thinking-agentic": {
+          "name": "kr/gpt-5.6-sol-thinking-agentic"
+        },
+        "kr/gpt-5.6-terra": {
+          "name": "kr/gpt-5.6-terra"
+        },
+        "kr/gpt-5.6-terra-agentic": {
+          "name": "kr/gpt-5.6-terra-agentic"
+        },
+        "kr/gpt-5.6-terra-thinking": {
+          "name": "kr/gpt-5.6-terra-thinking",
+          "reasoning": true
+        },
+        "kr/gpt-5.6-terra-thinking-agentic": {
+          "name": "kr/gpt-5.6-terra-thinking-agentic"
+        },
         "nvidia/nemotron-3-ultra-550b-a55b": {
           "name": "nvidia/nemotron-3-ultra-550b-a55b"
         },
