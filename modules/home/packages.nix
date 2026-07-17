@@ -65,6 +65,19 @@ let
     '';
   };
 
+  unity-editor = pkgs.writeShellScriptBin "unity-editor" ''
+    ${primeExports}
+    editor="''${FM_UNITY_EDITOR:-}"
+    if [ -z "$editor" ]; then
+      editor=$(ls -d "$HOME"/Unity/Hub/Editor/*/Editor/Unity 2>/dev/null | sort -V | tail -1)
+    fi
+    if [ -z "$editor" ] || [ ! -x "$editor" ]; then
+      echo "unity-editor: no editor under ~/Unity/Hub/Editor/*/Editor/Unity (set FM_UNITY_EDITOR)" >&2
+      exit 1
+    fi
+    exec ${unityhubBase.fhsEnv}/bin/unityhub-fhs-env "$editor" "$@"
+  '';
+
   gpuLibPath =
     "/run/opengl-driver/lib:/run/opengl-driver-32/lib:"
     + lib.makeLibraryPath (
@@ -169,6 +182,7 @@ in
         commandLineArgs = "--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoEncoder,WaylandWindowDecorations,PulseaudioLoopbackForScreenShare";
       })
       unityhub
+      unity-editor
       unzip
       p7zip
       unar
