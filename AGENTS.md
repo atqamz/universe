@@ -65,6 +65,8 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Body: `## Summary` (1-3 bullets), `Fixes #N` on its own line, `## Test plan`.
 - Same-repo issue: MUST use closing keyword (`Closes`/`Fixes`/`Resolves #N`) on its own line. Bare `#N` links but never closes.
 - Cross-repo: `owner/repo#N` in body, close by hand after all parts land.
+- Before merge: `gh pr view N --repo owner/repo --json reviews` and address every P1/P2 finding. CI green alone is not "safe to merge".
+- Address review findings with code fixes, then reply to each resolved comment via `gh api` and re-request review when needed.
 - Merge `gh pr merge --merge` only.
 - Post-merge (every merge, no exceptions):
   1. Verify issue closed: `gh issue view N --repo owner/repo --json state -q .state`.
