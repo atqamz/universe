@@ -45,11 +45,31 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Worktrees: always via `treehouse` (creates and recycles them). Never hand-manage `git worktree add`/`remove`.
 - One logical change per commit. Imperative, lowercase start, no trailing period.
 - No planning jargon in commits, PRs, or issues (no phase/step/milestone/part-X/task-id). Say what the change does.
-- `gh` CLI for all GitHub ops. No raw curl, no web UI. PR body: `## Summary` (1-3 bullets), `Fixes #N`, `## Test plan`.
-- Auto-close: every PR that resolves a same-repo issue MUST use a closing keyword (`Closes`/`Fixes`/`Resolves #N`) in its body so GitHub closes the issue on merge; a bare mention (`#N`) links but never closes. Closing keywords are same-repo only - GitHub never auto-closes cross-repo, so for a cross-repo or multi-repo tracking issue reference it as `owner/repo#N` and close it by hand once every part has landed.
-- No push, PR, or commit unless asked; applies to subagents too - every commit-capable subagent prompt states it. Merge `gh pr merge --merge` only. Assignee `atqamz` on every PR and issue.
+- `gh` CLI for all GitHub ops. No raw curl, no web UI.
+- No push, PR, or commit unless asked; applies to subagents too - every commit-capable subagent prompt states it.
+- Assignee `atqamz` on every PR and issue.
 - Planning/spec scratch docs (specs, plans, handovers) stay untracked. Never commit them to a product repo.
-- Post-merge: delete remote and local branch (treehouse recycles the worktree).
+
+### Issues
+
+- `gh issue create --assignee atqamz`. Add `--milestone` when one fits.
+- Existing repo labels when they fit; never create labels without asking.
+- Reference related issues (`Related: #N`, `Depends on: #M`). Cross-repo: `owner/repo#N`.
+- Multi-part work: one tracking issue, close only after ALL parts land.
+- Comment on issues when PRs open or work lands. Skip "started working" noise.
+- Close promptly with outcome: `gh issue close N -c "done: ..."`.
+
+### Pull requests
+
+- Body: `## Summary` (1-3 bullets), `Fixes #N` on its own line, `## Test plan`.
+- Same-repo issue: MUST use closing keyword (`Closes`/`Fixes`/`Resolves #N`) on its own line. Bare `#N` links but never closes.
+- Cross-repo: `owner/repo#N` in body, close by hand after all parts land.
+- Merge `gh pr merge --merge` only.
+- Post-merge (every merge, no exceptions):
+  1. Verify issue closed: `gh issue view N --repo owner/repo --json state -q .state`.
+  2. Still open? `gh issue close N --repo owner/repo -c "landed in #PR"`.
+  3. Delete remote+local branch.
+  Auto-close is unreliable. Verify step catches it.
 
 ## Communication
 
