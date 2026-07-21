@@ -201,6 +201,11 @@ in
       rtk
       codedb
       no-mistakes
+      tasks-axi
+      gh-axi
+      lavish-axi
+      chrome-devtools-axi
+      quota-axi
       bibata-cursors
       jq
       age
