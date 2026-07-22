@@ -18,7 +18,6 @@ in
       enable = true;
       withUWSM = true;
     };
-    nix-ld.enable = true;
     thunar = {
       enable = true;
       plugins = with pkgs; [
