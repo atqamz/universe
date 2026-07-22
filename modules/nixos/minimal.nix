@@ -11,7 +11,10 @@
     ./power.nix
     ./secrets.nix
     ./users.nix
+    ./virtualisation.nix
   ];
+
+  programs.nix-ld.enable = true;
 
   environment.systemPackages = with pkgs; [
     curl
