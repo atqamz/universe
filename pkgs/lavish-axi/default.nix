@@ -2,6 +2,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildNpmPackage rec {
   pname = "lavish-axi";
@@ -19,6 +20,13 @@ buildNpmPackage rec {
   '';
 
   npmDepsHash = "sha256-WJXWvcAVvnQbTVz5Kxc79dlVUGTSKQpd+7oxH1brdg0=";
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "${pname}-v(.*)"
+    ];
+  };
 
   meta = {
     description = "Editor for reviewing and annotating rich HTML artifacts produced by AI agents";

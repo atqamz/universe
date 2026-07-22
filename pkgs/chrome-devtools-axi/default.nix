@@ -2,6 +2,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildNpmPackage rec {
   pname = "chrome-devtools-axi";
@@ -19,6 +20,13 @@ buildNpmPackage rec {
   '';
 
   npmDepsHash = "sha256-yTCuAiZ0+aQJn1w7WCqDqFUWxMV8EE3t9VHWFlmiv50=";
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "${pname}-v(.*)"
+    ];
+  };
 
   meta = {
     description = "AXI-compliant chrome-devtools-mcp wrapper with combined operations and TOON output";
