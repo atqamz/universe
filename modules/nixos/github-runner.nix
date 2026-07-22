@@ -109,7 +109,10 @@ let
     wants = [ "network-online.target" ];
     requires = [ "github-runner-token-refresh.service" ];
     wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.podman ];
+    path = with pkgs; [
+      podman
+      shadow
+    ];
     unitConfig.ConditionPathExists = tokenEnv;
     environment = {
       HOME = runnerHome;
