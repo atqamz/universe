@@ -2,6 +2,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildNpmPackage rec {
   pname = "tasks-axi";
@@ -19,6 +20,13 @@ buildNpmPackage rec {
   '';
 
   npmDepsHash = "sha256-0mRQQnppQXgF18U+Rau9h8vGqhtRPKGlJ/jQN8/S4sw=";
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "${pname}-v(.*)"
+    ];
+  };
 
   meta = {
     description = "AXI-compliant task/backlog CLI with token-efficient TOON output and pluggable backends";

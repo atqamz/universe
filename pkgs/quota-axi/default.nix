@@ -2,6 +2,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildNpmPackage rec {
   pname = "quota-axi";
@@ -19,6 +20,13 @@ buildNpmPackage rec {
   '';
 
   npmDepsHash = "sha256-uJJuvzCZ2Gn/Ra7/zyHFLKb0BKD/YEXcACYa8NFCprc=";
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "${pname}-v(.*)"
+    ];
+  };
 
   meta = {
     description = "AXI CLI that reports local agent-provider quota windows without routing or mutation";

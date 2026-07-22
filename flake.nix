@@ -76,6 +76,7 @@
         ./parts/devshells.nix
         ./parts/hosts.nix
         ./parts/apps.nix
+        ./parts/packages.nix
       ];
     };
 }

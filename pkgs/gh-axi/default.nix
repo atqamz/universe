@@ -2,6 +2,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildNpmPackage rec {
   pname = "gh-axi";
@@ -19,6 +20,13 @@ buildNpmPackage rec {
   '';
 
   npmDepsHash = "sha256-09/Ld7zO44aNdQP15xKzThrXA95h0AwSpdT492ejNaM=";
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "${pname}-v(.*)"
+    ];
+  };
 
   meta = {
     description = "AXI-compliant gh CLI wrapper with token-efficient TOON output and contextual suggestions";
