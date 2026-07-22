@@ -8,18 +8,25 @@ let
   cfg = config.services.pavg15Runner;
 
   runnerHome = "/var/lib/github-runner";
-  workDir = "/_work/${cfg.name}";
   tokenEnv = "${runnerHome}/token.env";
   hookInContainer = "/opt/runner-hooks/job-completed.sh";
-  runtimeDir = "/run/github-runner";
+
+  runnerIndices = lib.range 1 cfg.count;
+  workDirFor = n: "/_work/${cfg.name}-${toString n}";
+  containerNameFor = n: "${cfg.name}-${toString n}-runner";
+  runnerNameFor = n: "${cfg.name}-${toString n}";
+  runtimeDirNameFor = n: "github-runner-${toString n}";
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
     builtins.toJSON {
       projects = lib.listToAttrs (
-        map (repo: {
-          name = "${workDir}/${repo}/${repo}";
-          value.hasTrustDialogAccepted = true;
-        }) cfg.claudeTrustedRepos
+        lib.concatMap (
+          n:
+          map (repo: {
+            name = "${workDirFor n}/${repo}/${repo}";
+            value.hasTrustDialogAccepted = true;
+          }) cfg.claudeTrustedRepos
+        ) runnerIndices
       );
     }
   );
@@ -28,7 +35,7 @@ let
     name = "github-runner-job-completed";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      work="''${RUNNER_WORKDIR:-${workDir}}"
+      work="''${RUNNER_WORKDIR:-${workDirFor 1}}"
       [ -d "$work" ] || exit 0
       chown -R runner:runner "$work" 2>/dev/null || chown -R "$(id -u):$(id -g)" "$work" || true
     '';
@@ -92,15 +99,69 @@ let
       mv -f "$tmp_env" "$OUT_FILE"
     '';
   };
+
+  mkRunnerService = n: {
+    description = "GitHub Actions self-hosted runner (yes2games org, ${runnerNameFor n} light)";
+    after = [
+      "network-online.target"
+      "github-runner-token-refresh.service"
+    ];
+    wants = [ "network-online.target" ];
+    requires = [ "github-runner-token-refresh.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.podman ];
+    unitConfig.ConditionPathExists = tokenEnv;
+    environment = {
+      HOME = runnerHome;
+      XDG_RUNTIME_DIR = "/run/${runtimeDirNameFor n}";
+    };
+    serviceConfig = {
+      User = "github-runner";
+      Group = "github-runner";
+      RuntimeDirectory = runtimeDirNameFor n;
+      Restart = "always";
+      RestartSec = "10s";
+      CPUWeight = 20;
+      Nice = 10;
+      ExecStartPre = "-${pkgs.podman}/bin/podman rm -f ${containerNameFor n}";
+      ExecStart = lib.concatStringsSep " " [
+        "${pkgs.podman}/bin/podman run --rm --replace --name ${containerNameFor n}"
+        "--env-file ${tokenEnv}"
+        "-e RUNNER_SCOPE=org"
+        "-e ORG_NAME=yes2games"
+        "-e RUNNER_NAME=${runnerNameFor n}"
+        "-e LABELS=self-hosted,${cfg.name},light"
+        "-e EPHEMERAL=true"
+        "-e DISABLE_AUTO_UPDATE=true"
+        "-e RUNNER_WORKDIR=${workDirFor n}"
+        "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
+        "-v /run/docker.sock:/var/run/docker.sock"
+        "-v ${workDirFor n}:${workDirFor n}"
+        "-v ${claudeTrust}:/root/.claude.json:ro"
+        "-v ${jobCompletedHook}/bin/github-runner-job-completed:${hookInContainer}:ro"
+        "--group-add keep-groups"
+        "--memory=${cfg.memory}"
+        "--cpus=${cfg.cpus}"
+        cfg.image
+      ];
+      ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${containerNameFor n}";
+    };
+  };
 in
 {
   options.services.pavg15Runner = {
     enable = lib.mkEnableOption "GitHub Actions self-hosted runner (yes2games org) on pavg15";
 
+    count = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 1;
+      description = "Number of parallel runner instances (github-runner-1..N).";
+    };
+
     name = lib.mkOption {
       type = lib.types.str;
       default = "pavg15";
-      description = "Runner name and DooD work-directory suffix (/_work/<name>).";
+      description = "Runner name and DooD work-directory suffix (/_work/<name>-<n>).";
     };
 
     image = lib.mkOption {
@@ -134,13 +195,13 @@ in
     memory = lib.mkOption {
       type = lib.types.str;
       default = "4g";
-      description = "Container memory cap (half the laptop's resources).";
+      description = "Per-runner container memory cap.";
     };
 
     cpus = lib.mkOption {
       type = lib.types.str;
       default = "2";
-      description = "Container CPU cap (half the laptop's resources).";
+      description = "Per-runner container CPU cap.";
     };
 
     claudeTrustedRepos = lib.mkOption {
@@ -155,7 +216,8 @@ in
       description = ''
         Repo checkout-dir names pre-trusted in /root/.claude.json so
         claude-code-action jobs are not SIGKILLed by the workspace-trust gate
-        (yes2infra#350). Each pre-trusts /_work/<name>/<repo>/<repo>.
+        (yes2infra#350). Each pre-trusts /_work/<name>-<n>/<repo>/<repo> for
+        every runner instance.
       '';
     };
   };
@@ -173,22 +235,28 @@ in
     users.groups.github-runner = { };
 
     systemd = {
-      tmpfiles.rules = [
-        "d ${workDir} 0755 github-runner github-runner - -"
-      ];
+      tmpfiles.rules = map (n: "d ${workDirFor n} 0755 github-runner github-runner - -") runnerIndices;
 
-      services.github-runner-token-refresh = {
-        description = "Refresh butler App installation token for the pavg15 org runner";
-        after = [ "network-online.target" ];
-        wants = [ "network-online.target" ];
-        unitConfig.ConditionPathExists = cfg.appPemPath;
-        serviceConfig = {
-          Type = "oneshot";
-          User = "github-runner";
-          Group = "github-runner";
-          ExecStart = "${tokenRefresh}/bin/github-runner-token-refresh ${cfg.appPemPath} ${cfg.appId} ${cfg.installationId} ${tokenEnv}";
+      services = {
+        github-runner-token-refresh = {
+          description = "Refresh butler App installation token for the pavg15 org runner";
+          after = [ "network-online.target" ];
+          wants = [ "network-online.target" ];
+          unitConfig.ConditionPathExists = cfg.appPemPath;
+          serviceConfig = {
+            Type = "oneshot";
+            User = "github-runner";
+            Group = "github-runner";
+            ExecStart = "${tokenRefresh}/bin/github-runner-token-refresh ${cfg.appPemPath} ${cfg.appId} ${cfg.installationId} ${tokenEnv}";
+          };
         };
-      };
+      }
+      // lib.listToAttrs (
+        map (n: {
+          name = "github-runner-${toString n}";
+          value = mkRunnerService n;
+        }) runnerIndices
+      );
 
       timers.github-runner-token-refresh = {
         description = "Periodic butler App token refresh for the pavg15 org runner";
@@ -198,54 +266,6 @@ in
           OnActiveSec = "1min";
           OnUnitActiveSec = "20min";
           AccuracySec = "1min";
-        };
-      };
-
-      services.github-runner = {
-        description = "GitHub Actions self-hosted runner (yes2games org, ${cfg.name} light)";
-        after = [
-          "network-online.target"
-          "github-runner-token-refresh.service"
-        ];
-        wants = [ "network-online.target" ];
-        requires = [ "github-runner-token-refresh.service" ];
-        wantedBy = [ "multi-user.target" ];
-        path = [ pkgs.podman ];
-        unitConfig.ConditionPathExists = tokenEnv;
-        environment = {
-          HOME = runnerHome;
-          XDG_RUNTIME_DIR = runtimeDir;
-        };
-        serviceConfig = {
-          User = "github-runner";
-          Group = "github-runner";
-          RuntimeDirectory = "github-runner";
-          Restart = "always";
-          RestartSec = "10s";
-          CPUWeight = 20;
-          Nice = 10;
-          ExecStartPre = "-${pkgs.podman}/bin/podman rm -f ${cfg.name}-runner";
-          ExecStart = lib.concatStringsSep " " [
-            "${pkgs.podman}/bin/podman run --rm --replace --name ${cfg.name}-runner"
-            "--env-file ${tokenEnv}"
-            "-e RUNNER_SCOPE=org"
-            "-e ORG_NAME=yes2games"
-            "-e RUNNER_NAME=${cfg.name}"
-            "-e LABELS=self-hosted,${cfg.name},light"
-            "-e EPHEMERAL=true"
-            "-e DISABLE_AUTO_UPDATE=true"
-            "-e RUNNER_WORKDIR=${workDir}"
-            "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
-            "-v /run/docker.sock:/var/run/docker.sock"
-            "-v ${workDir}:${workDir}"
-            "-v ${claudeTrust}:/root/.claude.json:ro"
-            "-v ${jobCompletedHook}/bin/github-runner-job-completed:${hookInContainer}:ro"
-            "--group-add keep-groups"
-            "--memory=${cfg.memory}"
-            "--cpus=${cfg.cpus}"
-            cfg.image
-          ];
-          ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.name}-runner";
         };
       };
     };
