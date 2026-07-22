@@ -2,6 +2,7 @@
   buildGoModule,
   fetchFromGitHub,
   lib,
+  nix-update-script,
 }:
 buildGoModule rec {
   pname = "no-mistakes";
@@ -26,6 +27,8 @@ buildGoModule rec {
   subPackages = [ "cmd/no-mistakes" ];
 
   doCheck = false;
+
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Push-gate that validates and auto-fixes agent changes in an isolated worktree";

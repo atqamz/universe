@@ -1,0 +1,55 @@
+name: Update packages
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - codedb
+          - no-mistakes
+          - chrome-devtools-axi
+          - gh-axi
+          - lavish-axi
+          - quota-axi
+          - tasks-axi
+    steps:
+      - uses: actions/checkout@v7.0.0
+      - uses: cachix/install-nix-action@v31.11.0
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: update package
+        id: update
+        run: |
+          nix shell nixpkgs#nix-update -c nix-update \
+            --flake --commit "${{ matrix.package }}"
+          if git diff --quiet HEAD~1; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: create pr
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          version=$(nix eval --raw ".#${{ matrix.package }}.version")
+          branch="update-${{ matrix.package }}-${version}"
+          git checkout -b "$branch"
+          git push -u origin "$branch"
+          gh pr create \
+            --title "build(deps): bump ${{ matrix.package }} to ${version}" \
+            --body "Automated update by nix-update." \
+            --assignee atqamz
+          gh pr merge --auto --merge "$branch"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
