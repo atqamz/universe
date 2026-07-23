@@ -40,9 +40,9 @@ Repo-specific rules. Global rules apply unless overridden here.
 
 ## CI / flake hygiene
 
-- `nix flake check` (`parts/checks.nix`) builds the full `toplevel` closure for every host, including the `-minimal` variants — this pulls in caelestia-shell, which always compiles from source (no upstream Cachix), hence the `free-disk-space` step and capped `cache-nix-action` size in `.github/workflows/ci.yml`.
+- `nix flake check` (`parts/checks.nix`) builds the full `toplevel` closure for every host, including the `-minimal` variants - this pulls in caelestia-shell, which always compiles from source (no upstream Cachix), hence the `free-disk-space` step and capped `cache-nix-action` size in `.github/workflows/ci.yml`.
 - Dependabot + auto-merge (`.github/dependabot.yml`, `.github/workflows/automerge.yml`) replaced a hand-rolled flake-autoupdate timer.
-- `system.autoUpgrade` (`modules/nixos/auto-upgrade.nix`) deliberately points at a `git+https://` flakeref rather than `github:` — `github:` flakerefs hit the rate-limited GitHub API and can silently pin a stale rev on a 403.
+- `system.autoUpgrade` (`modules/nixos/auto-upgrade.nix`) deliberately points at a `git+https://` flakeref rather than `github:` - `github:` flakerefs hit the rate-limited GitHub API and can silently pin a stale rev on a 403.
 
 ## Install / bootstrap
 
