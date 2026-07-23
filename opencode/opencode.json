@@ -110,9 +110,7 @@
   },
   "compaction": {
     "auto": true,
-    "prune": true,
-    "preserve_recent_tokens": 8000,
-    "reserved": 20000
+    "preserve_recent_tokens": 200000
   },
   "permission": {
     "*": "allow",
