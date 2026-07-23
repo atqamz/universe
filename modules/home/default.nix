@@ -24,6 +24,7 @@ _: {
     ./secret-service.nix
     ./skills-sync.nix
     ./wezterm.nix
+    ./unity.nix
     ./zen.nix
     ./zen-profile-sync.nix
   ];
