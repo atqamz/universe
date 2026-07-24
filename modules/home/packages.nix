@@ -206,6 +206,7 @@ in
       lavish-axi
       chrome-devtools-axi
       quota-axi
+      qmd
       bibata-cursors
       jq
       age

@@ -8,6 +8,7 @@ _: {
       lavish-axi = final.callPackage ../../pkgs/lavish-axi { };
       chrome-devtools-axi = final.callPackage ../../pkgs/chrome-devtools-axi { };
       quota-axi = final.callPackage ../../pkgs/quota-axi { };
+      qmd = final.callPackage ../../pkgs/qmd { };
     })
   ];
 }

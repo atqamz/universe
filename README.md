@@ -20,6 +20,7 @@ Each host builds a full variant and a stripped `-minimal` variant.
 - `hosts/<name>/` - host-specific config and generated hardware; `hosts/disko.nix` is the shared disk layout
 - `modules/nixos/` - one-concern system modules (`default.nix` full, `minimal.nix` base)
 - `modules/home/` - one-concern home-manager modules
+- `pkgs/` - locally packaged tools exposed through the NixOS overlay and home profile, including `qmd` (CPU-only, x86_64-linux)
 - `lib/mkHost.nix` - host factory, wires home-manager in as a NixOS module
 
 Config that must stay live-editable (dotfiles, agent config) is symlinked out of the store from the sibling [dotfiles](https://github.com/atqamz/dotfiles) and [dotagents](https://github.com/atqamz/dotagents) repos.

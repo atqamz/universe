@@ -88,4 +88,4 @@ itself once the install finishes.
 The tailnet connection drops on the reboot. After the machine boots to its text
 login console, continue from **`install.md` step 6 (First login)** -- the rest
 is identical (greetd appears only once the full config is applied in install.md
-step 9).
+step 8).

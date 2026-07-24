@@ -136,15 +136,14 @@ Missing file -> the injected host key is not the secret's recipient. Confirm its
 age (`ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`) matches the `age:` entry
 for this host in `.sops.yaml`.
 
-## 7. Bootstrap (vault + brain/dotagents/dotfiles)
+## 7. Bootstrap (vault + dotagents/dotfiles)
 
 ```bash
 nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#bootstrap
 ```
 
 Clones `~/vault` and runs `import.sh` (age/GPG/SSH keys, git signing, gpg preset
-passphrase), then clones `~/dotagents`, `~/brain`, `~/dotfiles` over ssh, then builds the
-qmd index. Verify:
+passphrase), then clones `~/dotagents` and `~/dotfiles` over ssh. Verify:
 
 ```bash
 ssh-add -l
@@ -175,8 +174,8 @@ nix run .#bootstrap-check
 ```
 
 It reports pass/fail for the `atqa` user and groups, tailscale, sshd, the
-secrets/brain bootstrap state, `ollama.service`, the `brain-promote` dry-run, the
-sync timers, and a clean `greetd`/`hyprland` start.
+secrets vault and synced repositories, the sync timers, and a clean
+`greetd`/`hyprland` start.
 
 ## 10. Authorize Ollama cloud
 
