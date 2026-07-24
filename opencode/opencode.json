@@ -84,11 +84,17 @@
         "kr/gpt-5.6-terra-thinking-agentic": {
           "name": "kr/gpt-5.6-terra-thinking-agentic"
         },
+        "nvidia/minimaxai/minimax-m3": {
+          "name": "nvidia/minimaxai/minimax-m3"
+        },
         "nvidia/nemotron-3-ultra-550b-a55b": {
           "name": "nvidia/nemotron-3-ultra-550b-a55b"
         },
         "nvidia/parakeet-ctc-1.1b-asr": {
           "name": "nvidia/parakeet-ctc-1.1b-asr"
+        },
+        "nvidia/z-ai/glm-5.2": {
+          "name": "nvidia/z-ai/glm-5.2"
         },
         "ollama/deepseek-v4-flash": {
           "name": "ollama/deepseek-v4-flash"
@@ -104,6 +110,9 @@
         },
         "ollama/minimax-m3": {
           "name": "ollama/minimax-m3"
+        },
+        "openrouter/openrouter/free": {
+          "name": "openrouter/openrouter/free"
         }
       }
     }
