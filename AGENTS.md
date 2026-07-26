@@ -19,6 +19,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - YAML files: always `.yaml`, never `.yml`.
 - Three job contexts: yes2games (primary), blankon (FOSS-first: OpenTofu over Terraform, Podman over Docker), hage (side). Never bleed one context's conventions into another.
 - Subagents and unattended scripts run cheaper model tiers (haiku trivial, sonnet default, opus deep review); top tier orchestrator-only. Scale reviewer-subagent count with change risk, not a fixed number.
+- Opus tier means `claude-opus-5`. Never pin an older opus point release.
 - Use skills when relevant; run process skills (brainstorming, systematic-debugging) before implementation skills.
 - Check full detail of issue (body, comments, linked PRs) before asking questions. Never re-ask what was already decided.
 
