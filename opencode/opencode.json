@@ -42,6 +42,9 @@
         "kr/claude-opus-4.8": {
           "name": "kr/claude-opus-4.8"
         },
+        "kr/claude-opus-5": {
+          "name": "kr/claude-opus-5"
+        },
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
         },
