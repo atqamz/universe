@@ -23,6 +23,7 @@ _: {
     ./rtk.nix
     ./secret-service.nix
     ./skills-sync.nix
+    ./treehouse-prune.nix
     ./wezterm.nix
     ./unity.nix
     ./zen.nix

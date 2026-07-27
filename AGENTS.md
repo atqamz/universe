@@ -34,6 +34,8 @@ Repo-specific rules. Global rules apply unless overridden here.
 - The `*-sync` services (`modules/home/dotfiles-sync.nix`, `dotagents-sync.nix`, and siblings) share one pattern: `writeShellApplication` locks down PATH, the dirty-check uses `git status --porcelain --untracked-files=no` (counting untracked files self-deadlocks the timer), and pulls are `--ff-only`, skipped silently when dirty or diverged.
 - `rtk-init` and `codedb-register` (`modules/home/rtk.nix`, `codedb.nix`) re-apply the Claude Code hook/MCP registration on a daily systemd timer as a self-heal, since that config lives outside the Nix store.
 - `zen-profile-sync` (`modules/home/zen-profile.nix`) pulls the synced Zen profile on session start, self-seeding a fresh headless profile first if none exists; push runs on logout. Neither is part of `nix run .#bootstrap` — see `parts/apps.nix` for what bootstrap actually clones.
+- `treehouse-prune` (`modules/home/treehouse-prune.nix`) is weekly, not daily, and has no `home.activation` hook unlike its siblings above: it deletes worktree pools, so it may only ever run on its own schedule, never as a side effect of a rebuild.
+Deliberately no `--prune-orphans`: treehouse cannot run its uncommitted-changes or merged-HEAD checks once a backing repo is gone, so orphans stay reported-only and are reaped by hand.
 
 ## Secrets
 
