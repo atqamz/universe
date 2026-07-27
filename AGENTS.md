@@ -19,8 +19,9 @@ Repo-specific rules. Global rules apply unless overridden here.
 ## Packaging
 
 - `codedb` and `no-mistakes` are packaged via a nixpkgs overlay (`modules/nixos/overlays.nix` -> `pkgs/codedb`, `pkgs/no-mistakes`). `codedb` is a prebuilt release binary; its own `update`/`nuke` subcommands don't apply under Nix — bump the version with `nix-update` (uses `passthru.updateScript`).
+- `rtk` is overridden in the same overlay with `RUSTFLAGS = "--cap-lints warn"` - upstream's `Cargo.toml` sets `[lints.rust] warnings = "deny"`, so any dead code a newer rustc starts flagging fails the test-binary build and takes `nix flake check` down with it. Capping keeps the test suite running; drop the override once nixpkgs ships an rtk that compiles clean.
 - `claude` (`modules/home/packages.nix`) wraps sadjow's `claude-code` flake input and prefixes PATH with a bun-backed `node` shim — NixOS has no system JS runtime, and Claude plugin hooks that shell out to `node` need one.
-- `unityhub` (same file) prefixes `ffmpeg` onto PATH so Unity's FSBTool can encode WebGL AAC audio; `modules/home/unity.nix` adds `/home/atqa/.unity/bin` to the login PATH for Unity CLI tools.
+- `unityhub` (same file) prefixes `ffmpeg` onto PATH so Unity's FSBTool can encode WebGL AAC audio; `modules/home/unity.nix` adds `/home/atqa/.unity/bin` to the login PATH for Unity CLI tools. Those CLI tools exec the editor binary raw, with no FHS wrapper in the chain, so its GL/X11/GTK/ICU deps come from `programs.nix-ld.libraries` (`modules/nixos/nix-ld.nix`) - the empirically minimal set of the editor's unresolved `ldd` entries, not the full FHS superset. That module is imported from `modules/nixos/default.nix`, not from `minimal.nix` where `programs.nix-ld.enable` lives, deliberately: co-locating them would drag the GTK/GL closure into the `-minimal` host variants.
 - `qmd` (`pkgs/qmd`) is `buildNpmPackage` for an upstream that ships no `package-lock.json` (only `bun.lock`/`pnpm-lock.yaml`) — the lockfile was generated once via `npm install --package-lock-only` against the release tag and vendored. Native deps that ship prebuilt platform binaries (tree-sitter-*, sqlite-vec, node-llama-cpp) work fine under `buildNpmPackage`'s default `npm ci --ignore-scripts`; only deps with no prebuilt binary (better-sqlite3) need a manual `node-gyp rebuild --release` in `preBuild`. `autoPatchelfHook` fixes up the prebuilt ELF binaries; optional GPU-backend variants (CUDA/Vulkan `.so`s) are intentionally left unpatched and qmd is wrapped with `QMD_LLAMA_GPU=false` and the nixpkgs Node runtime because this package exposes the CPU search path only.
 
 ## Dotfiles / dotagents symlinks
@@ -41,8 +42,8 @@ Repo-specific rules. Global rules apply unless overridden here.
 
 ## CI / flake hygiene
 
-- `nix flake check` (`parts/checks.nix`) builds the full `toplevel` closure for every host, including the `-minimal` variants - this pulls in caelestia-shell, which always compiles from source (no upstream Cachix), hence the `free-disk-space` step and capped `cache-nix-action` size in `.github/workflows/ci.yml`.
-- Dependabot + auto-merge (`.github/dependabot.yml`, `.github/workflows/automerge.yml`) replaced a hand-rolled flake-autoupdate timer.
+- `nix flake check` (`parts/checks.nix`) builds the full `toplevel` closure for every host, including the `-minimal` variants - this pulls in caelestia-shell, which always compiles from source (no upstream Cachix), hence the `free-disk-space` step and capped `cache-nix-action` size in `.github/workflows/ci.yaml`.
+- Dependabot + auto-merge (`.github/dependabot.yaml`, `.github/workflows/automerge.yaml`) replaced a hand-rolled flake-autoupdate timer.
 - `system.autoUpgrade` (`modules/nixos/auto-upgrade.nix`) deliberately points at a `git+https://` flakeref rather than `github:` - `github:` flakerefs hit the rate-limited GitHub API and can silently pin a stale rev on a 403.
 
 ## Install / bootstrap

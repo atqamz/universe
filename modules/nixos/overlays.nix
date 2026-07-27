@@ -1,6 +1,11 @@
 _: {
   nixpkgs.overlays = [
-    (final: _prev: {
+    (final: prev: {
+      rtk = prev.rtk.overrideAttrs (old: {
+        env = (old.env or { }) // {
+          RUSTFLAGS = "--cap-lints warn";
+        };
+      });
       codedb = final.callPackage ../../pkgs/codedb { };
       no-mistakes = final.callPackage ../../pkgs/no-mistakes { };
       tasks-axi = final.callPackage ../../pkgs/tasks-axi { };
