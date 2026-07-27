@@ -68,7 +68,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Cross-repo: `owner/repo#N` in body, close by hand after all parts land.
 - Before merge: `gh pr view N --repo owner/repo --json reviews` and address every P1/P2 finding. CI green alone is not "safe to merge".
 - Address review findings with code fixes, then reply to each resolved comment via `gh api` and re-request review when needed.
-- Merge `gh pr merge --merge` only.
+- Merge with `gh pr merge --merge` or `--squash`; squash a branch whose intermediate commits are noise. Never `--rebase`.
 - Post-merge (every merge, no exceptions):
   1. Verify issue closed: `gh issue view N --repo owner/repo --json state -q .state`.
   2. Still open? `gh issue close N --repo owner/repo -c "landed in #PR"`.
