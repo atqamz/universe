@@ -99,21 +99,6 @@
         "nvidia/z-ai/glm-5.2": {
           "name": "nvidia/z-ai/glm-5.2"
         },
-        "ollama/deepseek-v4-flash": {
-          "name": "ollama/deepseek-v4-flash"
-        },
-        "ollama/deepseek-v4-pro": {
-          "name": "ollama/deepseek-v4-pro"
-        },
-        "ollama/glm-5.2": {
-          "name": "ollama/glm-5.2"
-        },
-        "ollama/kimi-k2.7-code": {
-          "name": "ollama/kimi-k2.7-code"
-        },
-        "ollama/minimax-m3": {
-          "name": "ollama/minimax-m3"
-        },
         "openrouter/openrouter/free": {
           "name": "openrouter/openrouter/free"
         }
