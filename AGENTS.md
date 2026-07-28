@@ -56,16 +56,18 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 
 - `gh issue create --assignee atqamz`. Add `--milestone` when one fits.
 - Existing repo labels when they fit; never create labels without asking.
-- Reference related issues (`Related: #N`, `Depends on: #M`). Cross-repo: `owner/repo#N`.
+- Always write issue references fully qualified: `owner/repo#N`, never bare `#N`, even same-repo. Related issues: `Related: owner/repo#N`, `Depends on: owner/repo#M`.
 - Multi-part work: one tracking issue, close only after ALL parts land.
 - Comment on issues when PRs open or work lands. Skip "started working" noise.
 - Close promptly with outcome: `gh issue close N -c "done: ..."`.
 
 ### Pull requests
 
-- Body: `## Summary` (1-3 bullets), `Fixes #N` on its own line, `## Test plan`.
-- Same-repo issue: MUST use closing keyword (`Closes`/`Fixes`/`Resolves #N`) on its own line. Bare `#N` links but never closes.
-- Cross-repo: `owner/repo#N` in body, close by hand after all parts land.
+- Body: `## Summary` (1-3 bullets), `Fixes owner/repo#N` on its own line, `## Test plan`.
+- Same-repo issue: MUST use closing keyword (`Closes`/`Fixes`/`Resolves`) + `owner/repo#N` on its own line. Keyword directly precedes the reference, nothing between. Reference without keyword links but never closes.
+- Multiple issues: repeat the keyword for each (`Closes owner/repo#1, closes owner/repo#2`). A comma list after one keyword closes only the first.
+- Closing keyword fires only when the PR merges into the default branch. PR targeting any other branch links but never closes; close by hand.
+- Cross-repo: keywords never close. Reference `owner/repo#N`, close by hand after all parts land.
 - Before merge: `gh pr view N --repo owner/repo --json reviews` and address every P1/P2 finding. CI green alone is not "safe to merge".
 - Address review findings with code fixes, then reply to each resolved comment via `gh api` and re-request review when needed.
 - Merge with `gh pr merge --merge` or `--squash`; squash a branch whose intermediate commits are noise. Never `--rebase`.
