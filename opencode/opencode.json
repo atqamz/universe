@@ -36,6 +36,9 @@
         "atqa-gpt-glm": {
           "name": "atqa-gpt-glm"
         },
+        "Free": {
+          "name": "Free"
+        },
         "glm-5.2-visual": {
           "name": "glm-5.2-visual"
         },
@@ -101,6 +104,9 @@
         },
         "openrouter/openrouter/free": {
           "name": "openrouter/openrouter/free"
+        },
+        "tkr/moonshotai/kimi-k3-free": {
+          "name": "tkr/moonshotai/kimi-k3-free"
         }
       }
     }
