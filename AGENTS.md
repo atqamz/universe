@@ -14,6 +14,10 @@ Repo-specific rules. Global rules apply unless overridden here.
 - Keep `# shellcheck disable=` pragmas — `writeShellApplication` runs shellcheck at build.
 - Before commit: `nix fmt`, then `nix flake check`.
 - "Ship" means: commit + push + PR + merge if green + apply
+- Apply on a live machine with no flake attr: `sudo nixos-rebuild switch --flake /home/atqa/universe`.
+It resolves `nixosConfigurations.$(hostname)` itself.
+Never hardcode a host attr, and never copy one out of a doc or an older session - switching a machine to the wrong host silently rewrites `networking.hostName`, swaps its hardware config (kernel modules, microcode, PRIME bus IDs, undervolt), and `system.autoUpgrade`'s flakeref interpolates that same `hostName`, so the wrong host reapplies itself on every timer run.
+Only the from-ISO install path names a host explicitly, because the installer boots as `nixos` (`docs/runbooks/install.md`).
 - Cachix auth token only in GH secret `CACHIX_AUTH_TOKEN`.
 
 ## Packaging

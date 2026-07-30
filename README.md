@@ -28,7 +28,7 @@ Config that must stay live-editable (dotfiles, agent config) is symlinked out of
 ## Build
 
 ```bash
-sudo nixos-rebuild switch --flake .#<host>
+sudo nixos-rebuild switch --flake .
 ```
 
 ## Install
