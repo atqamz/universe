@@ -48,6 +48,16 @@
         "kr/claude-opus-5": {
           "name": "kr/claude-opus-5"
         },
+        "kr/claude-opus-5-agentic": {
+          "name": "kr/claude-opus-5-agentic"
+        },
+        "kr/claude-opus-5-thinking": {
+          "name": "kr/claude-opus-5-thinking",
+          "reasoning": true
+        },
+        "kr/claude-opus-5-thinking-agentic": {
+          "name": "kr/claude-opus-5-thinking-agentic"
+        },
         "kr/claude-sonnet-5": {
           "name": "kr/claude-sonnet-5"
         },
