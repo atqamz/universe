@@ -10,6 +10,7 @@ _: {
     ./cursor.nix
     ./direnv.nix
     ./dotfiles.nix
+    ./eye-break.nix
     ./file-management.nix
     ./git.nix
     ./gpg-preset.nix

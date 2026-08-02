@@ -119,7 +119,8 @@ _: {
           check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
           for unit in \
             universe-sync dotfiles-sync dotagents-sync vault-sync password-store-sync github-sync \
-            skills-sync rtk-init codedb-register treehouse-prune nix-access-token zen-profile-sync; do
+            skills-sync rtk-init codedb-register treehouse-prune nix-access-token zen-profile-sync \
+            eye-break; do
             check "$unit timer enabled" systemctl --user is-enabled "$unit.timer"
           done
           check "nixos-upgrade timer enabled" systemctl is-enabled nixos-upgrade.timer
