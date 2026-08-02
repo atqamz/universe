@@ -10,4 +10,21 @@ build.log
 
 .superpowers/
 docs/superpowers/
+docs/audits/
 treehouse.toml
+
+codedb.snapshot
+
+.claude/settings.local.json
+**/.claude/scheduled_tasks.lock
+**/.claude/scheduled_tasks.json
+**/.claude/routines/.state/
+**/.claude/worktrees/
+**/.claude/checkpoints/
+**/.claude/mailbox/
+**/.claude/agent-registry.json
+**/.claude/agent-memory-local
+**/.claude/first-run
+**/.claude/assistant-daemon-state.json
+
+.opencode/plugins/fm-turn-end.js

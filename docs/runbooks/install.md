@@ -164,8 +164,26 @@ Both `gh` and `git` now use ssh (the gpg `[A]` auth subkey); no https.
 ```bash
 cd ~/universe || git clone git@github.com:atqamz/universe.git ~/universe
 cd ~/universe
-sudo nixos-rebuild switch --flake .#$HOST
+sudo nixos-rebuild switch --flake .
 ```
+
+The machine already booted with its `networking.hostName` set, so no host attr is
+named here; `nixos-rebuild` resolves `nixosConfigurations.$(hostname)` itself.
+Naming one by hand is how a machine gets switched to the wrong host's hardware
+config. Only step 4 names a host, because the installer boots as `nixos`.
+
+## 8a. Repos a working machine expects
+
+Six repos, four mechanisms. See `docs/adr/0002-cross-repo-layout.md` for why.
+
+| Repo | Purpose | Cloned by | Kept current by |
+| --- | --- | --- | --- |
+| `~/universe` | this flake | step 8, by hand | `universe-sync.timer` |
+| `~/vault` | private keys and secrets | `nix run .#bootstrap` | `vault-sync.timer` |
+| `~/dotagents` | agent config | `nix run .#bootstrap` | `dotagents-sync.timer` |
+| `~/dotfiles` | app config | `nix run .#bootstrap` | `dotfiles-sync.timer` |
+| `~/.password-store` | pass store | `vault/scripts/import.sh` | `password-store-sync.timer` |
+| `~/.local/share/zen-profile` | encrypted Zen profile | `zen-profile-pull` on first run | `zen-profile-sync.timer` |
 
 ## 9. Verify e2e
 
@@ -177,20 +195,7 @@ It reports pass/fail for the `atqa` user and groups, tailscale, sshd, the
 secrets vault and synced repositories, the sync timers, and a clean
 `greetd`/`hyprland` start.
 
-## 10. Authorize Ollama cloud
-
-```bash
-ollama signin
-```
-
-Open the printed URL in a browser logged into ollama.com. Then:
-
-```bash
-systemctl --user restart ollama
-BRAIN_PROMOTE_DRY_RUN=1 brain-promote
-```
-
-## 11. Verify hibernate
+## 10. Verify hibernate
 
 ```bash
 systemctl hibernate
@@ -199,7 +204,7 @@ systemctl hibernate
 Power back on; the prior session should resume. Hibernate uses the plain 32G
 swap partition (`boot.resumeDevice = /dev/disk/by-partlabel/disk-main-swap`).
 
-## 12. Final validation
+## 11. Final validation
 
 ```bash
 sudo reboot
@@ -230,10 +235,6 @@ the scp + `--extra-files` step with the vault-backed key.
 Check `journalctl --user -u greetd` and `journalctl --user -u hyprland-session`.
 Common causes: NVIDIA modules not loaded, missing firmware, `uwsm` syntax
 mismatch, or wrong PRIME bus IDs in `hosts/$HOST/default.nix`.
-
-### `brain-promote` fails with Unauthorized
-
-Ollama cloud is not signed in. See step 10.
 
 ### `github ssh auth` fails after a reboot
 
