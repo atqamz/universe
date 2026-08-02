@@ -42,6 +42,11 @@ Those CLI tools exec the editor binary raw, with no FHS wrapper in the chain, so
 - `~/dotfiles` and `~/dotagents` are separate repos, wired in via `config.lib.file.mkOutOfStoreSymlink` (`modules/home/dotfiles.nix`, `dotagents.nix`) so edits there apply live without a rebuild. The symlink target must be an absolute home-relative string (`${config.home.homeDirectory}/...`); a relative one breaks live-editing silently.
 - Caelestia's `shell.json` is per-host (`dotfiles/caelestia/hosts/${hostname}.json`, `hostname` comes from `lib/mkHost.nix`'s specialArgs) and needs `force = true` on that `home.file` entry — caelestia's own atomic writes to the path clobber a plain symlink otherwise. `modules/home/caelestia.nix` also runs an activation script that normalizes a few keys via `jq`.
 
+## Eye comfort
+
+- `modules/home/nightlight.nix` enables `hyprsunset` but deliberately leaves `services.hyprsunset.settings` empty: that option writes `xdg.configFile."hypr/hyprsunset.conf"`, which collides with the whole-directory `mkOutOfStoreSymlink` `dotfiles.nix` puts at `~/.config/hypr`. The profiles live in `dotfiles/hypr/hyprsunset.conf` instead, tunable with no rebuild. `reading-mode` (bound to `mod + R` in `dotfiles/hypr/hyprland.lua`) toggles against the schedule and restores it with `hyprctl hyprsunset reset`.
+- `modules/home/auto-brightness.nix` runs `wluma` off the ALS at `/sys/bus/iio/devices/iio:device0`, gated to the host that has one. It writes `/sys/class/backlight/*/brightness` directly, which needs the `SUBSYSTEM=="backlight"` udev rule in `modules/nixos/power.nix` - group `video` alone is not enough, and `brightnessctl` never needed it because it goes through logind.
+
 ## Sync timers
 
 - Every pull-only repo sync is one entry in the `repos` list in `modules/home/repo-sync.nix` (`universe`, `dotagents`, `dotfiles`, `vault`, `password-store`), plus one `github-sync` sweep over `~/github`. Add a repo by adding a row, not a module. The shared pattern: `writeShellApplication` locks down PATH, the dirty-check uses `git status --porcelain --untracked-files=no` (counting untracked files self-deadlocks the timer), and pulls are `--ff-only`, skipped silently when dirty or diverged.
