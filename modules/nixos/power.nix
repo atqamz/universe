@@ -1,6 +1,15 @@
-_: {
-  services.power-profiles-daemon.enable = true;
-  services.upower.enable = true;
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.settings.General.Experimental = true;
+{ pkgs, ... }:
+{
+  services = {
+    power-profiles-daemon.enable = true;
+    upower.enable = true;
+    udev.extraRules = ''
+      ACTION=="add", SUBSYSTEM=="backlight", RUN+="${pkgs.coreutils}/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="${pkgs.coreutils}/bin/chmod g+w /sys/class/backlight/%k/brightness"
+    '';
+  };
+
+  hardware.bluetooth = {
+    enable = true;
+    settings.General.Experimental = true;
+  };
 }
