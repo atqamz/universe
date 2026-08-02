@@ -1,4 +1,4 @@
-{ self, ... }:
+{ self, lib, ... }:
 {
   perSystem =
     { config, ... }:
@@ -12,11 +12,8 @@
         };
       };
 
-      checks = {
-        toplevel-pavg15 = self.nixosConfigurations.pavg15.config.system.build.toplevel;
-        toplevel-pavg15-minimal = self.nixosConfigurations.pavg15-minimal.config.system.build.toplevel;
-        toplevel-sfx14 = self.nixosConfigurations.sfx14.config.system.build.toplevel;
-        toplevel-sfx14-minimal = self.nixosConfigurations.sfx14-minimal.config.system.build.toplevel;
-      };
+      checks = lib.mapAttrs' (
+        name: host: lib.nameValuePair "toplevel-${name}" host.config.system.build.toplevel
+      ) self.nixosConfigurations;
     };
 }
