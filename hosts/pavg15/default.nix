@@ -7,7 +7,7 @@ _: {
 
   networking.hostName = "pavg15";
 
-  services.pavg15Runner = {
+  services.orgRunner = {
     enable = true;
     count = 4;
     memory = "7g";

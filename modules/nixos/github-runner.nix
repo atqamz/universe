@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.services.pavg15Runner;
+  cfg = config.services.orgRunner;
 
   runnerHome = "/var/lib/github-runner";
   tokenEnv = "${runnerHome}/token.env";
@@ -152,7 +152,7 @@ let
   };
 in
 {
-  options.services.pavg15Runner = {
+  options.services.orgRunner = {
     enable = lib.mkEnableOption "GitHub Actions self-hosted runner (yes2games org) on pavg15";
 
     count = lib.mkOption {
