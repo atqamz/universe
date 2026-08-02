@@ -1,12 +1,7 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, ... }:
 let
   root = "${config.home.homeDirectory}/dotagents";
   claude = "${root}/claude";
-  home = config.home.homeDirectory;
   link = config.lib.file.mkOutOfStoreSymlink;
 in
 {
@@ -15,13 +10,15 @@ in
     ".claude/AGENTS.md".source = link "${root}/AGENTS.md";
     ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
+    ".claude/settings.json" = {
+      source = link "${claude}/settings.json";
+      force = true;
+    };
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
+    ".config/opencode/opencode.json" = {
+      source = link "${root}/opencode/opencode.json";
+      force = true;
+    };
   };
-
-  home.activation.writableAgentSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "${home}/.claude" "${home}/.config/opencode"
-    run ln -sf "${claude}/settings.json" "${home}/.claude/settings.json"
-    run ln -sf "${root}/opencode/opencode.json" "${home}/.config/opencode/opencode.json"
-  '';
 }
