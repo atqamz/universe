@@ -93,12 +93,10 @@ in
   systemd.services.cpu-epp = {
     description = "bias CPU to balance_power EPP by default";
     wantedBy = [ "multi-user.target" ];
-    after = [ "power-profiles-daemon.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = pkgs.writeShellScript "cpu-epp" ''
-        ${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced
         for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo balance_power >"$f"; done
       '';
     };
