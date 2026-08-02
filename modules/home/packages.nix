@@ -206,7 +206,6 @@ in
       }))
       inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
       inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
-      inputs.mirufm.packages.${pkgs.stdenv.hostPlatform.system}.default
       rtk
       codedb
       no-mistakes
@@ -238,6 +237,7 @@ in
       btop
       nvitop
       bitwarden-cli
+      libreoffice
       occt
       furmark
       furmarkGui

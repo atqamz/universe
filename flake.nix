@@ -36,6 +36,7 @@
     caelestia-shell = {
       url = "github:caelestia-dots/shell/v2.2.0";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     zen-browser = {
@@ -55,11 +56,6 @@
 
     herdr = {
       url = "github:ogulcancelik/herdr";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    mirufm = {
-      url = "github:atqamz/mirufm";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
