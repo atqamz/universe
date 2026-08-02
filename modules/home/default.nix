@@ -1,6 +1,7 @@
 _: {
   imports = [
     ./minimal.nix
+    ./benchmarks.nix
     ./caelestia.nix
     ./caelestia-theme.nix
     ./clipboard.nix

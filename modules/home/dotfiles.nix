@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   hostname,
   ...
 }:
@@ -9,15 +8,6 @@ let
   root = "${config.home.homeDirectory}/dotfiles";
 in
 {
-  home.packages = with pkgs; [
-    starship
-    direnv
-    zoxide
-    eza
-    lazygit
-    podman-tui
-  ];
-
   home.file = {
     ".config/hypr".source = link "${root}/hypr";
     ".config/zed".source = link "${root}/zed";
