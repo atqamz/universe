@@ -45,7 +45,12 @@ Those CLI tools exec the editor binary raw, with no FHS wrapper in the chain, so
 ## Eye comfort
 
 - `modules/home/nightlight.nix` enables `hyprsunset` but deliberately leaves `services.hyprsunset.settings` empty: that option writes `xdg.configFile."hypr/hyprsunset.conf"`, which collides with the whole-directory `mkOutOfStoreSymlink` `dotfiles.nix` puts at `~/.config/hypr`. The profiles live in `dotfiles/hypr/hyprsunset.conf` instead, tunable with no rebuild. `reading-mode` (bound to `mod + R` in `dotfiles/hypr/hyprland.lua`) toggles against the schedule and restores it with `hyprctl hyprsunset reset`.
+Temperature and gamma need no per-monitor config: hyprsunset binds every `wl_output` and applies one CTM each, so external screens are covered as soon as they are connected.
 - `modules/home/auto-brightness.nix` runs `wluma` off the ALS at `/sys/bus/iio/devices/iio:device0`, gated to the host that has one. It writes `/sys/class/backlight/*/brightness` directly, which needs the `SUBSYSTEM=="backlight"` udev rule in `modules/nixos/power.nix` - group `video` alone is not enough, and `brightnessctl` never needed it because it goes through logind.
+- The external monitor has no backlight class, so its entry is an `output.ddcutil` one driven over DP AUX, which is why `power.nix` sets `hardware.i2c.enable` - that rule's `uaccess` tag is what grants access, since wluma's unit runs `PrivateUsers=true` and would lose a plain `i2c` group membership.
+Two traps: `name` is matched as a *substring* of the output description, so a bare `DP-1` also matches `eDP-1` and one config steals the other's screen - `(DP-1)` with the parens does not.
+And `udevadm trigger` after a rebuild needs `--subsystem-match=i2c-dev`, not `i2c`.
+`identifier` is what wluma matches against the DDC display name (`ddcutil detect`), and a mismatch is only a warning, so an unplugged or swapped monitor degrades to internal-only.
 
 ## Sync timers
 
