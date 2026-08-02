@@ -8,8 +8,12 @@
     '';
   };
 
-  hardware.bluetooth = {
-    enable = true;
-    settings.General.Experimental = true;
+  hardware = {
+    i2c.enable = true;
+
+    bluetooth = {
+      enable = true;
+      settings.General.Experimental = true;
+    };
   };
 }

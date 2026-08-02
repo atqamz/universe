@@ -18,13 +18,22 @@ in
           "800" = "outdoors";
         };
       };
-      output.backlight = [
-        {
-          name = "eDP-1";
-          path = "/sys/class/backlight/intel_backlight";
-          capturer = "wayland";
-        }
-      ];
+      output = {
+        backlight = [
+          {
+            name = "eDP-1";
+            path = "/sys/class/backlight/intel_backlight";
+            capturer = "wayland";
+          }
+        ];
+        ddcutil = [
+          {
+            name = "(DP-1)";
+            identifier = "USB C2 demoset-1 RTK";
+            capturer = "wayland";
+          }
+        ];
+      };
     };
   };
 
