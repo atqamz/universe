@@ -15,12 +15,6 @@ _: {
         owner = "atqa";
         mode = "0400";
       };
-
-      ninerouter-api-key = {
-        sopsFile = ./secrets/ninerouter-api-key.sops.yaml;
-        owner = "atqa";
-        mode = "0400";
-      };
     };
   };
 }

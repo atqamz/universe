@@ -14,7 +14,6 @@ _: {
     ./gtk.nix
     ./hypr.nix
     ./mise.nix
-    ./ninerouter-models-sync.nix
     ./packages.nix
     ./passmenu.nix
     ./qt.nix
