@@ -18,6 +18,15 @@ let
 
   occtVersion = "17.0.3";
 
+  zedTools = with pkgs; [
+    nil
+    go
+    gopls
+    rust-analyzer
+    pyright
+    typescript-language-server
+  ];
+
   zed = pkgs.symlinkJoin {
     name = "zed";
     paths = [ pkgs.zed-editor ];
@@ -26,7 +35,7 @@ let
       rm -f $out/bin/zeditor
       makeWrapper ${pkgs.zed-editor}/bin/zeditor $out/bin/zeditor \
         --set DOTNET_ROOT ${dotnetSdk.unwrapped}/share/dotnet \
-        --prefix PATH : ${lib.makeBinPath [ pkgs.nil ]}
+        --prefix PATH : ${lib.makeBinPath zedTools}
       ln -s zeditor $out/bin/zed
     '';
   };
