@@ -13,6 +13,8 @@ _: {
     stalled-download-timeout = 20;
     download-attempts = 2;
     auto-optimise-store = true;
+    min-free = 5368709120;
+    max-free = 21474836480;
   };
   nix.gc = {
     automatic = true;
