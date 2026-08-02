@@ -15,6 +15,7 @@ _: {
     ./gtk.nix
     ./hypr.nix
     ./mise.nix
+    ./nightlight.nix
     ./packages.nix
     ./passmenu.nix
     ./qt.nix
