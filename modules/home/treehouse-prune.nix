@@ -18,7 +18,10 @@ let
 in
 {
   systemd.user.services.treehouse-prune = {
-    Unit.Description = "Prune stale treehouse worktree pools";
+    Unit = {
+      Description = "Prune stale treehouse worktree pools";
+      OnFailure = [ "notify-failure@%n.service" ];
+    };
     Service = {
       Type = "oneshot";
       WorkingDirectory = config.home.homeDirectory;

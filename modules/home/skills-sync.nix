@@ -30,7 +30,10 @@ in
   home.packages = [ sync ];
 
   systemd.user.services.skills-sync = {
-    Unit.Description = "Sync global agent skills";
+    Unit = {
+      Description = "Sync global agent skills";
+      OnFailure = [ "notify-failure@%n.service" ];
+    };
     Service = {
       Type = "oneshot";
       ExecStart = "${sync}/bin/skills-sync";

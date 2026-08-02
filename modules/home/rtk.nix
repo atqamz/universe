@@ -20,7 +20,10 @@ in
   '';
 
   systemd.user.services.rtk-init = {
-    Unit.Description = "Re-apply rtk hook for Claude Code";
+    Unit = {
+      Description = "Re-apply rtk hook for Claude Code";
+      OnFailure = [ "notify-failure@%n.service" ];
+    };
     Service = {
       Type = "oneshot";
       ExecStart = "${ensure}/bin/rtk-init";

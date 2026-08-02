@@ -117,13 +117,17 @@ _: {
           check "gpg key present" gpg -K
           check "dotagents cloned" test -d "$HOME/dotagents/.git"
           check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
-          check "dotfiles-sync timer enabled" systemctl --user is-enabled dotfiles-sync.timer
-          check "dotagents-sync timer enabled" systemctl --user is-enabled dotagents-sync.timer
-          check "vault-sync timer enabled" systemctl --user is-enabled vault-sync.timer
-          check "password-store-sync timer enabled" systemctl --user is-enabled password-store-sync.timer
+          for unit in \
+            universe-sync dotfiles-sync dotagents-sync vault-sync password-store-sync github-sync \
+            skills-sync rtk-init codedb-register treehouse-prune nix-access-token zen-profile-sync; do
+            check "$unit timer enabled" systemctl --user is-enabled "$unit.timer"
+          done
           check "nixos-upgrade timer enabled" systemctl is-enabled nixos-upgrade.timer
+          # shellcheck disable=SC2016
+          check "nixos-upgrade not failed" bash -c '[ "$(systemctl is-failed nixos-upgrade.service)" != failed ]'
+          # shellcheck disable=SC2016
+          check "no failed user units" bash -c '[ -z "$(systemctl --user list-units --state=failed --no-legend)" ]'
           check "zen identity present" test -f "$HOME/.config/zen-profile/identity"
-          check "zen-profile-sync timer enabled" systemctl --user is-enabled zen-profile-sync.timer
           check "universe repo cloned" test -d "$HOME/universe/.git"
           check "greetd active" systemctl is-active greetd
           check "claude-code on PATH" command -v claude

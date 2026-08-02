@@ -10,7 +10,6 @@ _: {
     ./dotfiles.nix
     ./file-management.nix
     ./git.nix
-    ./github-pull-sync.nix
     ./gpg-preset.nix
     ./gtk.nix
     ./hypr.nix

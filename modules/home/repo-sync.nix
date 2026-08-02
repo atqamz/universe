@@ -2,6 +2,12 @@
 let
   repos = [
     {
+      name = "universe";
+      dir = "$HOME/universe";
+      description = "universe flake";
+      interval = "5min";
+    }
+    {
       name = "dotagents";
       dir = "$HOME/dotagents";
       description = "dotagents";
@@ -63,33 +69,86 @@ let
         ${repo.post or ""}
       '';
     };
+
+  githubSync = pkgs.writeShellApplication {
+    name = "github-sync";
+    runtimeInputs = with pkgs; [
+      git
+      findutils
+      coreutils
+    ];
+    text = ''
+      root="$HOME/github"
+      [ -d "$root" ] || exit 0
+
+      find "$root" -name .git -type d -prune | while read -r gitdir; do
+        repo=$(dirname "$gitdir")
+        name=''${repo#"$root"/}
+
+        if ! git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+          continue
+        fi
+
+        if [ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]; then
+          echo "skip $name: dirty"
+          continue
+        fi
+
+        if ! git -C "$repo" pull --ff-only -q >/dev/null 2>&1; then
+          echo "skip $name: pull not fast-forward"
+          continue
+        fi
+
+        echo "ok $name"
+      done
+    '';
+  };
+
+  units =
+    (map (repo: {
+      inherit (repo) name description interval;
+      bin = "${mkSync repo}/bin/${repo.name}-sync";
+    }) repos)
+    ++ [
+      {
+        name = "github";
+        description = "every repo under ~/github";
+        interval = "15min";
+        bin = "${githubSync}/bin/github-sync";
+      }
+    ];
 in
 {
+  home.packages = [ githubSync ];
+
   systemd.user.services = lib.listToAttrs (
-    map (repo: {
-      name = "${repo.name}-sync";
+    map (unit: {
+      name = "${unit.name}-sync";
       value = {
-        Unit.Description = "Pull ${repo.description}";
+        Unit = {
+          Description = "Pull ${unit.description}";
+          OnFailure = [ "notify-failure@%n.service" ];
+        };
         Service = {
           Type = "oneshot";
-          ExecStart = "${mkSync repo}/bin/${repo.name}-sync";
+          ExecStart = unit.bin;
         };
       };
-    }) repos
+    }) units
   );
 
   systemd.user.timers = lib.listToAttrs (
-    map (repo: {
-      name = "${repo.name}-sync";
+    map (unit: {
+      name = "${unit.name}-sync";
       value = {
-        Unit.Description = "Periodic ${repo.name} sync";
+        Unit.Description = "Periodic ${unit.name} sync";
         Timer = {
           OnStartupSec = "2min";
-          OnUnitActiveSec = repo.interval;
+          OnUnitActiveSec = unit.interval;
           Persistent = true;
         };
         Install.WantedBy = [ "timers.target" ];
       };
-    }) repos
+    }) units
   );
 }

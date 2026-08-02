@@ -2,7 +2,8 @@ _: {
   imports = [
     ./dotagents.nix
     ./nix-access-token.nix
-    ./repo-pull-sync.nix
+    ./notify-failure.nix
+    ./repo-sync.nix
   ];
 
   home = {

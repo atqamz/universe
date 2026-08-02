@@ -27,10 +27,9 @@ let
   };
 in
 {
-  # Absolute, not relative: nix.conf is a store symlink, so a relative !include would
-  # resolve against the store directory instead of ~/.config/nix.
   xdg.configFile."nix/nix.conf".text = ''
     !include ${tokenFile}
+    tarball-ttl = 0
   '';
 
   home.activation.nixAccessToken = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -38,7 +37,10 @@ in
   '';
 
   systemd.user.services.nix-access-token = {
-    Unit.Description = "Write the GitHub token nix reads for flake fetches";
+    Unit = {
+      Description = "Write the GitHub token nix reads for flake fetches";
+      OnFailure = [ "notify-failure@%n.service" ];
+    };
     Service = {
       Type = "oneshot";
       ExecStart = "${writeToken}/bin/nix-access-token-write";

@@ -32,7 +32,10 @@ in
   '';
 
   systemd.user.services.codedb-register = {
-    Unit.Description = "Register codedb MCP server for Claude Code";
+    Unit = {
+      Description = "Register codedb MCP server for Claude Code";
+      OnFailure = [ "notify-failure@%n.service" ];
+    };
     Service = {
       Type = "oneshot";
       ExecStart = "${ensure}/bin/codedb-register";
