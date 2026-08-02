@@ -10,19 +10,29 @@ permissions:
   pull-requests: write
 
 jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: cachix/install-nix-action@v31.11.0
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: list packages
+        id: list
+        run: |
+          names=$(nix eval --json '.#packages.x86_64-linux' --apply builtins.attrNames)
+          echo "packages=$names" >> "$GITHUB_OUTPUT"
+
   update:
+    needs: list
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - codedb
-          - no-mistakes
-          - chrome-devtools-axi
-          - gh-axi
-          - lavish-axi
-          - quota-axi
-          - tasks-axi
+        package: ${{ fromJSON(needs.list.outputs.packages) }}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: cachix/install-nix-action@v31.11.0
@@ -33,7 +43,9 @@ jobs:
         id: update
         run: |
           nix shell nixpkgs#nix-update -c nix-update \
-            --flake --commit "${{ matrix.package }}"
+            --flake --commit \
+            --override-filename "pkgs/${{ matrix.package }}/default.nix" \
+            "${{ matrix.package }}"
           if git diff --quiet HEAD~1; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else

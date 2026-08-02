@@ -1,38 +1,9 @@
-{
-  buildNpmPackage,
-  fetchFromGitHub,
-  lib,
-  nix-update-script,
-}:
-buildNpmPackage rec {
+{ callPackage }:
+callPackage ../axi { } {
   pname = "tasks-axi";
   version = "0.2.3";
-
-  src = fetchFromGitHub {
-    owner = "kunchenguid";
-    repo = "tasks-axi";
-    tag = "${pname}-v${version}";
-    hash = "sha256-ziQJdRYtMsJW9xhRtrBiTjDe/5PcECXrBU9Wt9Tn7Vg=";
-  };
-
-  postPatch = ''
-    cp ${./package-lock.json} package-lock.json
-  '';
-
+  hash = "sha256-ziQJdRYtMsJW9xhRtrBiTjDe/5PcECXrBU9Wt9Tn7Vg=";
   npmDepsHash = "sha256-0mRQQnppQXgF18U+Rau9h8vGqhtRPKGlJ/jQN8/S4sw=";
-
-  passthru.updateScript = nix-update-script {
-    extraArgs = [
-      "--version-regex"
-      "${pname}-v(.*)"
-    ];
-  };
-
-  meta = {
-    description = "AXI-compliant task/backlog CLI with token-efficient TOON output and pluggable backends";
-    homepage = "https://github.com/kunchenguid/tasks-axi";
-    license = lib.licenses.mit;
-    mainProgram = "tasks-axi";
-    platforms = [ "x86_64-linux" ];
-  };
+  packageLock = ./package-lock.json;
+  description = "AXI-compliant task/backlog CLI with token-efficient TOON output and pluggable backends";
 }
