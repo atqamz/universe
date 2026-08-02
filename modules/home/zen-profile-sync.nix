@@ -1,6 +1,14 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  hostname,
+  ...
+}:
 let
   recipient = "age14ye9kvq4prahqgjntj5tv2gfg2d8kxsv79vfusxzzw8ssezfyqeq8hh94e";
+  pushHost = "sfx14";
+  isPushHost = hostname == pushHost;
 
   common = ''
     REPO="$HOME/.local/share/zen-profile"
@@ -83,11 +91,14 @@ let
         [ -f "$HOME/.config/zen/profiles.ini" ] || die "headless profile seed failed"
       }
 
-      if zen_running; then die "close Zen before pull (last-push-wins clobbers live session)"; fi
+      if zen_running; then
+        echo "zen-profile: Zen running, pull skipped"
+        exit 0
+      fi
       [ -f "$IDENTITY" ] || die "no identity at $IDENTITY - provision from vault"
       ensure_repo
       git -C "$REPO" pull --ff-only
-      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet - run zen-profile-push first"
+      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet - run zen-profile-push on ${pushHost} first"
       ensure_profile
       pdir="$(profile_dir)"
       tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
@@ -113,20 +124,31 @@ let
     text = ''
       ${common}
       FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
-      if zen_running; then die "close Zen before push"; fi
       ensure_repo
-      pdir="$(profile_dir)"
-      tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
-      present=()
-      for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
-      [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
-      tar czf "$tmp" -C "$pdir" "''${present[@]}"
-      age -r "${recipient}" -o "$REPO/$BLOB" "$tmp"
-      git -C "$REPO" add "$BLOB"
-      if git -C "$REPO" diff --cached --quiet; then
-        echo "zen-profile: no changes"; exit 0
+
+      if zen_running; then
+        echo "zen-profile: Zen running, snapshot skipped"
+      else
+        pdir="$(profile_dir)"
+        tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+        present=()
+        for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
+        [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
+        tar czf "$tmp" -C "$pdir" "''${present[@]}"
+        age -r "${recipient}" -o "$REPO/$BLOB" "$tmp"
+        git -C "$REPO" add "$BLOB"
+        if git -C "$REPO" diff --cached --quiet; then
+          echo "zen-profile: no changes"
+        else
+          git -C "$REPO" -c commit.gpgsign=false \
+            commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
+        fi
       fi
-      git -C "$REPO" commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
+
+      if [ -z "$(git -C "$REPO" log --oneline '@{u}..' 2>/dev/null)" ]; then
+        echo "zen-profile: nothing to push"
+        exit 0
+      fi
       git -C "$REPO" push
       echo "zen-profile: pushed"
     '';
@@ -152,41 +174,71 @@ let
   };
 in
 {
-  home.packages = [
-    pull
-    push
-  ];
+  home.packages = [ pull ] ++ lib.optional isPushHost push;
 
   systemd.user = {
-    services.zen-profile-sync = {
-      Unit.Description = "Pull Zen profile from sync repo";
-      Service = {
-        Type = "oneshot";
-        ExecStart = "${pull}/bin/zen-profile-pull";
+    services = {
+      zen-profile-sync = {
+        Unit = {
+          Description = "Pull Zen profile from sync repo";
+          OnFailure = [ "notify-failure@%n.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${pull}/bin/zen-profile-pull";
+        };
       };
-    };
-    timers.zen-profile-sync = {
-      Unit.Description = "Pull Zen profile on startup";
-      Timer = {
-        OnStartupSec = "1min";
-        Persistent = true;
+    }
+    // lib.optionalAttrs isPushHost {
+      zen-profile-push = {
+        Unit = {
+          Description = "Push Zen profile to sync repo";
+          After = [ "gpg-agent.service" ];
+          OnFailure = [ "notify-failure@%n.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${push}/bin/zen-profile-push";
+        };
       };
-      Install.WantedBy = [ "timers.target" ];
+
+      zen-profile-logout-push = {
+        Unit = {
+          Description = "Push Zen profile on logout";
+          After = [ "gpg-agent.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.coreutils}/bin/true";
+          ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
+          TimeoutStopSec = "120s";
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
     };
 
-    services.zen-profile-push = {
-      Unit = {
-        Description = "Push Zen profile on logout";
-        After = [ "gpg-agent.service" ];
+    timers = {
+      zen-profile-sync = {
+        Unit.Description = "Periodic Zen profile pull";
+        Timer = {
+          OnStartupSec = "1min";
+          OnUnitActiveSec = "1h";
+          Persistent = true;
+        };
+        Install.WantedBy = [ "timers.target" ];
       };
-      Service = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.coreutils}/bin/true";
-        ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
-        TimeoutStopSec = "120s";
+    }
+    // lib.optionalAttrs isPushHost {
+      zen-profile-push = {
+        Unit.Description = "Periodic Zen profile push";
+        Timer = {
+          OnStartupSec = "3min";
+          OnUnitActiveSec = "30min";
+          Persistent = true;
+        };
+        Install.WantedBy = [ "timers.target" ];
       };
-      Install.WantedBy = [ "default.target" ];
     };
   };
 }
