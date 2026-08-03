@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
+{ config, pkgs, ... }:
 let
   tokenFile = "${config.home.homeDirectory}/.config/nix/access-tokens.conf";
 
@@ -32,28 +27,15 @@ in
     tarball-ttl = 0
   '';
 
-  home.activation.nixAccessToken = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${writeToken}/bin/nix-access-token-write || true
-  '';
-
-  systemd.user.services.nix-access-token = {
-    Unit = {
-      Description = "Write the GitHub token nix reads for flake fetches";
-      OnFailure = [ "notify-failure@%n.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${writeToken}/bin/nix-access-token-write";
-    };
-  };
-
-  systemd.user.timers.nix-access-token = {
-    Unit.Description = "Refresh nix's GitHub token";
-    Timer = {
+  services.userTimers.nix-access-token = {
+    description = "Write the GitHub token nix reads for flake fetches";
+    timerDescription = "Refresh nix's GitHub token";
+    command = "${writeToken}/bin/nix-access-token-write";
+    onActivation = "try";
+    timer = {
       OnStartupSec = "30s";
       OnUnitActiveSec = "1d";
       Persistent = true;
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }

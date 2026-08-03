@@ -1,43 +1,24 @@
-{
-  pkgs,
-  lib,
-  ...
-}:
+{ pkgs, ... }:
 let
-  runtime = [ pkgs.rtk ];
-
   ensure = pkgs.writeShellApplication {
     name = "rtk-init";
-    runtimeInputs = runtime;
+    runtimeInputs = [ pkgs.rtk ];
     text = ''
       rtk init -g --hook-only --auto-patch || true
     '';
   };
 in
 {
-  home.activation.rtkInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${ensure}/bin/rtk-init
-  '';
-
-  systemd.user.services.rtk-init = {
-    Unit = {
-      Description = "Re-apply rtk hook for Claude Code";
-      OnFailure = [ "notify-failure@%n.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${ensure}/bin/rtk-init";
-    };
-  };
-
-  systemd.user.timers.rtk-init = {
-    Unit.Description = "Daily rtk hook refresh";
-    Timer = {
+  services.userTimers.rtk-init = {
+    description = "Re-apply rtk hook for Claude Code";
+    timerDescription = "Daily rtk hook refresh";
+    command = "${ensure}/bin/rtk-init";
+    onActivation = "run";
+    timer = {
       OnStartupSec = "10min";
       OnCalendar = "daily";
       RandomizedDelaySec = "30min";
       Persistent = true;
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }

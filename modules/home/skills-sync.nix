@@ -29,24 +29,14 @@ in
 {
   home.packages = [ sync ];
 
-  systemd.user.services.skills-sync = {
-    Unit = {
-      Description = "Sync global agent skills";
-      OnFailure = [ "notify-failure@%n.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${sync}/bin/skills-sync";
-    };
-  };
-
-  systemd.user.timers.skills-sync = {
-    Unit.Description = "Periodic global agent skills sync";
-    Timer = {
+  services.userTimers.skills-sync = {
+    description = "Sync global agent skills";
+    timerDescription = "Periodic global agent skills sync";
+    command = "${sync}/bin/skills-sync";
+    timer = {
       OnStartupSec = "3min";
       OnUnitActiveSec = "1d";
       Persistent = true;
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }

@@ -4,6 +4,7 @@ _: {
     ./nix-access-token.nix
     ./notify-failure.nix
     ./repo-sync.nix
+    ./user-timers.nix
   ];
 
   home = {

@@ -9,26 +9,15 @@ let
   };
 in
 {
-  systemd.user = {
-    services.eye-break = {
-      Unit = {
-        Description = "Remind me to look away from the screen";
-        ConditionEnvironment = "WAYLAND_DISPLAY";
-        OnFailure = [ "notify-failure@%n.service" ];
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = lib.getExe eyeBreak;
-      };
-    };
-
-    timers.eye-break = {
-      Unit.Description = "Remind me to look away from the screen every 20 minutes";
-      Timer = {
-        OnActiveSec = "20min";
-        OnUnitActiveSec = "20min";
-      };
-      Install.WantedBy = [ "graphical-session.target" ];
+  services.userTimers.eye-break = {
+    description = "Remind me to look away from the screen";
+    timerDescription = "Remind me to look away from the screen every 20 minutes";
+    command = lib.getExe eyeBreak;
+    unitExtra.ConditionEnvironment = "WAYLAND_DISPLAY";
+    wantedBy = [ "graphical-session.target" ];
+    timer = {
+      OnActiveSec = "20min";
+      OnUnitActiveSec = "20min";
     };
   };
 }

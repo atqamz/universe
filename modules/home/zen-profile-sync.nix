@@ -176,69 +176,46 @@ in
 {
   home.packages = [ pull ] ++ lib.optional isPushHost push;
 
-  systemd.user = {
-    services = {
-      zen-profile-sync = {
-        Unit = {
-          Description = "Pull Zen profile from sync repo";
-          OnFailure = [ "notify-failure@%n.service" ];
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${pull}/bin/zen-profile-pull";
-        };
-      };
-    }
-    // lib.optionalAttrs isPushHost {
-      zen-profile-push = {
-        Unit = {
-          Description = "Push Zen profile to sync repo";
-          After = [ "gpg-agent.service" ];
-          OnFailure = [ "notify-failure@%n.service" ];
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${push}/bin/zen-profile-push";
-        };
-      };
-
-      zen-profile-logout-push = {
-        Unit = {
-          Description = "Push Zen profile on logout";
-          After = [ "gpg-agent.service" ];
-        };
-        Service = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStart = "${pkgs.coreutils}/bin/true";
-          ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
-          TimeoutStopSec = "120s";
-        };
-        Install.WantedBy = [ "default.target" ];
+  services.userTimers = {
+    zen-profile-sync = {
+      description = "Pull Zen profile from sync repo";
+      timerDescription = "Periodic Zen profile pull";
+      command = "${pull}/bin/zen-profile-pull";
+      timer = {
+        OnStartupSec = "1min";
+        OnUnitActiveSec = "1h";
+        Persistent = true;
       };
     };
+  }
+  // lib.optionalAttrs isPushHost {
+    zen-profile-push = {
+      description = "Push Zen profile to sync repo";
+      timerDescription = "Periodic Zen profile push";
+      command = "${push}/bin/zen-profile-push";
+      unitExtra.After = [ "gpg-agent.service" ];
+      timer = {
+        OnStartupSec = "3min";
+        OnUnitActiveSec = "30min";
+        Persistent = true;
+      };
+    };
+  };
 
-    timers = {
-      zen-profile-sync = {
-        Unit.Description = "Periodic Zen profile pull";
-        Timer = {
-          OnStartupSec = "1min";
-          OnUnitActiveSec = "1h";
-          Persistent = true;
-        };
-        Install.WantedBy = [ "timers.target" ];
+  systemd.user.services = lib.optionalAttrs isPushHost {
+    zen-profile-logout-push = {
+      Unit = {
+        Description = "Push Zen profile on logout";
+        After = [ "gpg-agent.service" ];
       };
-    }
-    // lib.optionalAttrs isPushHost {
-      zen-profile-push = {
-        Unit.Description = "Periodic Zen profile push";
-        Timer = {
-          OnStartupSec = "3min";
-          OnUnitActiveSec = "30min";
-          Persistent = true;
-        };
-        Install.WantedBy = [ "timers.target" ];
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/true";
+        ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
+        TimeoutStopSec = "120s";
       };
+      Install.WantedBy = [ "default.target" ];
     };
   };
 }

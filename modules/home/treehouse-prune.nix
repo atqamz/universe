@@ -17,25 +17,15 @@ let
   };
 in
 {
-  systemd.user.services.treehouse-prune = {
-    Unit = {
-      Description = "Prune stale treehouse worktree pools";
-      OnFailure = [ "notify-failure@%n.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      WorkingDirectory = config.home.homeDirectory;
-      ExecStart = "${prune}/bin/treehouse-prune";
-    };
-  };
-
-  systemd.user.timers.treehouse-prune = {
-    Unit.Description = "Weekly treehouse worktree pool prune";
-    Timer = {
+  services.userTimers.treehouse-prune = {
+    description = "Prune stale treehouse worktree pools";
+    timerDescription = "Weekly treehouse worktree pool prune";
+    command = "${prune}/bin/treehouse-prune";
+    serviceExtra.WorkingDirectory = config.home.homeDirectory;
+    timer = {
       OnCalendar = "weekly";
       RandomizedDelaySec = "30min";
       Persistent = true;
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }

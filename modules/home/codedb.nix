@@ -1,9 +1,4 @@
-{
-  pkgs,
-  lib,
-  config,
-  ...
-}:
+{ pkgs, config, ... }:
 let
   bin = "${config.home.profileDirectory}/bin/codedb";
 
@@ -27,29 +22,16 @@ let
   };
 in
 {
-  home.activation.codedbRegister = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${ensure}/bin/codedb-register
-  '';
-
-  systemd.user.services.codedb-register = {
-    Unit = {
-      Description = "Register codedb MCP server for Claude Code";
-      OnFailure = [ "notify-failure@%n.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${ensure}/bin/codedb-register";
-    };
-  };
-
-  systemd.user.timers.codedb-register = {
-    Unit.Description = "Daily codedb MCP registration refresh";
-    Timer = {
+  services.userTimers.codedb-register = {
+    description = "Register codedb MCP server for Claude Code";
+    timerDescription = "Daily codedb MCP registration refresh";
+    command = "${ensure}/bin/codedb-register";
+    onActivation = "run";
+    timer = {
       OnStartupSec = "10min";
       OnCalendar = "daily";
       RandomizedDelaySec = "30min";
       Persistent = true;
     };
-    Install.WantedBy = [ "timers.target" ];
   };
 }

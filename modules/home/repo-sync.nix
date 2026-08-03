@@ -121,34 +121,19 @@ in
 {
   home.packages = [ githubSync ];
 
-  systemd.user.services = lib.listToAttrs (
-    map (unit: {
-      name = "${unit.name}-sync";
-      value = {
-        Unit = {
-          Description = "Pull ${unit.description}";
-          OnFailure = [ "notify-failure@%n.service" ];
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = unit.bin;
-        };
-      };
-    }) units
-  );
-
-  systemd.user.timers = lib.listToAttrs (
-    map (unit: {
-      name = "${unit.name}-sync";
-      value = {
-        Unit.Description = "Periodic ${unit.name} sync";
-        Timer = {
+  services.userTimers = lib.listToAttrs (
+    map (
+      unit:
+      lib.nameValuePair "${unit.name}-sync" {
+        description = "Pull ${unit.description}";
+        timerDescription = "Periodic ${unit.name} sync";
+        command = unit.bin;
+        timer = {
           OnStartupSec = "2min";
           OnUnitActiveSec = unit.interval;
           Persistent = true;
         };
-        Install.WantedBy = [ "timers.target" ];
-      };
-    }) units
+      }
+    ) units
   );
 }
