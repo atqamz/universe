@@ -46,6 +46,8 @@ jobs:
       - name: update package
         id: update
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           before=$(git rev-parse HEAD)
           nix shell nixpkgs#nix-update -c nix-update \
             --flake --commit \
