@@ -30,19 +30,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         package: ${{ fromJSON(needs.list.outputs.packages) }}
     env:
       PACKAGE: ${{ matrix.package }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
       - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+        with:
+          name: atqamz-universe
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: update package
         id: update
         run: |
@@ -58,23 +63,11 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: create pr
-        id: pr
+      - name: flake check
+        if: steps.update.outputs.changed == 'true'
+        run: nix flake check --print-build-logs
+      - name: push to main
         if: steps.update.outputs.changed == 'true'
         run: |
-          version=$(nix eval --raw ".#$PACKAGE.version")
-          branch="update-$PACKAGE-$version"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          git checkout -b "$branch"
-          git push -u origin "$branch"
-          gh pr create \
-            --title "build(deps): bump $PACKAGE to $version" \
-            --body "Automated update by nix-update." \
-            --assignee atqamz
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: drop branch if no pr was opened
-        if: failure() && steps.pr.outputs.branch != ''
-        run: git push origin --delete "${{ steps.pr.outputs.branch }}" || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git pull --rebase origin main
+          git push origin HEAD:main

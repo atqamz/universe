@@ -1,4 +1,4 @@
-name: Auto-merge automated PRs
+name: Auto-merge dependabot PRs
 
 on:
   workflow_run:
@@ -14,8 +14,7 @@ jobs:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
-      (startsWith(github.event.workflow_run.head_branch, 'dependabot/') ||
-       startsWith(github.event.workflow_run.head_branch, 'update-'))
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
     runs-on: ubuntu-latest
     steps:
       - name: merge the pr for this branch
