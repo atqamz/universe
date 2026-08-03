@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   list:
@@ -15,8 +14,8 @@ jobs:
     outputs:
       packages: ${{ steps.list.outputs.packages }}
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: cachix/install-nix-action@v31.11.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -29,39 +28,51 @@ jobs:
   update:
     needs: list
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     strategy:
       fail-fast: false
       matrix:
         package: ${{ fromJSON(needs.list.outputs.packages) }}
+    env:
+      PACKAGE: ${{ matrix.package }}
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: cachix/install-nix-action@v31.11.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - name: update package
         id: update
         run: |
+          before=$(git rev-parse HEAD)
           nix shell nixpkgs#nix-update -c nix-update \
             --flake --commit \
-            --override-filename "pkgs/${{ matrix.package }}/default.nix" \
-            "${{ matrix.package }}"
-          if git diff --quiet HEAD~1; then
+            --override-filename "pkgs/$PACKAGE/default.nix" \
+            "$PACKAGE"
+          if [ "$(git rev-parse HEAD)" = "$before" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - name: create pr
+        id: pr
         if: steps.update.outputs.changed == 'true'
         run: |
-          version=$(nix eval --raw ".#${{ matrix.package }}.version")
-          branch="update-${{ matrix.package }}-${version}"
+          version=$(nix eval --raw ".#$PACKAGE.version")
+          branch="update-$PACKAGE-$version"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
           git checkout -b "$branch"
           git push -u origin "$branch"
           gh pr create \
-            --title "build(deps): bump ${{ matrix.package }} to ${version}" \
+            --title "build(deps): bump $PACKAGE to $version" \
             --body "Automated update by nix-update." \
             --assignee atqamz
-          gh pr merge --auto --merge "$branch"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: drop branch if no pr was opened
+        if: failure() && steps.pr.outputs.branch != ''
+        run: git push origin --delete "${{ steps.pr.outputs.branch }}" || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
