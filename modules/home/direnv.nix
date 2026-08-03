@@ -1,6 +1,7 @@
-_: {
+{ config, ... }:
+{
   home.file.".config/direnv/direnv.toml".text = ''
     [whitelist]
-    prefix = ["/home/atqa/.treehouse"]
+    prefix = ["${config.home.homeDirectory}/.treehouse"]
   '';
 }

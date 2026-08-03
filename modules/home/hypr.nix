@@ -5,5 +5,6 @@ _: {
     enable = true;
     systemd.enable = false;
     package = null;
+    portalPackage = null;
   };
 }
