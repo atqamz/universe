@@ -9,7 +9,8 @@
 set -euo pipefail
 
 [ -n "${PREFIX:-}" ] && [ -d "$PREFIX" ] || {
-  echo "Not running inside Termux (\$PREFIX unset). Aborting." >&2
+  # shellcheck disable=SC2016
+  echo 'Not running inside Termux ($PREFIX unset). Aborting.' >&2
   exit 1
 }
 
@@ -32,7 +33,10 @@ auth="$HOME/.ssh/authorized_keys"
 touch "$auth"
 chmod 600 "$auth"
 keys="$(curl -fsSL "https://github.com/$GH_USER.keys")"
-[ -n "$keys" ] || { echo "No keys returned for $GH_USER" >&2; exit 1; }
+[ -n "$keys" ] || {
+  echo "No keys returned for $GH_USER" >&2
+  exit 1
+}
 while IFS= read -r key; do
   [ -n "$key" ] || continue
   grep -qxF "$key" "$auth" || echo "$key" >>"$auth"

@@ -8,6 +8,7 @@ build.log
 
 .direnv/
 
+.impeccable/
 .superpowers/
 docs/superpowers/
 docs/audits/
