@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   root = "${config.home.homeDirectory}/dotagents";
   claude = "${root}/claude";
@@ -10,10 +10,6 @@ in
     ".claude/AGENTS.md".source = link "${root}/AGENTS.md";
     ".claude/fetch-usage.sh".source = link "${claude}/fetch-usage.sh";
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
-    ".claude/settings.json" = {
-      source = link "${claude}/settings.json";
-      force = true;
-    };
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
     ".config/opencode/opencode.json" = {
@@ -21,4 +17,8 @@ in
       force = true;
     };
   };
+
+  home.activation.claudeSettingsLink = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ln -sfn "${claude}/settings.json" "${config.home.homeDirectory}/.claude/settings.json"
+  '';
 }
