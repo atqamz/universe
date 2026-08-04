@@ -7,6 +7,8 @@
 }:
 let
   recipient = "age14ye9kvq4prahqgjntj5tv2gfg2d8kxsv79vfusxzzw8ssezfyqeq8hh94e";
+  committerName = "zen-profile-sync";
+  committerEmail = "zen-profile-sync@users.noreply.github.com";
   pushHost = "sfx14";
   isPushHost = hostname == pushHost;
 
@@ -140,7 +142,10 @@ let
         if git -C "$REPO" diff --cached --quiet; then
           echo "zen-profile: no changes"
         else
-          git -C "$REPO" -c commit.gpgsign=false \
+          git -C "$REPO" \
+            -c commit.gpgsign=false \
+            -c user.name="${committerName}" \
+            -c user.email="${committerEmail}" \
             commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
         fi
       fi
