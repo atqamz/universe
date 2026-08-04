@@ -25,7 +25,7 @@ buildNpmPackage rec {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-vaTCRPjxScnOUaT9bhaGqMy5PrDIFXJsetnacF/nl8A=";
+  npmDepsHash = "sha256-J11B/PeRD1wmetp7Vi6yiT77xmgicM8pB4dP+hoQKws=";
 
   npmFlags = [ "--ignore-scripts" ];
 
