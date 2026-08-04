@@ -62,11 +62,6 @@ in
       rtk
       codedb
       no-mistakes
-      tasks-axi
-      gh-axi
-      lavish-axi
-      chrome-devtools-axi
-      quota-axi
       qmd
       bibata-cursors
       jq
