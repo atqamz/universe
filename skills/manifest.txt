@@ -1,9 +1,4 @@
 dietrichgebert/ponytail
 juliusbrussee/caveman
-kunchenguid/chrome-devtools-axi
-kunchenguid/gh-axi
-kunchenguid/lavish-axi
-kunchenguid/quota-axi
-kunchenguid/tasks-axi
 obra/superpowers
 pbakaus/impeccable
