@@ -52,6 +52,7 @@ in
       nodeShim
       npxShim
       claude
+      codex
       (pkgs.opencode.overrideAttrs (_: {
         installPhase =
           builtins.replaceStrings [ "--set OPENCODE_DISABLE_AUTOUPDATE true" ] [ "" ]
@@ -70,6 +71,7 @@ in
       gh
       firebase-tools
       google-cloud-sdk
+      gws
       git-lfs
       hyprpicker
       grim
