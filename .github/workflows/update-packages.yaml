@@ -54,8 +54,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           before=$(git rev-parse HEAD)
+          update_args=()
+          if [ "$PACKAGE" = "unity-cli" ]; then
+            update_args+=(--use-update-script)
+          fi
           nix shell nixpkgs#nix-update -c nix-update \
-            --flake --commit \
+            --flake --commit "${update_args[@]}" \
             --override-filename "pkgs/$PACKAGE/default.nix" \
             "$PACKAGE"
           if [ "$(git rev-parse HEAD)" = "$before" ]; then

@@ -5,8 +5,12 @@
   autoPatchelfHook,
   makeWrapper,
   cacert,
+  curl,
   gnupg,
+  jq,
+  nix-update,
   unzip,
+  writeShellApplication,
 }:
 let
   platform =
@@ -21,6 +25,22 @@ let
       };
     }
     .${stdenv.hostPlatform.system};
+
+  updateScript = writeShellApplication {
+    name = "update-unity-cli";
+    runtimeInputs = [
+      curl
+      jq
+      nix-update
+    ];
+    text = ''
+      version=$(curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/latest-beta.json | jq -er '.version | select(type == "string" and length > 0)')
+      exec nix-update --flake \
+        --override-filename pkgs/unity-cli/default.nix \
+        --version "$version" \
+        unity-cli
+    '';
+  };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "unity-cli";
@@ -28,7 +48,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://public-cdn.cloud.unity3d.com/hub/prod/cli/${finalAttrs.version}/unity-linux-${platform.arch}";
-    hash = platform.hash;
+    inherit (platform) hash;
   };
 
   nativeBuildInputs = [
@@ -46,12 +66,16 @@ stdenv.mkDerivation (finalAttrs: {
   installPhase = ''
     install -Dm755 $src $out/bin/.unity-unwrapped
     makeWrapper $out/bin/.unity-unwrapped $out/bin/unity \
-      --prefix PATH : ${lib.makeBinPath [
-        gnupg
-        unzip
-      ]} \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          gnupg
+          unzip
+        ]
+      } \
       --set-default SSL_CERT_FILE ${cacert}/etc/ssl/certs/ca-bundle.crt
   '';
+
+  passthru.updateScript = [ (lib.getExe updateScript) ];
 
   meta = {
     description = "Command-line interface for Unity Editors, projects, and Unity Cloud";

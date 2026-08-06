@@ -28,7 +28,7 @@ Unity Editors and their modules remain outside the Nix store. Commands such as `
 
 The package pins a beta version because Unity currently distributes the experimental CLI through its beta channel. A package-specific update script reads Unity's official `latest-beta.json`, extracts the published version, and invokes `nix-update` so both the version and fixed-output hash are refreshed.
 
-The weekly package workflow uses each package's `passthru.updateScript`. Existing local packages retain their current `nix-update-script` behavior, while Unity CLI can use its manifest-aware updater without a package-name special case in the workflow.
+The weekly package workflow opts Unity CLI into its `passthru.updateScript`. Existing local packages retain the workflow's direct `nix-update` behavior because their generic `nix-update-script` entries cannot re-enter this repository as a flake.
 
 The CLI's own `unity upgrade` command is not the update mechanism for this installation. The Nix store is immutable, and upgrades arrive through the repository's package update and rebuild flow.
 

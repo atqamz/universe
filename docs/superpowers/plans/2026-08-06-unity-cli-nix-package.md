@@ -4,7 +4,7 @@
 
 **Goal:** Package Unity CLI as a pinned Nix derivation and install it beside the existing Nix-managed Unity Hub without managing Unity Editors in the Nix store.
 
-**Architecture:** A local `unity-cli` package fetches Unity's versioned standalone binary, patches it for NixOS, and wraps its declared runtime tools. Home Manager installs that package and stops exposing the legacy user-installed binary; a manifest-aware updater integrates with the existing weekly package workflow.
+**Architecture:** A local `unity-cli` package fetches Unity's versioned standalone binary, patches it for NixOS, and wraps its declared runtime tools. Home Manager installs that package and stops exposing the legacy user-installed binary; a manifest-aware updater integrates with the existing weekly package workflow without changing other packages' update paths.
 
 **Tech Stack:** Nix, Home Manager, `stdenv.mkDerivation`, `autoPatchelfHook`, `makeWrapper`, `nix-update`, GitHub Actions.
 
@@ -141,10 +141,11 @@ git commit -m "feat(home): manage Unity CLI with Nix"
 **Files:**
 - Modify: `pkgs/unity-cli/default.nix`
 - Modify: `.github/workflows/update-packages.yaml`
+- Modify: `parts/packages.nix`
 
 **Interfaces:**
 - Consumes: `https://public-cdn.cloud.unity3d.com/hub/prod/cli/latest-beta.json` with string field `.version`.
-- Produces: `passthru.updateScript`, invoked by the weekly workflow through `nix-update --use-update-script`.
+- Produces: `passthru.updateScript`, invoked only for Unity CLI by the weekly workflow through `nix-update --use-update-script`.
 
 - [ ] **Step 1: Add the package-specific updater**
 
@@ -161,7 +162,9 @@ Expose the generated executable as a one-element `passthru.updateScript` list.
 
 - [ ] **Step 2: Make the weekly workflow honor package update scripts**
 
-Add `--use-update-script` to the existing `nix-update` invocation in `.github/workflows/update-packages.yaml`. Do not add a Unity-specific branch to the workflow.
+Build an `update_args` shell array in `.github/workflows/update-packages.yaml`. Add `--use-update-script` only when `PACKAGE` is `unity-cli`, then expand the array in the existing `nix-update` invocation. This preserves the direct updater path for existing packages whose generic update scripts cannot re-enter this repository as a flake.
+
+Import the per-system package set in `parts/packages.nix` with an `allowUnfreePredicate` limited to `unity-cli`, so flake package evaluation accepts the package's accurate proprietary license metadata without globally allowing unfree packages.
 
 - [ ] **Step 3: Verify updater evaluation and current-version behavior**
 
