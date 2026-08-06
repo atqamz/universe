@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   ...
 }:
 let
@@ -49,11 +48,9 @@ let
   '';
 in
 {
-  home = {
-    sessionPath = [ "${config.home.homeDirectory}/.unity/bin" ];
-    packages = [
-      unityhub
-      unity-editor
-    ];
-  };
+  home.packages = [
+    pkgs.unity-cli
+    unityhub
+    unity-editor
+  ];
 }
