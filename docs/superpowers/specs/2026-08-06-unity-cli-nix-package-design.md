@@ -10,7 +10,7 @@ The existing `~/.unity/bin` installation and `home.sessionPath` entry are no lon
 
 Add `pkgs/unity-cli/default.nix` and register it in `pkgs/default.nix`.
 
-The package fetches Unity's official versioned standalone Linux binary from the Unity CLI CDN with a fixed hash. It supports the Linux architectures published in Unity's release manifest, patches the ELF interpreter and runtime libraries for NixOS, and makes the binary available as `unity`.
+The package fetches Unity's official versioned x86-64 Linux binary from the Unity CLI CDN with a fixed hash, patches the ELF interpreter and runtime libraries for NixOS, and makes the binary available as `unity`. This matches the flake's declared `x86_64-linux` system and keeps its automated hash refresh verifiable.
 
 Runtime programs declared by Unity's Linux package, including GnuPG and `unzip`, are placed on the CLI's execution path. The wrapper sets `SSL_CERT_FILE` to the Nix-provided CA bundle by default while preserving an explicit user override.
 

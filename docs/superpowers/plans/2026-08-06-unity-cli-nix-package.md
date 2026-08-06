@@ -13,7 +13,7 @@
 - No comments in `.nix` files.
 - Nix owns only Unity Hub and Unity CLI; Unity owns Editors, modules, projects, authentication, and mutable state.
 - Fetch only Unity's official versioned standalone Linux binaries with fixed hashes.
-- Support `x86_64-linux` and `aarch64-linux`, the Linux architectures in Unity's beta manifest.
+- Support the flake's declared `x86_64-linux` system.
 - Preserve the existing Unity Hub GPU offload, FHS environment, desktop entry, and `unity-editor` launcher.
 - Do not delete anything under `~/.unity`.
 - Run `nix fmt`, then `nix flake check` before completion.
@@ -27,7 +27,7 @@
 - Modify: `pkgs/default.nix`
 
 **Interfaces:**
-- Consumes: Unity's `latest-beta.json` architecture names and fixed SHA-256 hashes.
+- Consumes: Unity's `latest-beta.json` version and fixed x86-64 SHA-256 hash.
 - Produces: flake package `unity-cli` with main executable `$out/bin/unity`.
 
 - [ ] **Step 1: Verify the package is absent**
@@ -42,13 +42,13 @@ Expected: FAIL because the flake has no `unity-cli` package.
 
 - [ ] **Step 2: Add the minimal derivation**
 
-Create `pkgs/unity-cli/default.nix` with an architecture table for `x86_64-linux` and `aarch64-linux`, version `1.0.0-beta.3`, and URLs of the form:
+Create `pkgs/unity-cli/default.nix` for `x86_64-linux`, version `1.0.0-beta.3`, and the URL:
 
 ```text
-https://public-cdn.cloud.unity3d.com/hub/prod/cli/1.0.0-beta.3/unity-linux-<arch>
+https://public-cdn.cloud.unity3d.com/hub/prod/cli/1.0.0-beta.3/unity-linux-x64
 ```
 
-Use `x64` with `sha256-m4mqpaZ26OW9ajhEqTmN77ljvTSVGGRFpGSkcFflTqM=` and `arm64` with `sha256-Idor+Y0W261V3Tuxh6AQCKz+CDlgdeSRiA2X2Bip7xE=`.
+Use `sha256-m4mqpaZ26OW9ajhEqTmN77ljvTSVGGRFpGSkcFflTqM=`.
 
 Use `fetchurl` with `executable = true`, install the source as `$out/bin/.unity-unwrapped`, and let `autoPatchelfHook` patch the copied ELF. Wrap it as `$out/bin/unity` with:
 

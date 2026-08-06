@@ -13,19 +13,6 @@
   writeShellApplication,
 }:
 let
-  platform =
-    {
-      x86_64-linux = {
-        arch = "x64";
-        hash = "sha256-m4mqpaZ26OW9ajhEqTmN77ljvTSVGGRFpGSkcFflTqM=";
-      };
-      aarch64-linux = {
-        arch = "arm64";
-        hash = "sha256-Idor+Y0W261V3Tuxh6AQCKz+CDlgdeSRiA2X2Bip7xE=";
-      };
-    }
-    .${stdenv.hostPlatform.system};
-
   updateScript = writeShellApplication {
     name = "update-unity-cli";
     runtimeInputs = [
@@ -47,8 +34,8 @@ stdenv.mkDerivation (finalAttrs: {
   version = "1.0.0-beta.3";
 
   src = fetchurl {
-    url = "https://public-cdn.cloud.unity3d.com/hub/prod/cli/${finalAttrs.version}/unity-linux-${platform.arch}";
-    inherit (platform) hash;
+    url = "https://public-cdn.cloud.unity3d.com/hub/prod/cli/${finalAttrs.version}/unity-linux-x64";
+    hash = "sha256-m4mqpaZ26OW9ajhEqTmN77ljvTSVGGRFpGSkcFflTqM=";
   };
 
   nativeBuildInputs = [
@@ -82,10 +69,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://docs.unity.com/en-us/unity-cli/use-unity-cli";
     license = lib.licenses.unfree;
     mainProgram = "unity";
-    platforms = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
+    platforms = [ "x86_64-linux" ];
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
 })
