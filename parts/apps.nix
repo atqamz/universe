@@ -108,7 +108,13 @@ _: {
             target="$2"
             path="$HOME/$relative"
             expected="$HOME/$target"
-            [ -L "$path" ] && [ "$(readlink -f "$path")" = "$(readlink -f "$expected")" ]
+
+            [ -L "$path" ] || return 1
+            [ -e "$expected" ] || return 1
+
+            actual="$(readlink -f -- "$path" 2>/dev/null)" || return 1
+            expected_real="$(readlink -f -- "$expected" 2>/dev/null)" || return 1
+            [ "$actual" = "$expected_real" ]
           }
 
           echo "== universe-doctor =="
