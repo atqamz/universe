@@ -12,7 +12,9 @@ let
     zenProfileWriter = osConfig.universe.roles.zenProfileWriter;
     timers = installed config.systemd.user.timers;
     services = installed config.systemd.user.services;
+    activeSystemServices = osConfig.universe.doctor.activeSystemServices;
     activeUserServices = config.universe.doctor.activeUserServices;
+    systemTimers = osConfig.universe.doctor.systemTimers;
     symlinks = config.universe.doctor.symlinks;
   };
 in

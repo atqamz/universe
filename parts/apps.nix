@@ -154,6 +154,16 @@ _: {
             check "$unit.service active" systemctl --user is-active "$unit.service"
           done < <(jq -r '.activeUserServices[]' "$manifest")
 
+          while IFS= read -r unit; do
+            [ -n "$unit" ] || continue
+            check "$unit.service active" systemctl is-active "$unit.service"
+          done < <(jq -r '.activeSystemServices[]' "$manifest")
+
+          while IFS= read -r unit; do
+            [ -n "$unit" ] || continue
+            check "$unit.timer enabled" systemctl is-enabled "$unit.timer"
+          done < <(jq -r '.systemTimers[]' "$manifest")
+
           while IFS=$'\t' read -r path target; do
             [ -n "$path" ] || continue
             check "$path direct symlink" check_link "$path" "$target"

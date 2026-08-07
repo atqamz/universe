@@ -233,6 +233,13 @@ let
   );
 in
 {
+  universe.doctor = {
+    activeSystemServices =
+      map (n: "github-runner-${toString n}") runnerIndices
+      ++ map (n: "github-runner-podman-${toString n}") runnerIndices;
+    systemTimers = [ "github-runner-token-refresh" ];
+  };
+
   users.users = {
     github-runner = {
       isSystemUser = true;

@@ -80,6 +80,11 @@ let
   };
 in
 {
+  universe.doctor.activeSystemServices = [
+    "gpu-undervolt"
+    "sfx14-power-default"
+  ];
+
   environment.systemPackages = [ powerMode ];
 
   hardware.i2c.enable = true;
