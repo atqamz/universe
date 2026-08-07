@@ -8,6 +8,7 @@ let
   dotnetSdk = pkgs.dotnet-sdk_10;
 
   zedTools = with pkgs; [
+    nixd
     nil
     go
     gopls

@@ -8,6 +8,7 @@ _: {
           config.treefmt.build.wrapper
           pkgs.statix
           pkgs.deadnix
+          pkgs.nixd
         ];
       };
     };

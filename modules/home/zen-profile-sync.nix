@@ -122,31 +122,49 @@ let
       gawk
       gnused
       procps
+      util-linux
     ];
     text = ''
       ${common}
+      LOCK="''${XDG_RUNTIME_DIR:-$HOME/.cache}/zen-profile-push.lock"
+      mkdir -p "$(dirname "$LOCK")"
+      exec 9>"$LOCK"
+      flock -n 9 || { echo "zen-profile: push already running"; exit 0; }
+
       FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
+      HASH_STATE="$REPO/.git/zen-profile-source.sha256"
       ensure_repo
 
       if zen_running; then
         echo "zen-profile: Zen running, snapshot skipped"
       else
         pdir="$(profile_dir)"
-        tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
         present=()
         for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
         [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
-        tar czf "$tmp" -C "$pdir" "''${present[@]}"
-        age -r "${recipient}" -o "$REPO/$BLOB" "$tmp"
-        git -C "$REPO" add "$BLOB"
-        if git -C "$REPO" diff --cached --quiet; then
-          echo "zen-profile: no changes"
+
+        profile_hash="$(
+          {
+            for f in "''${present[@]}"; do
+              printf '%s\0' "$f"
+              sha256sum <"$pdir/$f" | cut -d ' ' -f1
+            done
+          } | sha256sum | cut -d ' ' -f1
+        )"
+
+        if [ "$(cat "$HASH_STATE" 2>/dev/null || true)" = "$profile_hash" ]; then
+          echo "zen-profile: profile content unchanged"
         else
+          tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+          tar czf "$tmp" -C "$pdir" "''${present[@]}"
+          age -r "${recipient}" -o "$REPO/$BLOB" "$tmp"
+          git -C "$REPO" add "$BLOB"
           git -C "$REPO" \
             -c commit.gpgsign=false \
             -c user.name="${committerName}" \
             -c user.email="${committerEmail}" \
             commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
+          printf '%s\n' "$profile_hash" >"$HASH_STATE"
         fi
       fi
 
@@ -177,37 +195,69 @@ let
       zen-profile-push
     '';
   };
+
+  watchClose = pkgs.writeShellApplication {
+    name = "zen-profile-watch-close";
+    runtimeInputs = [
+      push
+      pkgs.procps
+      pkgs.coreutils
+    ];
+    text = ''
+      zen_alive() {
+        pgrep -x zen >/dev/null 2>&1 && return 0
+        pgrep -f '\.zen-wrapped' >/dev/null 2>&1 && return 0
+        pgrep -if 'zen-browser' >/dev/null 2>&1 && return 0
+        return 1
+      }
+
+      was_running=0
+      while true; do
+        if zen_alive; then
+          was_running=1
+        elif [ "$was_running" -eq 1 ]; then
+          echo "zen-profile: Zen closed, syncing profile"
+          if zen-profile-push; then
+            was_running=0
+          else
+            echo "zen-profile: close sync failed; retrying in 60s" >&2
+            sleep 60
+          fi
+        fi
+        sleep 5
+      done
+    '';
+  };
 in
 {
   home.packages = [ pull ] ++ lib.optional isPushHost push;
 
-  services.userTimers = {
-    zen-profile-sync = {
-      description = "Pull Zen profile from sync repo";
-      timerDescription = "Periodic Zen profile pull";
-      command = "${pull}/bin/zen-profile-pull";
-      timer = {
-        OnStartupSec = "1min";
-        OnUnitActiveSec = "1h";
-        Persistent = true;
-      };
-    };
-  }
-  // lib.optionalAttrs isPushHost {
-    zen-profile-push = {
-      description = "Push Zen profile to sync repo";
-      timerDescription = "Periodic Zen profile push";
-      command = "${push}/bin/zen-profile-push";
-      unitExtra.After = [ "gpg-agent.service" ];
-      timer = {
-        OnStartupSec = "3min";
-        OnUnitActiveSec = "30min";
-        Persistent = true;
-      };
+  services.userTimers.zen-profile-sync = {
+    description = "Pull Zen profile from sync repo";
+    timerDescription = "Periodic Zen profile pull";
+    command = "${pull}/bin/zen-profile-pull";
+    timer = {
+      OnStartupSec = "1min";
+      OnUnitActiveSec = "1h";
+      Persistent = true;
     };
   };
 
   systemd.user.services = lib.optionalAttrs isPushHost {
+    zen-profile-close-watcher = {
+      Unit = {
+        Description = "Push Zen profile after Zen closes";
+        After = [ "gpg-agent.service" ];
+      };
+      Service = {
+        ExecStart = "${watchClose}/bin/zen-profile-watch-close";
+        Restart = "on-failure";
+        RestartSec = "5s";
+        TimeoutStopSec = "10s";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+
     zen-profile-logout-push = {
       Unit = {
         Description = "Push Zen profile on logout";

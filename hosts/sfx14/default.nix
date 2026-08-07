@@ -19,8 +19,8 @@ let
       python3 ${gpuOffset}
     '';
   };
-  gamingPower = pkgs.writeShellApplication {
-    name = "gaming-power";
+  powerMode = pkgs.writeShellApplication {
+    name = "sfx14-power";
     runtimeInputs = [
       config.hardware.nvidia.package.bin
       pkgs.systemd
@@ -28,23 +28,41 @@ let
     ];
     text = ''
       rapl=/sys/class/powercap/intel-rapl:0
-      epp() { for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo "$1" >"$f"; done; }
+
+      set_rapl() {
+        echo "$1" >"$rapl/constraint_0_power_limit_uw"
+        echo "$2" >"$rapl/constraint_1_power_limit_uw"
+      }
+
+      epp() {
+        for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+          echo "$1" >"$f"
+        done
+      }
+
       case "''${1:-}" in
-        on)
-          echo 25000000 >"$rapl/constraint_0_power_limit_uw"
-          echo 30000000 >"$rapl/constraint_1_power_limit_uw"
+        normal)
+          set_rapl 20000000 20000000
+          systemctl start undervolt.timer
+          systemctl restart gpu-undervolt.service
+          powerprofilesctl set balanced
+          epp balance_power
+          ;;
+        low)
+          systemctl stop undervolt.timer
+          set_rapl 15000000 15000000
+          powerprofilesctl set power-saver
+          epp power
+          ;;
+        high)
+          systemctl stop undervolt.timer
+          set_rapl 25000000 25000000
           powerprofilesctl set balanced
           epp balance_performance
           nvidia-smi -lgc 210,1300
           ;;
-        off)
-          systemctl restart gpu-undervolt.service
-          systemctl start undervolt.timer
-          powerprofilesctl set balanced
-          epp balance_power
-          ;;
         *)
-          echo "usage: gaming-power on|off" >&2
+          echo "usage: sfx14-power low|normal|high" >&2
           exit 1
           ;;
       esac
@@ -66,16 +84,25 @@ in
     extraModprobeConfig = "options acer_wmi_battery enable_health_mode=1";
   };
 
-  hardware.nvidia.prime = {
-    intelBusId = "PCI:0:2:0";
-    nvidiaBusId = "PCI:1:0:0";
+  hardware = {
+    graphics.extraPackages = with pkgs; [
+      intel-media-driver
+      vpl-gpu-rt
+    ];
+    nvidia.prime = {
+      intelBusId = "PCI:0:2:0";
+      nvidiaBusId = "PCI:1:0:0";
+    };
   };
 
-  environment.systemPackages = [ gamingPower ];
+  environment = {
+    sessionVariables.LIBVA_DRIVER_NAME = "iHD";
+    systemPackages = [ powerMode ];
+  };
 
   programs.gamemode.settings.custom = {
-    start = "/run/wrappers/bin/sudo /run/current-system/sw/bin/gaming-power on";
-    end = "/run/wrappers/bin/sudo /run/current-system/sw/bin/gaming-power off";
+    start = "/run/wrappers/bin/sudo /run/current-system/sw/bin/sfx14-power high";
+    end = "/run/wrappers/bin/sudo /run/current-system/sw/bin/sfx14-power normal";
   };
 
   security.sudo.extraRules = [
@@ -83,7 +110,7 @@ in
       users = [ "atqa" ];
       commands = [
         {
-          command = "/run/current-system/sw/bin/gaming-power";
+          command = "/run/current-system/sw/bin/sfx14-power";
           options = [ "NOPASSWD" ];
         }
       ];
@@ -106,11 +133,11 @@ in
     enable = true;
     useTimer = true;
     p1 = {
-      limit = 25;
+      limit = 20;
       window = 28.0;
     };
     p2 = {
-      limit = 25;
+      limit = 20;
       window = 2.44;
     };
   };
