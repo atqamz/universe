@@ -1,12 +1,5 @@
 _: {
-  imports = [ ../../modules/nixos/github-runner.nix ];
-
-  services.orgRunner = {
-    enable = true;
-    count = 4;
-    memory = "7g";
-    cpus = "2.5";
-  };
+  imports = [ ./runner.nix ];
 
   hardware.nvidia.prime = {
     amdgpuBusId = "PCI:5:0:0";
