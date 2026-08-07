@@ -5,13 +5,13 @@
   hostModule ? ../hosts/${hostname},
   fullHostModule ? ../hosts/${hostname}/full.nix,
   nixosModule ? if minimal then ../modules/nixos/minimal.nix else ../modules/nixos,
-  homeModule ? if minimal then ../modules/home/minimal.nix else ../modules/home,
+  homeModule ? ../modules/home,
 }:
 let
   lib = inputs.nixpkgs.lib;
 in
 lib.nixosSystem {
-  specialArgs = { inherit inputs hostname; };
+  specialArgs = { inherit inputs hostname minimal; };
   modules = [
     hostModule
   ]
@@ -19,10 +19,14 @@ lib.nixosSystem {
   ++ [
     nixosModule
     inputs.disko.nixosModules.disko
-    inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
     {
       nixpkgs.hostPlatform = "x86_64-linux";
+    }
+  ]
+  ++ lib.optionals (!minimal) [
+    inputs.home-manager.nixosModules.home-manager
+    {
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;

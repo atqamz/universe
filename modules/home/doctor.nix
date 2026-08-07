@@ -33,5 +33,5 @@ in
     };
   };
 
-  xdg.configFile."universe/doctor.json".text = builtins.toJSON manifest;
+  config.xdg.configFile."universe/doctor.json".text = builtins.toJSON manifest;
 }

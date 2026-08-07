@@ -26,7 +26,7 @@ Do not preserve an abstraction merely because it already exists: every abstracti
 
 ## Host composition
 
-- A `-minimal` configuration may import only `hosts/<host>/default.nix`, `modules/nixos/minimal.nix`, and `modules/home/minimal.nix` plus the flake integration modules. Full-only host code belongs in `hosts/<host>/full.nix` or a module imported from it (`docs/adr/0006-minimal-host-variants.md`).
+- A `-minimal` configuration may import only `hosts/<host>/default.nix` and `modules/nixos/minimal.nix` plus the flake integration modules; it must not import Home Manager. `modules/home/minimal.nix` is the base layer of the full Home Manager configuration only. Full-only host code belongs in `hosts/<host>/full.nix` or a module imported from it (`docs/adr/0006-minimal-host-variants.md`).
 - Shared modules consume `universe.capabilities.*` or `universe.roles.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/caelestia/hosts/${hostname}.json`.
 - Host-specific services belong with the host when there is only one real consumer. Do not build a generic option layer around one machine's job merely to make the file look reusable.
 

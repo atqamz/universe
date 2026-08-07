@@ -11,8 +11,6 @@
     ./users.nix
   ];
 
-  programs.nix-ld.enable = true;
-
   environment.systemPackages = with pkgs; [
     curl
     htop

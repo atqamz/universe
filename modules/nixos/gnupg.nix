@@ -1,4 +1,8 @@
-{ pkgs, ... }:
+{
+  minimal ? false,
+  pkgs,
+  ...
+}:
 let
   pinentryAuto = pkgs.writeShellScriptBin "pinentry" ''
     if [ -n "''${WAYLAND_DISPLAY:-}" ] || [ -n "''${DISPLAY:-}" ]; then
@@ -11,7 +15,7 @@ in
   programs.gnupg.agent = {
     enable = true;
     enableSSHSupport = true;
-    pinentryPackage = pinentryAuto;
+    pinentryPackage = if minimal then pkgs.pinentry-curses else pinentryAuto;
     settings = {
       "allow-preset-passphrase" = "";
       default-cache-ttl = 86400;
