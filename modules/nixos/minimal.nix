@@ -1,17 +1,14 @@
 { pkgs, ... }:
 {
   imports = [
+    ./universe.nix
     ./boot.nix
-    ./earlyoom.nix
     ./gnupg.nix
-    ./gpu.nix
     ./locale.nix
     ./network.nix
     ./nix.nix
-    ./power.nix
     ./secrets.nix
     ./users.nix
-    ./virtualisation.nix
   ];
 
   programs.nix-ld.enable = true;

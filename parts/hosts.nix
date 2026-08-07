@@ -6,8 +6,7 @@ let
     "${name}" = mkHost { hostname = name; };
     "${name}-minimal" = mkHost {
       hostname = name;
-      nixosModule = ../modules/nixos/minimal.nix;
-      homeModule = ../modules/home/minimal.nix;
+      minimal = true;
     };
   };
 in

@@ -1,13 +1,22 @@
 { inputs }:
 {
   hostname,
-  nixosModule ? ../modules/nixos,
-  homeModule ? ../modules/home,
+  minimal ? false,
+  hostModule ? ../hosts/${hostname},
+  fullHostModule ? ../hosts/${hostname}/full.nix,
+  nixosModule ? if minimal then ../modules/nixos/minimal.nix else ../modules/nixos,
+  homeModule ? if minimal then ../modules/home/minimal.nix else ../modules/home,
 }:
-inputs.nixpkgs.lib.nixosSystem {
+let
+  lib = inputs.nixpkgs.lib;
+in
+lib.nixosSystem {
   specialArgs = { inherit inputs hostname; };
   modules = [
-    ../hosts/${hostname}
+    hostModule
+  ]
+  ++ lib.optional (!minimal) fullHostModule
+  ++ [
     nixosModule
     inputs.disko.nixosModules.disko
     inputs.home-manager.nixosModules.home-manager

@@ -1,12 +1,4 @@
 _: {
-  imports = [
-    ./dotagents.nix
-    ./nix-access-token.nix
-    ./notify-failure.nix
-    ./repo-sync.nix
-    ./user-timers.nix
-  ];
-
   home = {
     username = "atqa";
     homeDirectory = "/home/atqa";

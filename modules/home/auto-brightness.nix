@@ -1,11 +1,10 @@
-{ hostname, lib, ... }:
+{ lib, osConfig, ... }:
 let
-  alsHost = "sfx14";
-  hasAls = hostname == alsHost;
+  enabled = osConfig.universe.capabilities.ambientLight;
 in
 {
   services.wluma = {
-    enable = hasAls;
+    inherit enable;
     settings = {
       als.iio = {
         path = "/sys/bus/iio/devices";
@@ -37,7 +36,7 @@ in
     };
   };
 
-  systemd.user.services = lib.mkIf hasAls {
+  systemd.user.services = lib.mkIf enabled {
     wluma.Unit.OnFailure = [ "notify-failure@%n.service" ];
   };
 }

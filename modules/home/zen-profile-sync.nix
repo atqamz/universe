@@ -2,7 +2,7 @@
   pkgs,
   config,
   lib,
-  hostname,
+  osConfig,
   ...
 }:
 let
@@ -10,7 +10,7 @@ let
   committerName = "zen-profile-sync";
   committerEmail = "zen-profile-sync@users.noreply.github.com";
   pushHost = "sfx14";
-  isPushHost = hostname == pushHost;
+  isPushHost = osConfig.universe.roles.zenProfileWriter;
 
   common = ''
     REPO="$HOME/.local/share/zen-profile"
