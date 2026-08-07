@@ -3,8 +3,11 @@ let
   passmenu = pkgs.writeShellApplication {
     name = "passmenu";
     runtimeInputs = with pkgs; [
-      pass
+      coreutils
+      findutils
       fuzzel
+      gnused
+      pass
       wl-clipboard
     ];
     text = ''

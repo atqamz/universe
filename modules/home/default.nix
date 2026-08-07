@@ -9,6 +9,7 @@ _: {
     ./codedb.nix
     ./cursor.nix
     ./direnv.nix
+    ./doctor.nix
     ./dotagents.nix
     ./dotfiles.nix
     ./eye-break.nix

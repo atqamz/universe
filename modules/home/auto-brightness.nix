@@ -36,6 +36,8 @@ in
     };
   };
 
+  universe.doctor.activeUserServices = lib.optional enabled "wluma";
+
   systemd.user.services = lib.mkIf enabled {
     wluma.Unit.OnFailure = [ "notify-failure@%n.service" ];
   };

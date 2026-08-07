@@ -9,12 +9,14 @@ let
   recipient = "age14ye9kvq4prahqgjntj5tv2gfg2d8kxsv79vfusxzzw8ssezfyqeq8hh94e";
   committerName = "zen-profile-sync";
   committerEmail = "zen-profile-sync@users.noreply.github.com";
-  pushHost = "sfx14";
   isPushHost = osConfig.universe.roles.zenProfileWriter;
 
   common = ''
     REPO="$HOME/.local/share/zen-profile"
     BLOB="zen-profile.tar.age"
+    IDENTITY="$HOME/.config/zen-profile/identity"
+    LOCK="''${XDG_RUNTIME_DIR:-$HOME/.cache}/zen-profile-sync.lock"
+    FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
 
     die() { echo "zen-profile: $*" >&2; exit 1; }
 
@@ -48,12 +50,20 @@ let
       return 1
     }
 
+    open_lock() {
+      mkdir -p "$(dirname "$LOCK")"
+      exec 9>"$LOCK"
+    }
+
+    git_auth() {
+      export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+      export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+    }
+
     ensure_repo() {
       [ -d "$REPO/.git" ] && return 0
-      local sock
-      sock="$(gpgconf --list-dirs agent-ssh-socket)"
-      GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" SSH_AUTH_SOCK="$sock" \
-        git clone git@github.com:atqamz/zen-profile.git "$REPO"
+      git_auth
+      git clone git@github.com:atqamz/zen-profile.git "$REPO"
     }
   '';
 
@@ -63,21 +73,23 @@ let
       config.programs.zen-browser.finalPackage
     ]
     ++ (with pkgs; [
-      git
-      gnupg
       age
-      gnutar
       coreutils
-      gnugrep
       gawk
+      git
+      gnugrep
+      gnupg
       gnused
+      gnutar
+      openssh
       procps
+      util-linux
     ]);
     text = ''
       ${common}
-      IDENTITY="$HOME/.config/zen-profile/identity"
 
       ensure_profile() {
+        local r
         for r in "$HOME/.zen" "$HOME/.config/zen" "$HOME/.var/app/app.zen_browser.zen/zen"; do
           [ -f "$r/profiles.ini" ] && return 0
         done
@@ -85,27 +97,63 @@ let
         zen-beta --headless >/dev/null 2>&1 &
         seed_pid=$!
         for _ in $(seq 1 30); do
-          [ -f "$HOME/.config/zen/profiles.ini" ] && break
+          for r in "$HOME/.zen" "$HOME/.config/zen" "$HOME/.var/app/app.zen_browser.zen/zen"; do
+            [ -f "$r/profiles.ini" ] && break 2
+          done
           sleep 1
         done
         kill "$seed_pid" 2>/dev/null || true
         wait "$seed_pid" 2>/dev/null || true
-        [ -f "$HOME/.config/zen/profiles.ini" ] || die "headless profile seed failed"
+        for r in "$HOME/.zen" "$HOME/.config/zen" "$HOME/.var/app/app.zen_browser.zen/zen"; do
+          [ -f "$r/profiles.ini" ] && return 0
+        done
+        die "headless profile seed failed"
       }
 
       if zen_running; then
-        echo "zen-profile: Zen running, pull skipped"
+        echo "zen-profile: Zen running; pull skipped"
         exit 0
       fi
-      [ -f "$IDENTITY" ] || die "no identity at $IDENTITY - provision from vault"
+      [ -f "$IDENTITY" ] || die "no identity at $IDENTITY; provision from vault"
+
+      open_lock
+      flock -n 9 || { echo "zen-profile: another sync is active; pull skipped"; exit 0; }
       ensure_repo
+      git_auth
       git -C "$REPO" pull --ff-only
-      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet - run zen-profile-push on ${pushHost} first"
+      [ -f "$REPO/$BLOB" ] || die "remote has no $BLOB yet; run zen-profile-push on the writer host"
       ensure_profile
+
+      tmpdir="$(mktemp -d)"
+      archive="$tmpdir/profile.tar"
+      stage="$tmpdir/stage"
+      mkdir -p "$stage"
+      trap 'rm -rf "$tmpdir"' EXIT
+      age -d -i "$IDENTITY" -o "$archive" "$REPO/$BLOB"
+
+      while IFS= read -r entry; do
+        allowed=0
+        for f in "''${FILES[@]}"; do
+          [ "$entry" = "$f" ] && allowed=1
+        done
+        [ "$allowed" -eq 1 ] || die "unexpected archive entry: $entry"
+      done < <(tar tf "$archive")
+      tar xf "$archive" -C "$stage"
+
+      if zen_running; then
+        echo "zen-profile: Zen started during pull; apply skipped"
+        exit 0
+      fi
+
       pdir="$(profile_dir)"
-      tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
-      age -d -i "$IDENTITY" -o "$tmp" "$REPO/$BLOB"
-      tar xzf "$tmp" -C "$pdir"
+      for f in "''${FILES[@]}"; do
+        target="$pdir/$f"
+        rm -f -- "$target"
+        if [ -e "$stage/$f" ]; then
+          mkdir -p "$(dirname "$target")"
+          cp -a -- "$stage/$f" "$target"
+        fi
+      done
       echo "zen-profile: pulled into $pdir"
     '';
   };
@@ -113,59 +161,76 @@ let
   push = pkgs.writeShellApplication {
     name = "zen-profile-push";
     runtimeInputs = with pkgs; [
-      git
-      gnupg
       age
-      gnutar
       coreutils
-      gnugrep
       gawk
+      git
+      gnugrep
+      gnupg
       gnused
+      gnutar
+      openssh
       procps
       util-linux
     ];
     text = ''
       ${common}
-      LOCK="''${XDG_RUNTIME_DIR:-$HOME/.cache}/zen-profile-push.lock"
-      mkdir -p "$(dirname "$LOCK")"
-      exec 9>"$LOCK"
-      flock -n 9 || { echo "zen-profile: push already running"; exit 0; }
-
-      FILES=(prefs.js zen-sessions.jsonlz4 containers.json sessionstore-backups/recovery.jsonlz4)
-      HASH_STATE="$REPO/.git/zen-profile-source.sha256"
-      ensure_repo
 
       if zen_running; then
-        echo "zen-profile: Zen running, snapshot skipped"
-      else
-        pdir="$(profile_dir)"
-        present=()
-        for f in "''${FILES[@]}"; do [ -e "$pdir/$f" ] && present+=("$f"); done
-        [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
+        echo "zen-profile: Zen running; snapshot skipped"
+        exit 0
+      fi
+      [ -f "$IDENTITY" ] || die "no identity at $IDENTITY; provision from vault"
 
-        profile_hash="$(
-          {
-            for f in "''${present[@]}"; do
-              printf '%s\0' "$f"
-              sha256sum <"$pdir/$f" | cut -d ' ' -f1
-            done
-          } | sha256sum | cut -d ' ' -f1
-        )"
+      open_lock
+      flock -w 120 9 || die "timed out waiting for sync lock"
+      ensure_repo
+      git_auth
+      git -C "$REPO" pull --ff-only
+      if zen_running; then
+        echo "zen-profile: Zen started while waiting; snapshot skipped"
+        exit 0
+      fi
 
-        if [ "$(cat "$HASH_STATE" 2>/dev/null || true)" = "$profile_hash" ]; then
-          echo "zen-profile: profile content unchanged"
-        else
-          tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
-          tar czf "$tmp" -C "$pdir" "''${present[@]}"
-          age -r "${recipient}" -o "$REPO/$BLOB" "$tmp"
-          git -C "$REPO" add "$BLOB"
-          git -C "$REPO" \
-            -c commit.gpgsign=false \
-            -c user.name="${committerName}" \
-            -c user.email="${committerEmail}" \
-            commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
-          printf '%s\n' "$profile_hash" >"$HASH_STATE"
+      pdir="$(profile_dir)"
+      present=()
+      for f in "''${FILES[@]}"; do
+        [ -e "$pdir/$f" ] && present+=("$f")
+      done
+      [ ''${#present[@]} -gt 0 ] || die "no profile files found in $pdir"
+
+      tmpdir="$(mktemp -d)"
+      snapshot="$tmpdir/profile.tar"
+      previous="$tmpdir/previous.tar"
+      encrypted="$tmpdir/$BLOB"
+      trap 'rm -rf "$tmpdir"' EXIT
+      tar --format=gnu --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+        -cf "$snapshot" -C "$pdir" "''${present[@]}"
+
+      if zen_running; then
+        echo "zen-profile: Zen started during snapshot; snapshot discarded"
+        exit 0
+      fi
+
+      changed=1
+      if [ -f "$REPO/$BLOB" ]; then
+        age -d -i "$IDENTITY" -o "$previous" "$REPO/$BLOB"
+        if cmp -s "$snapshot" "$previous"; then
+          changed=0
         fi
+      fi
+
+      if [ "$changed" -eq 1 ]; then
+        age -r "${recipient}" -o "$encrypted" "$snapshot"
+        mv "$encrypted" "$REPO/$BLOB"
+        git -C "$REPO" add "$BLOB"
+        git -C "$REPO" \
+          -c commit.gpgsign=false \
+          -c user.name="${committerName}" \
+          -c user.email="${committerEmail}" \
+          commit -m "update from $(uname -n) $(date -u +%Y-%m-%dT%H:%MZ)"
+      else
+        echo "zen-profile: profile content unchanged"
       fi
 
       if [ -z "$(git -C "$REPO" log --oneline '@{u}..' 2>/dev/null)" ]; then
@@ -199,9 +264,9 @@ let
   watchClose = pkgs.writeShellApplication {
     name = "zen-profile-watch-close";
     runtimeInputs = [
-      push
-      pkgs.procps
       pkgs.coreutils
+      pkgs.procps
+      pkgs.systemd
     ];
     text = ''
       zen_alive() {
@@ -216,13 +281,9 @@ let
         if zen_alive; then
           was_running=1
         elif [ "$was_running" -eq 1 ]; then
-          echo "zen-profile: Zen closed, syncing profile"
-          if zen-profile-push; then
-            was_running=0
-          else
-            echo "zen-profile: close sync failed; retrying in 60s" >&2
-            sleep 60
-          fi
+          echo "zen-profile: Zen closed; scheduling profile push"
+          systemctl --user start --no-block zen-profile-push.service
+          was_running=0
         fi
         sleep 5
       done
@@ -243,34 +304,62 @@ in
     };
   };
 
-  systemd.user.services = lib.optionalAttrs isPushHost {
-    zen-profile-close-watcher = {
-      Unit = {
-        Description = "Push Zen profile after Zen closes";
-        After = [ "gpg-agent.service" ];
+  universe.doctor.activeUserServices = lib.optional isPushHost "zen-profile-close-watcher";
+
+  systemd.user = lib.mkIf isPushHost {
+    services = {
+      zen-profile-push = {
+        Unit = {
+          Description = "Push the Zen profile snapshot";
+          After = [ "gpg-agent.service" ];
+          OnFailure = [
+            "notify-failure@%n.service"
+            "zen-profile-push-retry.timer"
+          ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${push}/bin/zen-profile-push";
+          TimeoutStartSec = "180s";
+        };
       };
-      Service = {
-        ExecStart = "${watchClose}/bin/zen-profile-watch-close";
-        Restart = "on-failure";
-        RestartSec = "5s";
-        TimeoutStopSec = "10s";
+
+      zen-profile-close-watcher = {
+        Unit = {
+          Description = "Detect Zen close events";
+          After = [ "gpg-agent.service" ];
+        };
+        Service = {
+          ExecStart = "${watchClose}/bin/zen-profile-watch-close";
+          Restart = "on-failure";
+          RestartSec = "5s";
+          TimeoutStopSec = "10s";
+        };
+        Install.WantedBy = [ "default.target" ];
       };
-      Install.WantedBy = [ "default.target" ];
+
+      zen-profile-logout-push = {
+        Unit = {
+          Description = "Push Zen profile on logout";
+          After = [ "gpg-agent.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.coreutils}/bin/true";
+          ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
+          TimeoutStopSec = "120s";
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
     };
 
-    zen-profile-logout-push = {
-      Unit = {
-        Description = "Push Zen profile on logout";
-        After = [ "gpg-agent.service" ];
+    timers.zen-profile-push-retry = {
+      Unit.Description = "Retry a failed Zen profile push";
+      Timer = {
+        OnActiveSec = "5min";
+        Unit = "zen-profile-push.service";
       };
-      Service = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.coreutils}/bin/true";
-        ExecStop = "${pushOnStop}/bin/zen-profile-push-onstop";
-        TimeoutStopSec = "120s";
-      };
-      Install.WantedBy = [ "default.target" ];
     };
   };
 }

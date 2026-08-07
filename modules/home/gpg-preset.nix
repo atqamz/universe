@@ -10,15 +10,17 @@ let
     text = ''
       pp="$HOME/.gnupg/.preset-passphrase"
       if [ ! -r "$pp" ]; then
-        echo "no preset passphrase ($pp); run 'nix run .#bootstrap' first" >&2
-        exit 0
+        echo "gpg-preset: missing preset passphrase; run 'nix run .#bootstrap'" >&2
+        exit 1
       fi
-      gpg-connect-agent /bye >/dev/null 2>&1 || true
+      gpg-connect-agent /bye >/dev/null
       presetbin="$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase"
       gpg --batch --with-colons --with-keygrip --list-secret-keys \
-        | awk -F: '/^grp:/ {print $10}' | sort -u | while read -r kg; do
+        | awk -F: '/^grp:/ {print $10}' \
+        | sort -u \
+        | while read -r kg; do
             [ -n "$kg" ] || continue
-            "$presetbin" --preset "$kg" < "$pp" || true
+            "$presetbin" --preset "$kg" <"$pp"
           done
     '';
   };
@@ -28,6 +30,7 @@ in
     Unit = {
       Description = "Preset gpg passphrase into gpg-agent for headless signing";
       After = [ "gpg-agent.socket" ];
+      OnFailure = [ "notify-failure@%n.service" ];
     };
     Service = {
       Type = "oneshot";
