@@ -148,11 +148,11 @@ let
         pkgs.podman
       ];
       text = ''
-        podman rm --all --force || true
-        podman pod rm --all --force || true
-        podman volume rm --all --force || true
-        podman image rm --all --force || true
-        podman network prune --force || true
+        podman rm --all --force
+        podman pod rm --all --force
+        podman volume rm --all --force
+        podman image rm --all --force
+        podman network prune --force
         work="${workDirFor n}"
         [ -d "$work" ] && find "$work" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
       '';
