@@ -4,8 +4,10 @@
     { config, ... }:
     {
       pre-commit.settings.hooks = {
-        statix.enable = true;
+        actionlint.enable = true;
         deadnix.enable = true;
+        shellcheck.enable = true;
+        statix.enable = true;
         treefmt = {
           enable = true;
           packageOverrides.treefmt = config.treefmt.build.wrapper;

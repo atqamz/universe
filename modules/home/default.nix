@@ -1,7 +1,9 @@
 _: {
   imports = [
     ./minimal.nix
+    ./ai-tools.nix
     ./auto-brightness.nix
+    ./browsers.nix
     ./benchmarks.nix
     ./caelestia.nix
     ./caelestia-theme.nix
@@ -35,6 +37,7 @@ _: {
     ./wezterm.nix
     ./unity.nix
     ./zen.nix
+    ./zed.nix
     ./zen-profile-sync.nix
   ];
 }
