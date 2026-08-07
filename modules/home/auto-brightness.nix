@@ -4,7 +4,7 @@ let
 in
 {
   services.wluma = {
-    inherit enable;
+    enable = osConfig.universe.capabilities.ambientLight;
     settings = {
       als.iio = {
         path = "/sys/bus/iio/devices";
