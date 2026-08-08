@@ -56,8 +56,10 @@ let
     }
 
     git_auth() {
-      export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
-      export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+      SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+      export SSH_AUTH_SOCK
+      GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+      export GIT_SSH_COMMAND
     }
 
     ensure_repo() {
