@@ -1,24 +1,23 @@
-# 0002. Six repos, one owner each, no repo configures another
+# 0002. Six repos, one owner each
 
 ## Context
 
-A working machine needs six repos: `universe`, `vault`, `dotagents`, `dotfiles`, `password-store`, `zen-profile`.
-They are separate because their contents have different visibility (public flake, private keys, public config) and different change cadence (a rebuild vs a live edit).
-
-Without a stated boundary this degrades in two ways.
-Package declarations drift into whichever module happens to link that package's config, and unattended timers start committing into repos other timers are pulling.
+A working machine needs six repos: `universe`, `vault`, `dotagents`, `dotfiles`, `password-store`, and `zen-profile`.
+They have different visibility, mutation patterns, and recovery requirements.
+Without an ownership rule, package declarations drift into config repos and unattended automation starts writing human-maintained repositories.
 
 ## Decision
 
-- `universe` declares packages and system state, and owns every timer.
-- `dotfiles` and `dotagents` carry config only; `modules/home/dotfiles.nix` and `dotagents.nix` only link them.
-- `vault` owns key material and is the only thing `import.sh` writes.
-- No timer in `universe` pushes to another repo.
-  Pulls are `--ff-only` and skip when the target is dirty.
+- `universe` owns declarative machine state, packages, services, timers, and runtime health contracts.
+- `dotfiles` and `dotagents` own live-editable application and agent configuration. Universe links them but does not rewrite or push them.
+- `vault` owns key material and secret export/import logic.
+- `password-store` owns password entries.
+- Human-maintained sibling repos are pull-only from Universe automation. Pulls are `--ff-only` and never overwrite dirty work.
+- `zen-profile` is the explicit exception: it contains machine-generated replicated state rather than authored configuration. Exactly one host has `universe.roles.zenProfileWriter = true`; every other host is read-only.
 
-The full table of who clones and who refreshes each repo is in `docs/runbooks/install.md`.
+The install runbook is authoritative for how each repo is cloned and refreshed.
 
 ## Consequence
 
-A package whose config lives in `dotfiles` is still declared in `modules/home/packages.nix`.
-`ninerouter-models-sync`, which rewrote and pushed `dotagents/opencode/opencode.json` on a timer, was deleted rather than fixed.
+A package remains declared in Universe even when its configuration lives in `dotfiles` or `dotagents`.
+Adding another cross-repo writer requires a new architecture decision; the Zen exception is not precedent for pushing human-maintained repositories.

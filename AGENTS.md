@@ -2,97 +2,131 @@
 
 Repo-specific rules. Global rules apply unless overridden here.
 
+## Standard
+
+This repository optimizes for explicit ownership, reproducibility, deterministic state, observable failure, and small blast radius rather than minimum line count.
+Do not preserve an abstraction merely because it already exists: every abstraction must encode a real invariant or have more than one genuine consumer.
+
 ## Layout
 
-- `parts/` — flake-parts modules: hosts, checks, formatter, devshells, apps, packages.
-- `modules/nixos/`, `modules/home/` — system + home-manager config.
-- `lib/mkHost.nix` — host builder. `hosts/` — per-host hardware + disko.
-- `pkgs/` — local packages. `pkgs/default.nix` is the single list; the overlay, `perSystem.packages`, and the weekly update matrix all read it.
-- `docs/adr/` — the decisions this file only states the rules for. Read `docs/adr/README.md` before arguing with a rule here.
+- `parts/` — flake-parts modules for hosts, checks, formatter, dev shell, apps, and packages.
+- `hosts/<name>/default.nix` — minimal-safe identity/hardware layer. `hosts/<name>/full.nix` — full-host features. Host-only supporting modules live beside them.
+- `modules/nixos/`, `modules/home/` — shared system and Home Manager concerns.
+- `lib/mkHost.nix` — composes host base/full layers with shared base/full layers.
+- `pkgs/` — local packages. `pkgs/default.nix` is the single package registry consumed by the overlay, flake packages, and weekly updater.
+- `docs/adr/` — architecture decisions that are expensive to rediscover. Read the index before changing an invariant.
 
-## Rules
+## Non-negotiable rules
 
-- No comments in `.nix`. Code speaks. Stricter than global: none at all, not even "why" (`docs/adr/0007-no-comments-in-nix.md`).
-Rationale goes in an ADR, not the file.
-- Keep `# shellcheck disable=` pragmas — `writeShellApplication` runs shellcheck at build.
-- Before commit: `nix fmt`, then `nix flake check`.
-- "Ship" means: commit + push + PR + merge if green + apply
-- Apply on a live machine with no flake attr: `sudo nixos-rebuild switch --flake /home/atqa/universe`.
-It resolves `nixosConfigurations.$(hostname)` itself.
-Never hardcode a host attr, and never copy one out of a doc or an older session - switching a machine to the wrong host silently rewrites `networking.hostName`, swaps its hardware config (kernel modules, microcode, PRIME bus IDs, undervolt), and `system.autoUpgrade`'s flakeref interpolates that same `hostName`, so the wrong host reapplies itself on every timer run.
-Only the from-ISO install path names a host explicitly, because the installer boots as `nixos` (`docs/runbooks/install.md`, `docs/adr/0001-host-attr-resolution.md`).
-- Cachix auth token only in GH secret `CACHIX_AUTH_TOKEN`.
+- No comments in `.nix`; rationale belongs in an ADR (`docs/adr/0007-no-comments-in-nix.md`). Shell comments inside generated shell code, including required shellcheck pragmas, are fine.
+- Before commit: `nix fmt`, then `nix flake check`. After applying a machine/runtime change: `nix run .#doctor` too.
+- "Ship" means commit + push + PR + merge if green + apply.
+- Rebuild a live machine with `sudo nixos-rebuild switch --flake /home/atqa/universe` or `--flake .`; never name a host attr on a live machine. Only the installer names `$HOST-minimal` (`docs/adr/0001-host-attr-resolution.md`).
+- Cachix auth exists only as the GitHub secret `CACHIX_AUTH_TOKEN`.
 
-## Packaging
+## Host composition
 
-- Local packages live in `pkgs/<name>/default.nix` and are listed once in `pkgs/default.nix`. `modules/nixos/overlays.nix` merges that set into the overlay and `parts/packages.nix` exposes it as `perSystem.packages`; adding a package means one directory and one line, and `.github/workflows/update-packages.yaml` picks it up automatically via `nix eval --apply builtins.attrNames`.
-`pkgs/default.nix` must be `import`ed with `lib` and `callPackage` passed explicitly, never `callPackage`d. In the overlay, `final.callPackage ../../pkgs { }` is infinite recursion - the attr *names* of the overlay's result cannot depend on `final`, so `lib` comes from `prev`; in `parts/packages.nix`, `callPackage` would wrap the set in `makeOverridable` and leak `override`/`overrideDerivation` into `perSystem.packages`, which fails the type check.
-- `codedb` is a prebuilt release binary; its own `update`/`nuke` subcommands don't apply under Nix — bump the version with `nix-update` (uses `passthru.updateScript`).
-- `qmd` is the only package with a vendored `package-lock.json`, so the vendored-lockfile traps apply to it alone. `nix-update` cannot regenerate a lockfile: a version bump whose upstream `package.json` changed a dependency range fails at `npm ci` with `ENOTCACHED`. That fails safe because the updater gates its push on `nix flake check`, but the fix is by hand - `npm install --package-lock-only` against the new tag, then a fresh `npmDepsHash`.
-- Security advisories against that lockfile are fixed by hand, not by dependabot. Repo-level `dependabot_security_updates` is deliberately **disabled**: its npm fetcher needs a `package.json` beside the lockfile and `pkgs/qmd/` holds only `default.nix` + `package-lock.json`, so every run aborted with `Error during file fetching`; the job also runs `allowed-updates: direct` with `update-subdependencies: false`, and advisories here land on transitive deps, so nothing would be eligible anyway. Alerts come from the dependency graph and still arrive. The fix is `npm update <pkg> --package-lock-only` against the upstream tag's `package.json`, then `nix-update --version=skip` for a fresh `npmDepsHash` (`--version=skip` refreshes hashes without touching `version`).
-Check `dev` in the lockfile entry first: `npmInstallHook` prunes devDependencies, so a dev-only advisory never reaches the built output.
-That fix only reaches advisories whose patched version is inside the range upstream declares.
-`v2.5.3` pins `vitest` and `@modelcontextprotocol/sdk` to exact versions, and the SDK asks for `@hono/node-server` as `^1.19.9` while that advisory is fixed in `2.0.5`, so `npm update` moves the lockfile a patch release and clears nothing.
-Forcing it with an `overrides` entry does not work either: the derivation vendors only the lockfile, and `npm ci` validates that lockfile against upstream's own `package.json`, failing with `Missing: <pkg>@<version> from lock file` unless the override is patched into that file too.
-So when the patched version is out of range, the choice is a permanent divergence from upstream or a dismissal - and `meta.platforms` is what usually decides it, since a Windows-only advisory cannot reach an `x86_64-linux` package.
-- `claude` (`modules/home/packages.nix`) wraps sadjow's `claude-code` flake input and prefixes PATH with a bun-backed `node` shim — NixOS has no system JS runtime, and Claude plugin hooks that shell out to `node` need one.
-- `zed` (`modules/home/packages.nix`) is wrapped with its language servers on PATH (`nil`, `go`, `gopls`, `rust-analyzer`, `pyright`, `typescript-language-server`) rather than letting Zed fetch them. Zed's Go extension shells out to `go install golang.org/x/tools/gopls@latest`, so with no `go` on PATH it creates an empty `~/.local/share/zed/languages/gopls/` and the server never starts — a silent failure, unlike `rust-analyzer` which Zed downloads as a static binary. Zed also downloads and runs its own prebuilt `node` for the JS servers; that only executes because `programs.nix-ld` is enabled globally, so nix-ld is load-bearing for the editor, not just for Unity.
-- Unity (`modules/home/unity.nix`, `lib/prime.nix`) runs on `programs.nix-ld`, not an FHS wrapper, so nix-ld is load-bearing: `docs/adr/0008-unity-runs-on-nix-ld-not-fhs.md`.
-- The OCCT and FurMark GPU benchmarks stay in `modules/home/benchmarks.nix`, away from `packages.nix`, because their vendor URLs are unversioned: `docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`.
-- `qmd` (`pkgs/qmd`) is `buildNpmPackage` for an upstream that ships no `package-lock.json` (only `bun.lock`/`pnpm-lock.yaml`) — the lockfile was generated once via `npm install --package-lock-only` against the release tag and vendored. Native deps that ship prebuilt platform binaries (tree-sitter-*, sqlite-vec, node-llama-cpp) work fine under `buildNpmPackage`'s default `npm ci --ignore-scripts`; only deps with no prebuilt binary (better-sqlite3) need a manual `node-gyp rebuild --release` in `preBuild`. `autoPatchelfHook` fixes up the prebuilt ELF binaries; optional GPU-backend variants (CUDA/Vulkan `.so`s) are intentionally left unpatched and qmd is wrapped with `QMD_LLAMA_GPU=false` and the nixpkgs Node runtime because this package exposes the CPU search path only.
+- A `-minimal` configuration may import only `hosts/<host>/default.nix` and `modules/nixos/minimal.nix` plus the flake integration modules; it must not import Home Manager. `modules/home/minimal.nix` is the base layer of the full Home Manager configuration only. Full-only host code belongs in `hosts/<host>/full.nix` or a module imported from it (`docs/adr/0006-minimal-host-variants.md`).
+- Shared modules consume `universe.capabilities.*` or `universe.roles.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/caelestia/hosts/${hostname}.json`.
+- Host-specific services belong with the host when there is only one real consumer. Do not build a generic option layer around one machine's job merely to make the file look reusable.
 
-## Dotfiles / dotagents symlinks
+## State and update ownership
 
-- `~/dotfiles` and `~/dotagents` are separate repos, wired in via `config.lib.file.mkOutOfStoreSymlink` (`modules/home/dotfiles.nix`, `dotagents.nix`) so edits there apply live without a rebuild. The symlink target must be an absolute home-relative string (`${config.home.homeDirectory}/...`); a relative one breaks live-editing silently.
-- Caelestia's `shell.json` is per-host (`dotfiles/caelestia/hosts/${hostname}.json`, `hostname` comes from `lib/mkHost.nix`'s specialArgs) and needs `force = true` on that `home.file` entry — caelestia's own atomic writes to the path clobber a plain symlink otherwise. `modules/home/caelestia.nix` also runs an activation script that normalizes a few keys via `jq`.
+Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.md`, `docs/adr/0011-explicit-update-ownership.md`).
 
-## Eye comfort
+- Universe owns declarative machine state, packages, services, timers, and health contracts.
+- `dotfiles` / `dotagents` own live-editable config; Universe links but does not push them.
+- `vault` owns key material; `password-store` owns password entries.
+- `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
+- Nix-owned binaries do not self-update. Update them through their flake/package owner.
+- Runtime-managed payloads are explicit exceptions. Their installer version and repair mechanism are still declared by Universe.
+- Compatibility shims are scoped to the program that needs them. Claude's Bun-backed `node`/`npx` exist only in Claude's wrapper PATH, not globally.
 
-- `modules/home/nightlight.nix` enables `hyprsunset` but deliberately leaves `services.hyprsunset.settings` empty: that option writes `xdg.configFile."hypr/hyprsunset.conf"`, which collides with the whole-directory `mkOutOfStoreSymlink` `dotfiles.nix` puts at `~/.config/hypr`. The profiles live in `dotfiles/hypr/hyprsunset.conf` instead, tunable with no rebuild. `reading-mode` (bound to `mod + R` in `dotfiles/hypr/hyprland.lua`) toggles against the schedule and restores it with `hyprctl hyprsunset reset`.
-Temperature and gamma need no per-monitor config: hyprsunset binds every `wl_output` and applies one CTM each, so external screens are covered as soon as they are connected.
-- `modules/home/auto-brightness.nix` runs `wluma` off the ALS at `/sys/bus/iio/devices/iio:device0`, gated to the host that has one. It writes `/sys/class/backlight/*/brightness` directly, which needs the `SUBSYSTEM=="backlight"` udev rule in `modules/nixos/power.nix` - group `video` alone is not enough, and `brightnessctl` never needed it because it goes through logind.
-- The external monitor has no backlight class, so its entry is an `output.ddcutil` one driven over DP AUX, which is why `power.nix` sets `hardware.i2c.enable` - that rule's `uaccess` tag is what grants access, since wluma's unit runs `PrivateUsers=true` and would lose a plain `i2c` group membership.
-Two traps: `name` is matched as a *substring* of the output description, so a bare `DP-1` also matches `eDP-1` and one config steals the other's screen - `(DP-1)` with the parens does not.
-And `udevadm trigger` after a rebuild needs `--subsystem-match=i2c-dev`, not `i2c`.
-`identifier` is what wluma matches against the DDC display name (`ddcutil detect`), and a mismatch is only a warning, so an unplugged or swapped monitor degrades to internal-only.
+## Automation and failure semantics
 
-## Sync timers
+- Every timer-driven Home Manager job uses `services.userTimers` unless it genuinely is not a timer. That abstraction attaches `notify-failure@` automatically.
+- Expected non-action is success: dirty repo, application currently running, another valid sync holding a lock.
+- Broken repair is failure: auth/network failure, divergence, invalid encrypted data, registration failure, or a command that could not restore its invariant. Do not hide these behind `|| true` (`docs/adr/0012-automation-failures-are-observable.md`).
+- Use `onActivation = "try"` when activation should not block a rebuild but the same command must still fail under systemd.
+- Retry policy belongs to systemd when practical. A watcher detects an edge and triggers a oneshot job; it does not become an invisible retry engine.
+- `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.
 
-- Every pull-only repo sync is one entry in the `repos` list in `modules/home/repo-sync.nix` (`universe`, `dotagents`, `dotfiles`, `vault`, `password-store`), plus one `github-sync` sweep over `~/github`. Add a repo by adding a row, not a module. The shared pattern: `writeShellApplication` locks down PATH, the dirty-check uses `git status --porcelain --untracked-files=no` (counting untracked files self-deadlocks the timer), and pulls are `--ff-only`, skipped silently when dirty or diverged.
-- Every timer-driven user service is declared through `services.userTimers` (`modules/home/user-timers.nix`), never as a hand-written `systemd.user.services` + `systemd.user.timers` pair.
-The option generates both units and structurally guarantees `OnFailure = [ "notify-failure@%n.service" ]` (`modules/home/notify-failure.nix`), which desktop-notifies with the last 5 journal lines - a sync that silently stopped working for weeks is the failure mode that wiring exists to prevent, and it used to be a rule an agent could forget.
-`onActivation` (`never` / `run` / `try`) is what decides whether home-manager activation also runs the command and whether its failure aborts the rebuild; `unitExtra` / `serviceExtra` / `wantedBy` cover the per-unit outliers. A unit with no timer at all (`zen-profile-logout-push`) stays hand-written.
-- `rtk-init` and `codedb-register` (`modules/home/rtk.nix`, `codedb.nix`) re-apply the Claude Code hook/MCP registration on a daily systemd timer as a self-heal, since that config lives outside the Nix store.
-- `zen-profile-sync` (`modules/home/zen-profile-sync.nix`) pulls the age-encrypted Zen profile hourly and on session start, self-seeding a fresh headless profile if none exists, and skips the pull while Zen is running rather than failing.
-Push is gated to `sfx14` only (`pushHost` in that file), so every other machine is read-only and cannot clobber the blob. On sfx14 the push runs on a 30min timer *and* at logout; the timer is what matters, because a logout push has no network and no pinentry - it is why the sync was silently dead for weeks with 25 unpushed commits.
-Automated commits there use `-c commit.gpgsign=false` plus a `zen-profile-sync <zen-profile-sync@users.noreply.github.com>` identity, so GitHub links them to no account and they stay off the contribution graph - the snapshots are machine output, not authored work. History was reset to a single commit for the same reason; if a host's clone predates that reset it is permanently diverged and `git pull --ff-only` skips in silence, so delete `~/.local/share/zen-profile` there and let the unit re-clone.
-Neither unit is part of `nix run .#bootstrap` — see `parts/apps.nix` for what bootstrap actually clones and which timers `bootstrap-check` asserts.
-- `treehouse-prune` (`modules/home/treehouse-prune.nix`) is weekly, not daily, and has no `home.activation` hook unlike its siblings above: it deletes worktree pools, so it may only ever run on its own schedule, never as a side effect of a rebuild.
-Deliberately no `--prune-orphans`: treehouse cannot run its uncommitted-changes or merged-HEAD checks once a backing repo is gone, so orphans stay reported-only and are reaped by hand.
+## Doctor
 
-## Secrets
+`nix run .#doctor` is the runtime contract checker; `bootstrap-check` is a compatibility alias.
 
-- Recipient/rotation rules for `modules/nixos/secrets/*.sops.yaml` are documented at the top of `.sops.yaml` — read that before touching a secret. Universe's recipients are per-host SSH keys (headless decrypt at activation), deliberately a different set from the vault repo's user-age keys.
-- `tailscale-oauth` (`modules/nixos/network.nix`) is a steady-state OAuth client secret used as `authKeyFile`, not a one-shot auth key.
+- Installed user timers/services are derived from evaluated Home Manager systemd configuration, not copied into a manual list.
+- Critical host-specific system services/timers are declared through `universe.doctor.*`.
+- Direct writable symlinks that must bypass the Home Manager store hop are registered in `universe.doctor.symlinks`.
+- A new persistent service, timer, direct-link contract, or host responsibility should become doctor-visible by construction rather than by remembering another checklist.
+
+## Live dotfiles and agent configuration
+
+- Read-only live config uses `config.lib.file.mkOutOfStoreSymlink` to absolute paths under `config.home.homeDirectory` (`docs/adr/0003-live-editable-dotfiles.md`).
+- Config that the application rewrites atomically cannot traverse Home Manager's store-hop symlink. Claude `settings.json` and OpenCode `opencode.json` are direct writable links generated from one `writableLinks` map in `modules/home/dotagents.nix`; the same map feeds activation, user tmpfiles, and doctor checks.
+- Caelestia `shell.json` remains host-specific and `force = true` because Caelestia atomically replaces that path.
+
+## Packaging and developer tools
+
+- Add a local package in `pkgs/<name>/default.nix` and one entry in `pkgs/default.nix`. The overlay, `perSystem.packages`, and weekly updater derive from that registry.
+- `pkgs/default.nix` is imported with `lib` and `callPackage` passed explicitly; do not `callPackage` the package set itself. In the overlay the attr names cannot depend on `final`; in `parts/packages.nix`, wrapping the set with `callPackage` leaks override attrs into the flake package set.
+- `modules/home/packages.nix` is passive inventory. Application behavior belongs in a named module: Zed in `zed.nix`, browsers in `browsers.nix`, AI tool wrappers/update policy in `ai-tools.nix`, Unity in `unity.nix`.
+- Zed is wrapped with its language servers on PATH. `nixd` is the single Nix LSP; keep `go` beside `gopls` because Zed's Go extension may invoke the Go toolchain.
+- Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
+- Unity runs on `programs.nix-ld`, not a separate FHS wrapper (`docs/adr/0008-unity-runs-on-nix-ld-not-fhs.md`).
+- OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
+
+### qmd
+
+`qmd` is `buildNpmPackage` for an upstream that ships no `package-lock.json`; Universe vendors one generated against the release tag.
+`nix-update` cannot regenerate it. If upstream dependency ranges changed and `npm ci` fails with `ENOTCACHED`, regenerate the lockfile against the new tag and refresh `npmDepsHash` manually.
+Security advisories in the vendored lockfile are handled manually; repo-level Dependabot security updates are deliberately disabled because its npm fetcher cannot use this package layout and the relevant alerts are commonly transitive.
+Check whether an advisory is dev-only before changing the package: `npmInstallHook` prunes dev dependencies.
+Native prebuilt ELF dependencies are fixed by `autoPatchelfHook`; `better-sqlite3` is the exception that is rebuilt. qmd is intentionally CPU-only and wrapped with the nixpkgs Node runtime.
+
+## SFX14 power and display policy
+
+- `hosts/sfx14/power.nix` is the single owner of SFX14 CPU power state. `low`, `normal`, and `high` are canonical 15 W, 20 W, and 25 W states; each sets RAPL, PPD, EPP, and undervolt-timer state from any prior mode.
+- NVIDIA voltage/frequency policy is independent from CPU power mode. Do not make a generic power name secretly lower or raise GPU policy.
+- The selected CPU mode is restored after resume; GPU tuning is reapplied after resume as a separate invariant.
+- SFX14-only i2c/backlight permissions live with the SFX14 power/display feature, not in shared power configuration.
+- `auto-brightness.nix` consumes `universe.capabilities.ambientLight`; it must not know which hostname owns the sensor.
+
+## Zen profile replication
+
+- All hosts may pull only while Zen is stopped. Exactly one host may push; the writer is a role, not a hardcoded hostname.
+- The managed file set is explicit. Pull is replace semantics for that set, so deletion on the writer propagates.
+- Snapshot comparison happens on deterministic plaintext tar data before `age`; randomized ciphertext is never used as a change detector.
+- Pull and push share one lock around the Git repo.
+- The close watcher only detects running -> stopped and starts `zen-profile-push.service`. The oneshot push owns failure, notification, and systemd retry.
+- Automated snapshot commits disable GPG signing and use the dedicated `zen-profile-sync` identity.
+
+## Runner isolation
+
+- The pavg15 GitHub runner is a host-only feature in `hosts/pavg15/runner.nix` (`docs/adr/0013-runner-workloads-are-rootless-and-isolated.md`).
+- Each concurrent runner has its own system user, subordinate IDs, work directory, and rootless Podman API/socket. Never mount the host rootful Docker/Podman socket into a workflow runner.
+- The `github-runner` auth user owns the App private key. Job users receive only a short-lived runner registration token, never the App private key or installation token.
+- Runners are ephemeral and their work/container state is cleaned between jobs. Keep runner auto-update disabled; bump the container tag deliberately.
 
 ## CI / flake hygiene
 
-- `nix flake check` (`parts/checks.nix`) derives its checks from `self.nixosConfigurations`, so it builds the full `toplevel` closure for every host including the `-minimal` variants, with no second host list to keep in sync. That pulls in caelestia-shell, which always compiles from source, hence the `free-disk-space` step in `.github/workflows/ci.yaml`.
-- Cachix is the only extra substituter and CI must not cache the Nix store: a restored store means nothing is newly built, so `cachix-action` pushes nothing and every machine rebuilds from source. See `docs/adr/0005-cachix-only-substituter.md` before adding any store cache back.
-- Dependabot + auto-merge (`.github/dependabot.yaml`, `.github/workflows/automerge.yaml`) replaced a hand-rolled flake-autoupdate timer. `automerge.yaml` is dependabot-only on purpose: `GITHUB_TOKEN`'s anti-recursion rule means a run descended from a `GITHUB_TOKEN` event cannot start a `workflow_run` run, so it can never merge a PR that a workflow itself opened.
-- `.github/workflows/update-packages.yaml` therefore opens no PR at all - each matrix leg runs `nix flake check` on its own bump and pushes to `main` on green, `max-parallel: 1` so the legs do not race on the push. That push is also `GITHUB_TOKEN`-descended, so it starts no CI run of its own; the in-job check is the only gate, and the job pushes to Cachix itself so machines are not left rebuilding the bump from source.
-- `modules/nixos/github-runner.nix` defines `services.orgRunner` and is imported directly by `hosts/pavg15/default.nix`, not by `modules/nixos/default.nix` - the self-hosted runner is one machine's job, so no other host carries it.
-- `system.autoUpgrade` (`modules/nixos/auto-upgrade.nix`) deliberately points at a `git+https://` flakeref rather than `github:` - `github:` flakerefs hit the rate-limited GitHub API and can silently pin a stale rev on a 403.
+- `parts/checks.nix` derives every full/minimal NixOS toplevel check from `self.nixosConfigurations`; do not maintain a second host list.
+- Flake app implementations are also derivation checks, so `writeShellApplication` scripts are built/shellchecked by `nix flake check` rather than merely having valid app schemas.
+- Pre-commit covers treefmt, statix, deadnix, shellcheck, and actionlint.
+- Cachix is the only extra substituter; do not add a restored Nix-store CI cache (`docs/adr/0005-cachix-only-substituter.md`).
+- The package updater rebases onto current `main` before its final `nix flake check`; the exact checked commit is the commit pushed. Its GITHUB_TOKEN push does not get a second CI run, so this ordering is a correctness boundary.
+- Dependabot auto-merge remains gated on the normal build/check workflow.
+- `system.autoUpgrade` intentionally uses `git+https://` rather than `github:` to avoid the GitHub API rate-limit path.
 
-## Install / bootstrap
+## Secrets and install
 
-- Full install/reinstall procedure lives in `docs/runbooks/install.md` (console) and `install-anywhere.md` (remote over tailnet) — keep those current rather than re-describing steps here.
-- Host SSH keys are persistent per host, backed up in the vault repo (`~/vault/hosts/<host>/*.age`+`.pub`), and re-injected via `nixos-anywhere`/`disko-install --extra-files` on every reinstall so `sops-nix` never needs rekeying.
-- `gpg-preset` (`modules/home/gpg-preset.nix`) presets the GPG passphrase into the agent at login for headless git/ssh signing — needed because gpg-agent's cache clears on reboot.
+- Recipient/rotation rules for system SOPS files live at the top of `.sops.yaml`; host SSH keys are persistent per-host recipients (`docs/adr/0004-per-host-ssh-keys-as-sops-recipients.md`).
+- `tailscale-oauth` is a steady-state OAuth client secret used by the Tailscale service.
+- Full install/reinstall procedure lives in `docs/runbooks/install.md` and `install-anywhere.md`. Keep those current instead of restating procedural steps here.
+- The Termux bootstrap treats `https://github.com/atqamz.keys` as the exact source of truth for `authorized_keys`; rerunning it must revoke keys removed from GitHub, not only append new ones.
 
 ## Maintaining this file
 
-Keep this file for knowledge useful to almost every future agent session in this project.
-Do not repeat what the codebase already shows; point to the authoritative file or command instead.
-Prefer rewriting or pruning existing entries over appending new ones.
-When updating this file, preserve this bar for all agents and keep entries concise.
+Keep only durable rules and expensive-to-rediscover traps here.
+Implementation cadence, exact service internals, and other facts obvious from code belong in code, not duplicated prose.
+When an implementation change invalidates an invariant, update the ADR and rule in the same change.

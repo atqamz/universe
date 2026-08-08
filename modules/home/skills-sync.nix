@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
   manifest = "$HOME/dotagents/skills/manifest.txt";
+  skillsCliVersion = "1.5.20";
   sync = pkgs.writeShellApplication {
     name = "skills-sync";
     runtimeInputs = with pkgs; [
@@ -21,7 +22,7 @@ let
         esac
 
         echo "skills-sync: installing $source"
-        bunx --yes skills add "$source" -g -a opencode -a claude-code --skill '*' -y
+        bunx --yes skills@${skillsCliVersion} add "$source" -g -a opencode -a claude-code --skill '*' -y
       done < "$manifest"
     '';
   };

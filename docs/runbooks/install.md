@@ -188,12 +188,12 @@ Six repos, four mechanisms. See `docs/adr/0002-cross-repo-layout.md` for why.
 ## 9. Verify e2e
 
 ```bash
-nix run .#bootstrap-check
+nix run .#doctor
 ```
 
-It reports pass/fail for the `atqa` user and groups, tailscale, sshd, the
-secrets vault and synced repositories, the sync timers, and a clean
-`greetd`/`hyprland` start.
+It checks core host access, generated user-service/timer expectations, direct
+writable symlink contracts, host-specific critical services, and failed units.
+`nix run .#bootstrap-check` remains a compatibility alias.
 
 ## 10. Verify hibernate
 
@@ -210,7 +210,7 @@ swap partition (`boot.resumeDevice = /dev/disk/by-partlabel/disk-main-swap`).
 sudo reboot
 ```
 
-After login, run `nix run .#bootstrap-check` again.
+After login, run `nix run .#doctor` again.
 
 ## Troubleshooting
 
@@ -232,9 +232,10 @@ the scp + `--extra-files` step with the vault-backed key.
 
 ### Hyprland session does not start
 
-Check `journalctl --user -u greetd` and `journalctl --user -u hyprland-session`.
-Common causes: NVIDIA modules not loaded, missing firmware, `uwsm` syntax
-mismatch, or wrong PRIME bus IDs in `hosts/$HOST/default.nix`.
+Check `sudo journalctl -b -u greetd`, then inspect the user journal with
+`journalctl --user -b` for UWSM/Hyprland failures. Common causes are NVIDIA
+modules not loaded, missing firmware, a UWSM mismatch, or wrong PRIME bus IDs in
+`hosts/$HOST/full.nix`.
 
 ### `github ssh auth` fails after a reboot
 

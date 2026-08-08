@@ -79,7 +79,7 @@ stdin from `/dev/null` gives the probe immediate EOF so it exits and the install
 proceeds. There are no interactive prompts in this flow (passwordless sudo, no disk
 encryption), so closing stdin is safe.
 
-The disk device comes from `hosts/$HOST/disko.nix` (`device = "/dev/nvme0n1"`);
+The disk device comes from the shared `hosts/disko.nix` layout (`device = "/dev/nvme0n1"`);
 confirm it matches the target before running. `nixos-anywhere` reboots the host
 itself once the install finishes.
 

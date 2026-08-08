@@ -67,11 +67,12 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: rebase onto current main
+        if: steps.update.outputs.changed == 'true'
+        run: git pull --rebase origin main
       - name: flake check
         if: steps.update.outputs.changed == 'true'
         run: nix flake check --print-build-logs
-      - name: push to main
+      - name: push checked commit to main
         if: steps.update.outputs.changed == 'true'
-        run: |
-          git pull --rebase origin main
-          git push origin HEAD:main
+        run: git push origin HEAD:main

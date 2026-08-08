@@ -11,12 +11,13 @@ let
     text = ''
       target="${tokenFile}"
       if ! token="$(gh auth token 2>/dev/null)" || [ -z "$token" ]; then
-        echo "gh authentication unavailable; leaving $target as it is" >&2
-        exit 0
+        rm -f "$target"
+        echo "nix-access-token: GitHub authentication unavailable" >&2
+        exit 1
       fi
       mkdir -p "$(dirname "$target")"
       umask 077
-      printf 'access-tokens = github.com=%s\n' "$token" > "$target.tmp"
+      printf 'access-tokens = github.com=%s\n' "$token" >"$target.tmp"
       mv "$target.tmp" "$target"
     '';
   };

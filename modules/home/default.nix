@@ -1,7 +1,9 @@
 _: {
   imports = [
     ./minimal.nix
+    ./ai-tools.nix
     ./auto-brightness.nix
+    ./browsers.nix
     ./benchmarks.nix
     ./caelestia.nix
     ./caelestia-theme.nix
@@ -9,6 +11,8 @@ _: {
     ./codedb.nix
     ./cursor.nix
     ./direnv.nix
+    ./doctor.nix
+    ./dotagents.nix
     ./dotfiles.nix
     ./eye-break.nix
     ./file-management.nix
@@ -18,17 +22,22 @@ _: {
     ./hypr.nix
     ./mise.nix
     ./nightlight.nix
+    ./nix-access-token.nix
+    ./notify-failure.nix
     ./packages.nix
     ./passmenu.nix
     ./qt.nix
     ./readline.nix
+    ./repo-sync.nix
     ./rtk.nix
     ./secret-service.nix
     ./skills-sync.nix
     ./treehouse-prune.nix
+    ./user-timers.nix
     ./wezterm.nix
     ./unity.nix
     ./zen.nix
+    ./zed.nix
     ./zen-profile-sync.nix
   ];
 }

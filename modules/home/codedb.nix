@@ -6,18 +6,21 @@ let
     name = "codedb-register";
     runtimeInputs = [
       pkgs.codedb
+      pkgs.coreutils
       pkgs.jq
-      pkgs.gawk
     ];
     text = ''
       claudeCfg="$HOME/.claude.json"
-      tmp=$(mktemp)
+      mkdir -p "$(dirname "$claudeCfg")"
+      tmp="$(mktemp "$(dirname "$claudeCfg")/.claude.json.XXXXXX")"
+      trap 'rm -f "$tmp"' EXIT
       if [ -f "$claudeCfg" ]; then
-        jq '.mcpServers.codedb = {command: $bin, args: ["mcp"]}' --arg bin "${bin}" "$claudeCfg" > "$tmp" || { rm -f "$tmp"; exit 1; }
+        jq '.mcpServers.codedb = {command: $bin, args: ["mcp"]}' --arg bin "${bin}" "$claudeCfg" >"$tmp"
       else
-        jq -n --arg bin "${bin}" '{mcpServers: {codedb: {command: $bin, args: ["mcp"]}}}' > "$tmp" || { rm -f "$tmp"; exit 1; }
+        jq -n --arg bin "${bin}" '{mcpServers: {codedb: {command: $bin, args: ["mcp"]}}}' >"$tmp"
       fi
       mv "$tmp" "$claudeCfg"
+      trap - EXIT
     '';
   };
 in
@@ -26,7 +29,7 @@ in
     description = "Register codedb MCP server for Claude Code";
     timerDescription = "Daily codedb MCP registration refresh";
     command = "${ensure}/bin/codedb-register";
-    onActivation = "run";
+    onActivation = "try";
     timer = {
       OnStartupSec = "10min";
       OnCalendar = "daily";

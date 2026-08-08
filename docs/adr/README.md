@@ -7,11 +7,15 @@ Short by design: context, decision, consequence.
 | ADR | Decision |
 | --- | --- |
 | [0001](0001-host-attr-resolution.md) | Never name a host attr when rebuilding a live machine |
-| [0002](0002-cross-repo-layout.md) | Six repos, one owner each, no repo configures another |
+| [0002](0002-cross-repo-layout.md) | Six repos, one owner each |
 | [0003](0003-live-editable-dotfiles.md) | Dotfiles are out-of-store symlinks, not store copies |
 | [0004](0004-per-host-ssh-keys-as-sops-recipients.md) | Per-host SSH keys decrypt system secrets headlessly |
 | [0005](0005-cachix-only-substituter.md) | Cachix is the only extra substituter, in CI and on machines |
-| [0006](0006-minimal-host-variants.md) | Every host gets a free `-minimal` variant |
+| [0006](0006-minimal-host-variants.md) | Every host gets a genuinely minimal variant |
 | [0007](0007-no-comments-in-nix.md) | Nix files carry no comments; rationale lives here |
 | [0008](0008-unity-runs-on-nix-ld-not-fhs.md) | Unity runs on nix-ld, not an FHS wrapper |
 | [0009](0009-gpu-benchmarks-fetch-unversioned-urls.md) | GPU benchmarks are quarantined in their own module |
+| [0010](0010-host-capabilities-not-hostname-flags.md) | Shared modules consume capabilities, not hostname flags |
+| [0011](0011-explicit-update-ownership.md) | Every mutable artifact has one update owner |
+| [0012](0012-automation-failures-are-observable.md) | Automation distinguishes skips from failures |
+| [0013](0013-runner-workloads-are-rootless-and-isolated.md) | Self-hosted runner workloads are rootless and isolated |

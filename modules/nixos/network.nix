@@ -5,7 +5,16 @@
   services = {
     resolved.enable = true;
 
-    openssh.enable = true;
+    openssh = {
+      enable = true;
+      openFirewall = false;
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        PermitRootLogin = "no";
+      };
+    };
+
     tailscale = {
       enable = true;
       authKeyFile = config.sops.secrets.tailscale-oauth.path;

@@ -47,25 +47,26 @@ let
         (with pkgs; [
           git
           coreutils
-          libnotify
+          openssh
         ])
         ++ (repo.extraTools or [ ]);
       text = ''
         dir="${repo.dir}"
         name="${repo.name}"
         if [ ! -d "$dir/.git" ]; then
-          echo "$name not bootstrapped; run: nix run .#bootstrap" >&2
+          echo "$name not bootstrapped; run: nix run .#bootstrap"
           exit 0
         fi
 
         if [ -n "$(git -C "$dir" status --porcelain --untracked-files=no)" ]; then
-          notify-send "$name-sync" "local $name changes uncommitted - skipping pull" || true
-          echo "$name dirty, skipping pull" >&2
+          echo "$name dirty; pull skipped"
           exit 0
         fi
 
-        git -C "$dir" pull --ff-only || \
-          notify-send "$name-sync" "$name pull not fast-forward - diverged, skipping" || true
+        if ! git -C "$dir" pull --ff-only; then
+          echo "$name pull failed" >&2
+          exit 1
+        fi
         ${repo.post or ""}
       '';
     };
@@ -76,12 +77,14 @@ let
       git
       findutils
       coreutils
+      openssh
     ];
     text = ''
       root="$HOME/github"
       [ -d "$root" ] || exit 0
+      failed=0
 
-      find "$root" -name .git -type d -prune | while read -r gitdir; do
+      while read -r gitdir; do
         repo=$(dirname "$gitdir")
         name=''${repo#"$root"/}
 
@@ -94,13 +97,16 @@ let
           continue
         fi
 
-        if ! git -C "$repo" pull --ff-only -q >/dev/null 2>&1; then
-          echo "skip $name: pull not fast-forward"
+        if ! git -C "$repo" pull --ff-only -q; then
+          echo "failed $name: pull failed" >&2
+          failed=1
           continue
         fi
 
         echo "ok $name"
-      done
+      done < <(find "$root" -name .git -type d -prune)
+
+      exit "$failed"
     '';
   };
 

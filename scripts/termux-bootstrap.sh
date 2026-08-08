@@ -30,17 +30,17 @@ log "Fetching authorized_keys from github.com/$GH_USER.keys"
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 auth="$HOME/.ssh/authorized_keys"
-touch "$auth"
-chmod 600 "$auth"
 keys="$(curl -fsSL "https://github.com/$GH_USER.keys")"
 [ -n "$keys" ] || {
   echo "No keys returned for $GH_USER" >&2
   exit 1
 }
-while IFS= read -r key; do
-  [ -n "$key" ] || continue
-  grep -qxF "$key" "$auth" || echo "$key" >>"$auth"
-done <<<"$keys"
+tmp="$auth.tmp.$$"
+trap 'rm -f "$tmp"' EXIT
+printf '%s\n' "$keys" >"$tmp"
+chmod 600 "$tmp"
+mv "$tmp" "$auth"
+trap - EXIT
 
 # --- persistent bashrc block (wakelock + sshd autostart) -------------------
 log "Wiring wakelock + sshd autostart into $BASHRC"
