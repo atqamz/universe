@@ -91,10 +91,11 @@ _: {
           pass=0
           fail=0
 
-          check() {
-            name="$1"
-            shift
-            if "$@" >/dev/null 2>&1; then
+          report() {
+            local name="$1"
+            local status="$2"
+
+            if [ "$status" -eq 0 ]; then
               echo "PASS: $name"
               pass=$((pass + 1))
             else
@@ -103,18 +104,34 @@ _: {
             fi
           }
 
+          check() {
+            local name="$1"
+            shift
+
+            if "$@" >/dev/null 2>&1; then
+              report "$name" 0
+            else
+              report "$name" 1
+            fi
+          }
+
           check_link() {
-            relative="$1"
-            target="$2"
-            path="$HOME/$relative"
-            expected="$HOME/$target"
+            local relative="$1"
+            local target="$2"
+            local path="$HOME/$relative"
+            local expected="$HOME/$target"
+            local actual
+            local expected_real
 
-            [ -L "$path" ] || return 1
-            [ -e "$expected" ] || return 1
-
-            actual="$(readlink -f -- "$path" 2>/dev/null)" || return 1
-            expected_real="$(readlink -f -- "$expected" 2>/dev/null)" || return 1
-            [ "$actual" = "$expected_real" ]
+            if [ -L "$path" ] \
+              && [ -e "$expected" ] \
+              && actual="$(readlink -f -- "$path" 2>/dev/null)" \
+              && expected_real="$(readlink -f -- "$expected" 2>/dev/null)" \
+              && [ "$actual" = "$expected_real" ]; then
+              report "$relative direct symlink" 0
+            else
+              report "$relative direct symlink" 1
+            fi
           }
 
           echo "== universe-doctor =="
@@ -172,7 +189,7 @@ _: {
 
           while IFS=$'\t' read -r path target; do
             [ -n "$path" ] || continue
-            check "$path direct symlink" check_link "$path" "$target"
+            check_link "$path" "$target"
           done < <(jq -r '.symlinks | to_entries[] | [.key, .value] | @tsv' "$manifest")
 
           if jq -e '.zenProfileWriter' "$manifest" >/dev/null; then
