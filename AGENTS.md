@@ -18,6 +18,8 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - Session ends with unfinished multi-day work -> post short handoff comment (done / blocked / next) on GitHub issue via `gh`. GitHub is the sync; works for any agent.
 - YAML files: always `.yaml`, never `.yml`.
 - Four profiles: atqamz (personal, own repos), yes2games (primary job; org work authenticates as the butler GitHub App, and yes2infra / yes2github operations run through GitHub Actions since no creds are held locally), blankon (FOSS-first: OpenTofu over Terraform, Podman over Docker), hage (side). Never bleed one profile's conventions into another.
+- Google Workspace via `gw`: personal profile = atqamz@gmail.com, work profile = atqa@yes2games.com; always pass an explicit profile, never guess one for a write.
+- Personal Google Workspace profile covers Gmail, Calendar, Tasks; work adds Chat and Keep only when Workspace/admin authorization permits - never assume a consumer Gmail account exposes those APIs.
 - Subagents and unattended scripts run cheaper model tiers (haiku trivial, sonnet default, opus deep review); top tier orchestrator-only. Scale reviewer-subagent count with change risk, not a fixed number.
 - Opus tier means `claude-opus-5`. Never pin an older opus point release.
 - Use skills when relevant; run process skills (brainstorming, systematic-debugging) before implementation skills.
