@@ -10,7 +10,7 @@ Live-editable Git configuration and machine-generated runtime state are intentio
 Classify mutable artifacts by owner:
 
 - Nix-owned binaries are updated only through flake/package changes; application self-update is disabled.
-- Git-backed live configuration is owned by its sibling repo and linked into the home directory.
+- Git-backed live configuration is owned by its sibling repo and linked into the home directory; declarative Git client configuration is owned by Home Manager.
 - Runtime-managed payloads such as globally installed agent skills may change outside the Nix store, but the installer/version and repair mechanism are declared by Universe.
 - Machine-generated replicated state may be written only by its designated writer role.
 
