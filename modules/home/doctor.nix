@@ -29,7 +29,7 @@ in
     symlinks = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
-      description = "Direct home-relative symlink contracts checked by universe-doctor.";
+      description = "Home-relative symlink contracts checked by universe-doctor: both direct writable links that bypass the Home Manager store hop and read-only live instruction links.";
     };
   };
 

@@ -57,7 +57,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 - Installed user timers/services are derived from evaluated Home Manager systemd configuration, not copied into a manual list.
 - Critical host-specific system services/timers are declared through `universe.doctor.*`.
-- Direct writable symlinks that must bypass the Home Manager store hop are registered in `universe.doctor.symlinks`.
+- Home-relative symlink contracts are registered in `universe.doctor.symlinks`: both direct writable symlinks that bypass the Home Manager store hop, and read-only live instruction links that must resolve to a canonical source.
 - A new persistent service, timer, direct-link contract, or host responsibility should become doctor-visible by construction rather than by remembering another checklist.
 
 ## Live dotfiles and agent configuration

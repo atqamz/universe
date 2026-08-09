@@ -17,11 +17,14 @@ in
     ".claude/statusline-command.sh".source = link "${claude}/statusline-command.sh";
 
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
+
+    ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
   };
 
   systemd.user.tmpfiles.rules = [
     "d %h/.claude 0700 - - - -"
     "d %h/.config/opencode 0700 - - - -"
+    "d %h/.codex 0700 - - - -"
   ]
   ++ lib.mapAttrsToList (path: target: "L+ %h/${path} - - - - %h/${target}") writableLinks;
 
@@ -34,5 +37,7 @@ in
     )}
   '';
 
-  universe.doctor.symlinks = writableLinks;
+  universe.doctor.symlinks = writableLinks // {
+    ".codex/AGENTS.md" = "dotagents/AGENTS.md";
+  };
 }
