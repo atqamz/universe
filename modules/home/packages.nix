@@ -15,7 +15,6 @@
       gh
       firebase-tools
       google-cloud-sdk
-      gws
       git-lfs
       hyprpicker
       grim

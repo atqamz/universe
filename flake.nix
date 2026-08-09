@@ -58,6 +58,11 @@
       url = "github:ogulcancelik/herdr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    gw = {
+      url = "github:atqamz/gw";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

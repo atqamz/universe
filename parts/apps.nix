@@ -161,6 +161,7 @@ _: {
           check "zen identity present" test -f "$HOME/.config/zen-profile/identity"
           check "greetd active" systemctl is-active greetd
           check "claude-code on PATH" command -v claude
+          check "gw on PATH" command -v gw
 
           while IFS= read -r unit; do
             [ -n "$unit" ] || continue

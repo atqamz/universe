@@ -164,6 +164,26 @@
         "type": "github"
       }
     },
+    "gw": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786312576,
+        "narHash": "sha256-Z5iC/R1wX2vENYMsAzno0lxNuNlFoumq5LYaB7MyWiY=",
+        "owner": "atqamz",
+        "repo": "gw",
+        "rev": "8373764ff7171ed67398d2585126580ba4e6fb15",
+        "type": "github"
+      },
+      "original": {
+        "owner": "atqamz",
+        "repo": "gw",
+        "type": "github"
+      }
+    },
     "herdr": {
       "inputs": {
         "nixpkgs": [
@@ -287,6 +307,7 @@
         "disko": "disko",
         "flake-parts": "flake-parts",
         "git-hooks-nix": "git-hooks-nix",
+        "gw": "gw",
         "herdr": "herdr",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs",
