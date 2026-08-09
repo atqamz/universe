@@ -34,6 +34,7 @@ in
       opencode
       inputs.treehouse.packages.${system}.default
       inputs.herdr.packages.${system}.default
+      inputs.gw.packages.${system}.default
       rtk
       codedb
       no-mistakes
