@@ -151,6 +151,8 @@ _: {
           check "ssh daemon active" systemctl is-active sshd
           # shellcheck disable=SC2016
           check "github ssh auth" bash -c 'SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket) ssh -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
+          # shellcheck disable=SC2016
+          check "github https credential helper resolves" bash -c 'helper=$(git config --get "credential.https://github.com.helper") && bin=''${helper#!} && test -x "''${bin%% *}"'
           check "secrets vault cloned" test -d "$HOME/vault/.git"
           check "password store present" test -d "$HOME/.password-store"
           check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
