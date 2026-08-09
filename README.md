@@ -2,7 +2,7 @@
 
 Model-agnostic operating config for AI coding agents.
 
-One canonical rule set, shared across Claude Code, opencode, and any other agent that reads an instruction file at session start.
+One canonical rule set, shared across Claude Code, Codex, opencode, and any other agent that reads an instruction file at session start.
 Symlinked live from my NixOS config ([universe](https://github.com/atqamz/universe), `modules/home/dotagents.nix`) via `mkOutOfStoreSymlink`, so edits apply instantly with no rebuild.
 
 ## Layout
@@ -10,16 +10,27 @@ Symlinked live from my NixOS config ([universe](https://github.com/atqamz/univer
 - `AGENTS.md` - the canonical rules, including the always-on caveman and ponytail modes; `CLAUDE.md` is a symlink to it so every agent shares one source
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
 - `opencode/` - opencode config (`opencode.json`)
-- `skills/manifest.txt` - the skill set, installed for both agents by universe's `skills-sync` timer via `bunx skills`
+- `skills/manifest.txt` - one skill manifest feeding every Agent Skills-compatible harness (Claude Code, Codex, opencode); Universe (`modules/home/dotagents.nix`) owns the `skills-sync` installer/timer targets that run `bunx skills`
 
-Plugin-free by design: no Claude-only plugins. Behavior rules live in `AGENTS.md` (both agents read it), on-demand tooling comes from skills. Nothing is tied to one agent.
+Plugin-free by design: no Claude-only plugins. Behavior rules live in `AGENTS.md` (Claude Code, Codex, and opencode all read it), on-demand tooling comes from skills. Nothing is tied to one agent.
 
 ## Force-read convention
 
-Agent tools auto-load one instruction file at session start, by filename: `CLAUDE.md` (Claude Code), `AGENTS.md` (opencode, Copilot, Cursor, Zed; the cross-vendor standard).
+Agent tools auto-load one instruction file at session start, by filename: `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex, opencode, Copilot, Cursor, Zed; the cross-vendor standard).
 Canonical rules live in `AGENTS.md` for the broadest support, with `CLAUDE.md` symlinked to it.
 
-Global locations, all symlinked to this `AGENTS.md` by `dotagents.nix`: `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md`.
+Instruction fan-out, from this repo's canonical `AGENTS.md` to each harness's global instruction file:
+
+```text
+dotagents/AGENTS.md
+    |
+    +-> ~/.claude/CLAUDE.md            (Claude Code)
+    +-> ~/.codex/AGENTS.md             (Codex)
+    +-> ~/.config/opencode/AGENTS.md   (opencode)
+```
+
+This repo owns the source file.
+Universe (`modules/home/dotagents.nix`) owns the actual filesystem symlinks.
 Same filenames at a project root override these globals.
 
 ## License

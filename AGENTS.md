@@ -27,7 +27,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 
 - Host NixOS, shell bash. Write commands the user runs themselves in bash syntax.
 - Never install tools globally. Use the project devshell when available; else `nix shell nixpkgs#<pkg> -c <cmd>` for one-off CLI.
-- `~/.claude` and `~/.config/opencode` configs symlink into `~/dotagents`. Edit the source there; changes apply instantly, no home-manager rebuild.
+- `~/.claude`, `~/.codex`, and `~/.config/opencode` configs symlink into `~/dotagents`. Edit the source there; changes apply instantly, no home-manager rebuild.
 
 ## Coding
 
