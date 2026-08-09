@@ -22,7 +22,7 @@ let
         esac
 
         echo "skills-sync: installing $source"
-        bunx --yes skills@${skillsCliVersion} add "$source" -g -a opencode -a claude-code --skill '*' -y
+        bunx --yes skills@${skillsCliVersion} add "$source" -g -a opencode -a claude-code -a codex --skill '*' -y
       done < "$manifest"
     '';
   };
