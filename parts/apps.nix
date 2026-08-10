@@ -206,6 +206,7 @@ _: {
         runtimeInputs = with pkgs; [
           bash
           coreutils
+          diffutils
           git
           gnupg
           gnugrep
