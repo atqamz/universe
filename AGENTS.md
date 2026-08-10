@@ -95,6 +95,9 @@ Security advisories in the vendored lockfile are handled manually; repo-level De
 Check whether an advisory is dev-only before changing the package: `npmInstallHook` prunes dev dependencies.
 Native prebuilt ELF dependencies are fixed by `autoPatchelfHook`; `better-sqlite3` is the exception that is rebuilt. qmd is intentionally CPU-only and wrapped with the nixpkgs Node runtime.
 
+`pkgs/qmd/mcp-require-explicit-collections.patch` makes the MCP `query` tool require a non-empty `collections` argument, because one index holds several profiles' corpora and upstream falls back to every default collection when the argument is omitted (`docs/adr/0016-qmd-mcp-search-is-collection-scoped.md`).
+Re-check that patch on every qmd bump; the isolation is the reason the package is patched, so never drop the patch to make a version bump build. CLI search stays unscoped on purpose.
+
 `modules/home/qmd.nix` owns `~/.config/qmd/index.yml`. That filename is resolved by qmd upstream, so it stays `.yml` against the global YAML rule.
 Collections, the refresh timer, and their doctor contracts are gated on `universe.capabilities.knowledgeCorpus`; the binary and MCP registration are unconditional.
 A host that does not own the documentation repositories must not be required to have their paths.
