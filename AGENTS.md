@@ -38,7 +38,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `dotfiles` / `dotagents` own live-editable config; Universe links but does not push them.
 - `vault` owns key material; `password-store` owns password entries.
 - `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
-- Nix-owned binaries do not self-update. Update them through their flake/package owner.
+- Nix-owned binaries do not self-update. Update them through their flake/package owner. `koma` is the one exception: it has no opt-out switch, so the containment is not running `koma update` (`docs/adr/0014-koma-tracks-a-fork-branch-until-upstream-lands.md`).
 - Runtime-managed payloads are explicit exceptions. Their installer version and repair mechanism are still declared by Universe.
 - Compatibility shims are scoped to the program that needs them. Claude's Bun-backed `node`/`npx` exist only in Claude's wrapper PATH, not globally.
 
