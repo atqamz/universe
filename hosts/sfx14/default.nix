@@ -7,7 +7,10 @@ _: {
   networking.hostName = "sfx14";
 
   universe = {
-    capabilities.ambientLight = true;
+    capabilities = {
+      ambientLight = true;
+      knowledgeCorpus = true;
+    };
     roles.zenProfileWriter = true;
   };
 

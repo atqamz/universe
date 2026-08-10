@@ -20,3 +20,5 @@ Short by design: context, decision, consequence.
 | [0012](0012-automation-failures-are-observable.md) | Automation distinguishes skips from failures |
 | [0013](0013-runner-workloads-are-rootless-and-isolated.md) | Self-hosted runner workloads are rootless and isolated |
 | [0014](0014-koma-comes-from-its-upstream-flake.md) | koma comes from its upstream flake, and does not self-update |
+| [0015](0015-one-owner-ai-harness-integration.md) | One module owns AI harness integration for all three harnesses |
+| [0016](0016-qmd-mcp-search-is-collection-scoped.md) | qmd MCP search must name its collections, so profiles cannot leak into one result set |

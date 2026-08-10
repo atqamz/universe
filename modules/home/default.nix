@@ -1,6 +1,7 @@
 _: {
   imports = [
     ./minimal.nix
+    ./ai-harness.nix
     ./ai-tools.nix
     ./auto-brightness.nix
     ./browsers.nix
@@ -19,6 +20,7 @@ _: {
     ./git.nix
     ./gpg-preset.nix
     ./gtk.nix
+    ./herdr.nix
     ./hypr.nix
     ./mise.nix
     ./nightlight.nix
@@ -26,6 +28,7 @@ _: {
     ./notify-failure.nix
     ./packages.nix
     ./passmenu.nix
+    ./qmd.nix
     ./qt.nix
     ./readline.nix
     ./repo-sync.nix

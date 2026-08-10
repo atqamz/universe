@@ -1,7 +1,72 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
-  manifest = "$HOME/dotagents/skills/manifest.txt";
-  skillsCliVersion = "1.5.20";
+  skillsCliVersion = "1.5.22";
+
+  ledgerRelative = "${lib.removePrefix "${config.home.homeDirectory}/" config.xdg.stateHome}/universe/managed-skills";
+
+  roots = [
+    ".agents/skills"
+    ".claude/skills"
+    ".codex/skills"
+  ];
+
+  sources = {
+    "atqamz/gw" = [ "google-workspace" ];
+    "obra/superpowers" = [
+      "brainstorming"
+      "dispatching-parallel-agents"
+      "executing-plans"
+      "finishing-a-development-branch"
+      "receiving-code-review"
+      "requesting-code-review"
+      "subagent-driven-development"
+      "systematic-debugging"
+      "test-driven-development"
+      "using-git-worktrees"
+      "using-superpowers"
+      "verification-before-completion"
+      "writing-plans"
+      "writing-skills"
+    ];
+    "pbakaus/impeccable" = [ "impeccable" ];
+  };
+
+  expected = lib.concatLists (lib.attrValues sources);
+
+  forbidden = [
+    "caveman"
+    "caveman-commit"
+    "caveman-compress"
+    "caveman-help"
+    "caveman-review"
+    "caveman-stats"
+    "cavecrew"
+    "ponytail"
+    "ponytail-audit"
+    "ponytail-debt"
+    "ponytail-gain"
+    "ponytail-help"
+    "ponytail-review"
+  ];
+
+  install = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (
+      source: skills:
+      let
+        flags = lib.concatMapStringsSep " " (skill: "--skill ${lib.escapeShellArg skill}") skills;
+      in
+      ''
+        echo "skills-sync: installing ${source}"
+        bunx --yes skills@${skillsCliVersion} add ${lib.escapeShellArg source} -g -a opencode -a claude-code -a codex ${flags} -y
+      ''
+    ) sources
+  );
+
   sync = pkgs.writeShellApplication {
     name = "skills-sync";
     runtimeInputs = with pkgs; [
@@ -9,21 +74,57 @@ let
       coreutils
     ];
     text = ''
-      manifest="${manifest}"
+      ledger="''${HOME:?}/${ledgerRelative}"
 
-      if [ ! -f "$manifest" ]; then
-        echo "skills-sync: missing manifest: $manifest" >&2
-        exit 1
+      declare -A wanted=()
+      for skill in ${lib.escapeShellArgs expected}; do
+        wanted["$skill"]=1
+      done
+
+      retired=()
+      if [ -f "$ledger" ]; then
+        while IFS= read -r skill; do
+          [ -n "$skill" ] || continue
+          if [ -z "''${wanted[$skill]:-}" ]; then
+            retired+=("$skill")
+          fi
+        done <"$ledger"
       fi
 
-      while IFS= read -r source || [ -n "$source" ]; do
-        case "$source" in
-          ""|\#*) continue ;;
-        esac
+      for skill in "''${retired[@]}"; do
+        echo "skills-sync: retiring $skill"
+        for root in ${lib.escapeShellArgs roots}; do
+          rm -rf -- "''${HOME:?}/$root/$skill"
+        done
+      done
 
-        echo "skills-sync: installing $source"
-        bunx --yes skills@${skillsCliVersion} add "$source" -g -a opencode -a claude-code -a codex --skill '*' -y
-      done < "$manifest"
+      ${install}
+
+      mkdir -p "$HOME/.codex/skills"
+      for skill in ${lib.escapeShellArgs expected}; do
+        real="$HOME/.agents/skills/$skill"
+        if [ ! -d "$real" ]; then
+          echo "skills-sync: expected skill not installed: $real" >&2
+          exit 1
+        fi
+        ln -sfn "$real" "$HOME/.codex/skills/$skill"
+      done
+
+      for skill in ${lib.escapeShellArgs forbidden}; do
+        for root in ${lib.escapeShellArgs roots}; do
+          if [ -e "$HOME/$root/$skill" ] || [ -L "$HOME/$root/$skill" ]; then
+            echo "skills-sync: removed skill still present: $HOME/$root/$skill" >&2
+            exit 1
+          fi
+        done
+      done
+
+      mkdir -p "$(dirname "$ledger")"
+      staging="$(mktemp "$ledger.XXXXXX")"
+      trap 'rm -f "$staging"' EXIT
+      printf '%s\n' ${lib.escapeShellArgs expected} | sort >"$staging"
+      mv "$staging" "$ledger"
+      trap - EXIT
     '';
   };
 in
@@ -39,5 +140,11 @@ in
       OnUnitActiveSec = "1d";
       Persistent = true;
     };
+  };
+
+  universe.doctor = {
+    expectedSkills = expected;
+    forbiddenSkills = forbidden;
+    skillLedger = ledgerRelative;
   };
 }

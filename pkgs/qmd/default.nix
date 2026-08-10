@@ -21,6 +21,8 @@ buildNpmPackage rec {
     hash = "sha256-bFk078qQ8Ha/1na+r5ka6yNPI/Pealh0Rk6hJxKBwNs=";
   };
 
+  patches = [ ./mcp-require-explicit-collections.patch ];
+
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';

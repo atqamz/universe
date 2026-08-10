@@ -1,7 +1,10 @@
 { lib, ... }:
 {
   options.universe = {
-    capabilities.ambientLight = lib.mkEnableOption "ambient-light-driven display brightness";
+    capabilities = {
+      ambientLight = lib.mkEnableOption "ambient-light-driven display brightness";
+      knowledgeCorpus = lib.mkEnableOption "the local documentation corpus that qmd collections index";
+    };
     roles.zenProfileWriter = lib.mkEnableOption "the single Zen profile writer role";
 
     doctor = {
