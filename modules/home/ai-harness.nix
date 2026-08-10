@@ -34,6 +34,15 @@ let
 
   codexPatch = lib.recursiveUpdate { mcp_servers = bare; } cfg.codexConfig;
 
+  leafPaths =
+    prefix: value:
+    if lib.isAttrs value then
+      lib.concatLists (lib.mapAttrsToList (name: child: leafPaths (prefix ++ [ name ]) child) value)
+    else
+      [ (lib.concatStringsSep "." prefix) ];
+
+  unownedPaths = lib.subtractLists cfg.codexOwnedPaths (leafPaths [ ] cfg.codexConfig);
+
   claudeJson = pkgs.writeText "claude-mcp-servers.json" (builtins.toJSON claudeServers);
   codexJson = pkgs.writeText "codex-config-patch.json" (builtins.toJSON codexPatch);
 
@@ -119,7 +128,7 @@ let
       trap - EXIT
 
       mkdir -p "$HOME/.codex"
-      python3 ${tomlMerge} "$HOME/.codex/config.toml" ${codexJson} mcp_servers
+      python3 ${tomlMerge} "$HOME/.codex/config.toml" ${codexJson} ${lib.escapeShellArgs (lib.unique cfg.codexOwnedPaths)}
     '';
   };
 in
@@ -136,9 +145,36 @@ in
       default = { };
       description = "Codex config.toml keys owned by Universe and merged into the live file.";
     };
+
+    codexOwnedPaths = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "features.hooks" ];
+      description = "Dotted config.toml paths Universe retracts from the live file before merging its patch, so a key dropped from the declaration also disappears from the machine.";
+    };
   };
 
   config = {
+    assertions = [
+      {
+        assertion = unownedPaths == [ ];
+        message = "universe.aiHarness.codexConfig declares ${lib.concatStringsSep ", " unownedPaths} without listing them in codexOwnedPaths, so dropping them later would leave a stale value in ~/.codex/config.toml.";
+      }
+    ];
+
+    universe = {
+      aiHarness.codexOwnedPaths = [ "mcp_servers" ];
+
+      doctor = {
+        commands = [
+          "claude"
+          "codex"
+          "opencode"
+        ];
+        mcpServers = bare;
+      };
+    };
+
     home.packages = [ reconcile ];
 
     services.userTimers.ai-harness-reconcile = {
@@ -150,15 +186,6 @@ in
         OnStartupSec = "1min";
         Persistent = false;
       };
-    };
-
-    universe.doctor = {
-      commands = [
-        "claude"
-        "codex"
-        "opencode"
-      ];
-      mcpServers = bare;
     };
   };
 }

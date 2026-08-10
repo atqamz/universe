@@ -30,7 +30,10 @@ in
     ".config/opencode/plugins/herdr-agent-state.js".source = "${assets}/opencode/herdr-agent-state.js";
   };
 
-  universe.aiHarness.codexConfig.features.hooks = true;
+  universe.aiHarness = {
+    codexConfig.features.hooks = true;
+    codexOwnedPaths = [ "features.hooks" ];
+  };
 
   universe.doctor = {
     commands = [ "herdr" ];

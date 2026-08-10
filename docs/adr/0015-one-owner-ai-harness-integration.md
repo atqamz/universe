@@ -31,6 +31,11 @@ Universe still declares the desired content, the installer, and the repair mecha
 - Codex: a `tomlkit` merge deletes the Universe-owned paths, then merges the declared patch. `[projects.*]` trust entries and the user's `model` survive.
 - OpenCode: no runtime step. The `mcp` block is tracked config, and doctor enforces it.
 
+Which Codex paths Universe owns is its own declaration, `universe.aiHarness.codexOwnedPaths`, not an inference from the current patch.
+Ownership has to outlive the value: if `features.hooks` were retracted only because it is currently declared, then dropping it from the declaration would leave the live `true` behind forever.
+An assertion fails the build when `codexConfig` declares a leaf that no owned path covers, so retraction cannot be forgotten.
+Retraction is per leaf, so unrelated `[features]` keys the user set survive; `mcp_servers` is owned as a whole table, so a removed server disappears.
+
 Everything that can be a plain file is a plain file.
 The RTK OpenCode plugin comes from `pkgs.rtk.src`, so it is pinned to the same revision as the `rtk` binary.
 The herdr hooks come from the pinned `herdr` flake input at the exact asset paths its `integration status` inspects, which is why `herdr integration install` never has to run.
