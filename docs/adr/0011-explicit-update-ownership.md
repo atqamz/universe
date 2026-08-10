@@ -21,4 +21,4 @@ Compatibility shims are scoped to the program that requires them. They do not re
 OpenCode stays Nix-owned instead of bypassing the nixpkgs auto-update guard.
 The `skills` CLI invoked by the daily repair job is version-pinned.
 Claude's Bun-backed `node`/`npx` compatibility exists only in Claude's wrapper PATH.
-`koma` is the named exception to the disabled-self-update rule: it exposes no opt-out switch, so the rule is not to run `koma update` (`0014-koma-tracks-a-fork-branch-until-upstream-lands.md`).
+`koma` is the named exception to the disabled-self-update rule: it exposes no opt-out switch, so the rule is not to run `koma update` (`0014-koma-comes-from-its-upstream-flake.md`).
