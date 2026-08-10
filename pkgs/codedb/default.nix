@@ -6,11 +6,11 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "codedb";
-  version = "0.2.5836";
+  version = "0.2.5838";
 
   src = fetchurl {
     url = "https://github.com/justrach/codedb/releases/download/v${finalAttrs.version}/codedb-linux-x86_64";
-    hash = "sha256-CvVQoU+tyBCtd3ahYFidO0fcYn/KAyY64c5Hf6juV8s=";
+    hash = "sha256-VgWOqsdLdyVxDD0e8YJUR/MfNXrOlHcLrwXy1fzjrFA=";
     executable = true;
   };
 
