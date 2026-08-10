@@ -19,3 +19,4 @@ Short by design: context, decision, consequence.
 | [0011](0011-explicit-update-ownership.md) | Every mutable artifact has one update owner |
 | [0012](0012-automation-failures-are-observable.md) | Automation distinguishes skips from failures |
 | [0013](0013-runner-workloads-are-rootless-and-isolated.md) | Self-hosted runner workloads are rootless and isolated |
+| [0014](0014-koma-tracks-a-fork-branch-until-upstream-lands.md) | koma tracks a fork branch until its flake lands upstream |

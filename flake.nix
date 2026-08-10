@@ -63,6 +63,11 @@
       url = "github:atqamz/gw";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    koma = {
+      url = "github:atqamz/koma/157-nix-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
