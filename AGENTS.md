@@ -38,7 +38,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `dotfiles` / `dotagents` own live-editable config; Universe links but does not push them.
 - `vault` owns key material; `password-store` owns password entries.
 - `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
-- Nix-owned binaries do not self-update. Update them through their flake/package owner. `koma` is the one exception: it has no opt-out switch, so the containment is not running `koma update` (`docs/adr/0014-koma-tracks-a-fork-branch-until-upstream-lands.md`).
+- Nix-owned binaries do not self-update. Update them through their flake/package owner. `koma` is the one exception: it has no opt-out switch, so the containment is not running `koma update` (`docs/adr/0014-koma-comes-from-its-upstream-flake.md`).
 - Runtime-managed payloads are explicit exceptions. Their installer version and repair mechanism are still declared by Universe.
 - Compatibility shims are scoped to the program that needs them. Claude's Bun-backed `node`/`npx` exist only in Claude's wrapper PATH, not globally.
 
@@ -75,7 +75,6 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
 - Unity runs on `programs.nix-ld`, not a separate FHS wrapper (`docs/adr/0008-unity-runs-on-nix-ld-not-fhs.md`).
 - OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
-- The `koma` input is temporarily pinned to the fork branch `github:atqamz/koma/157-nix-flake`; repoint it at upstream and drop this rule when `aula-id/koma#159` merges (`docs/adr/0014-koma-tracks-a-fork-branch-until-upstream-lands.md`).
 
 ### qmd
 

@@ -65,7 +65,7 @@
     };
 
     koma = {
-      url = "github:atqamz/koma/157-nix-flake";
+      url = "github:aula-id/koma";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

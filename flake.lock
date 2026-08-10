@@ -253,16 +253,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1786340196,
-        "narHash": "sha256-P2BB+7pUMQmNpqi+CjkQKQsNGaA3R8JPAEEAdCQSKU0=",
-        "owner": "atqamz",
+        "lastModified": 1786345360,
+        "narHash": "sha256-m1Jqfn5LuolETBMD6XtsdTKvQ6kyUgOsLD+3xLRfNXs=",
+        "owner": "aula-id",
         "repo": "koma",
-        "rev": "e84e31c38b9e5fc0cbab02a1adac772ddcc24e8c",
+        "rev": "91c0ff026d3d1507c457f0219c9009be9275b6b5",
         "type": "github"
       },
       "original": {
-        "owner": "atqamz",
-        "ref": "157-nix-flake",
+        "owner": "aula-id",
         "repo": "koma",
         "type": "github"
       }
