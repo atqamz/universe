@@ -24,6 +24,7 @@ let
     qmdCollections = config.universe.doctor.qmdCollections;
     expectedSkills = config.universe.doctor.expectedSkills;
     forbiddenSkills = config.universe.doctor.forbiddenSkills;
+    skillLedger = config.universe.doctor.skillLedger;
   };
 in
 {
@@ -86,6 +87,12 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Skill directory names that must not exist in any harness discovery root.";
+    };
+
+    skillLedger = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Home-relative path of the ledger naming the skills Universe managed on the last successful sync; its contents must equal expectedSkills.";
     };
   };
 

@@ -35,6 +35,10 @@ Everything that can be a plain file is a plain file.
 The RTK OpenCode plugin comes from `pkgs.rtk.src`, so it is pinned to the same revision as the `rtk` binary.
 The herdr hooks come from the pinned `herdr` flake input at the exact asset paths its `integration status` inspects, which is why `herdr integration install` never has to run.
 The skill allowlist is a Nix attrset naming each source repository and each wanted skill, replacing `dotagents/skills/manifest.txt`; upstream additions do not silently enter the global prompt surface.
+Installing that allowlist is not enough to make it authoritative, because `bunx skills add` has no notion of what Universe asked for last time.
+`skills-sync` therefore keeps a ledger at `$XDG_STATE_HOME/universe/managed-skills` naming the skills it managed on its last successful run, and retires `previous - current` from the three roots this delivery mechanism writes before installing.
+Ownership comes from the ledger, never from a directory merely existing under `~/.agents/skills`, which is what keeps an independently managed skill such as `no-mistakes` safe.
+The ledger is replaced atomically after the sync succeeds, so a failed sync retries the same retirement instead of forgetting it.
 
 Every one of these gains a doctor contract.
 `universe.doctor` grew `commands`, `paths`, `absentPaths`, `mcpServers`, `herdrIntegrations`, `qmdCollections`, `expectedSkills`, and `forbiddenSkills`, and the checks are derived from the same declarations the modules already make.

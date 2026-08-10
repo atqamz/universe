@@ -1,6 +1,19 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   skillsCliVersion = "1.5.22";
+
+  ledgerRelative = "${lib.removePrefix "${config.home.homeDirectory}/" config.xdg.stateHome}/universe/managed-skills";
+
+  roots = [
+    ".agents/skills"
+    ".claude/skills"
+    ".codex/skills"
+  ];
 
   sources = {
     "atqamz/gw" = [ "google-workspace" ];
@@ -61,6 +74,30 @@ let
       coreutils
     ];
     text = ''
+      ledger="''${HOME:?}/${ledgerRelative}"
+
+      declare -A wanted=()
+      for skill in ${lib.escapeShellArgs expected}; do
+        wanted["$skill"]=1
+      done
+
+      retired=()
+      if [ -f "$ledger" ]; then
+        while IFS= read -r skill; do
+          [ -n "$skill" ] || continue
+          if [ -z "''${wanted[$skill]:-}" ]; then
+            retired+=("$skill")
+          fi
+        done <"$ledger"
+      fi
+
+      for skill in "''${retired[@]}"; do
+        echo "skills-sync: retiring $skill"
+        for root in ${lib.escapeShellArgs roots}; do
+          rm -rf -- "''${HOME:?}/$root/$skill"
+        done
+      done
+
       ${install}
 
       mkdir -p "$HOME/.codex/skills"
@@ -74,13 +111,20 @@ let
       done
 
       for skill in ${lib.escapeShellArgs forbidden}; do
-        for root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills"; do
-          if [ -e "$root/$skill" ] || [ -L "$root/$skill" ]; then
-            echo "skills-sync: removed skill still present: $root/$skill" >&2
+        for root in ${lib.escapeShellArgs roots}; do
+          if [ -e "$HOME/$root/$skill" ] || [ -L "$HOME/$root/$skill" ]; then
+            echo "skills-sync: removed skill still present: $HOME/$root/$skill" >&2
             exit 1
           fi
         done
       done
+
+      mkdir -p "$(dirname "$ledger")"
+      staging="$(mktemp "$ledger.XXXXXX")"
+      trap 'rm -f "$staging"' EXIT
+      printf '%s\n' ${lib.escapeShellArgs expected} | sort >"$staging"
+      mv "$staging" "$ledger"
+      trap - EXIT
     '';
   };
 in
@@ -101,5 +145,6 @@ in
   universe.doctor = {
     expectedSkills = expected;
     forbiddenSkills = forbidden;
+    skillLedger = ledgerRelative;
   };
 }

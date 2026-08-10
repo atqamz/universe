@@ -363,6 +363,14 @@ _: {
             check "herdr $target integration current" grep -qE "^$target: current " "$probe/herdr.txt"
           done < <(jq -r '.herdrIntegrations[]' "$manifest")
 
+          ledger="$(jq -r '.skillLedger' "$manifest")"
+          if [ -n "$ledger" ] && [ "$ledger" != null ]; then
+            jq -r '.expectedSkills[]' "$manifest" | sort >"$probe/expected-skills"
+            # shellcheck disable=SC2016
+            check "universe managed skill ledger matches the allowlist" bash -c \
+              'sort -- "$1" | diff -q - "$2"' _ "$HOME/$ledger" "$probe/expected-skills"
+          fi
+
           while IFS= read -r skill; do
             [ -n "$skill" ] || continue
             check "skill $skill discoverable by claude" test -e "$HOME/.claude/skills/$skill/SKILL.md"
