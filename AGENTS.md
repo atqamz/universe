@@ -109,7 +109,9 @@ Collections index documentation only, are named `<profile>-<repo>`, and each car
 ### codedb
 
 `modules/home/codedb.nix` is the sole owner of the `codedb` binary and its registration; `CODEDB_NO_AUTO_UPDATE` and `CODEDB_NO_CODEX_POLICY` keep the binary from installing an unmanaged copy or writing harness config behind Universe's back.
-`codedb-prune` decides staleness generically, by testing whether the project root recorded in `~/.codedb/projects/*/project.txt` still exists. An index whose project root is unreadable is counted, not deleted. Never special-case a particular worktree layout.
+`codedb-prune` decides staleness generically, by testing whether the project root recorded in `~/.codedb/projects/*/project.txt` still exists. Never special-case a particular worktree layout.
+A marker that is missing, unreadable, empty, or not an absolute path is counted as unknown and left alone; it never aborts the job.
+Deletion re-reads the marker and re-tests the project root, so a worktree recreated between the scan and the delete keeps its index.
 
 ## SFX14 power and display policy
 

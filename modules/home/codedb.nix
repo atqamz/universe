@@ -26,17 +26,24 @@ let
         exit 0
       fi
 
+      project_root() {
+        local marker="$1"
+        local value
+
+        [ -f "$marker" ] && [ -r "$marker" ] || return 1
+        value="$(head -n 1 -- "$marker" 2>/dev/null)" || return 1
+        case "$value" in
+          /*) ;;
+          *) return 1 ;;
+        esac
+        printf '%s\n' "$value"
+      }
+
       stale=()
       unknown=0
       for index in "$root"/*; do
         [ -d "$index" ] || continue
-        marker="$index/project.txt"
-        if [ ! -f "$marker" ]; then
-          unknown=$((unknown + 1))
-          continue
-        fi
-        project="$(head -n 1 "$marker")"
-        if [ -z "$project" ]; then
+        if ! project="$(project_root "$index/project.txt")"; then
           unknown=$((unknown + 1))
           continue
         fi
@@ -56,20 +63,41 @@ let
         exit 0
       fi
 
-      reclaimable="$(du -shc -- "''${stale[@]}" | tail -n 1 | cut -f1)"
+      reclaimable="unknown size"
+      if measured="$(du -shc -- "''${stale[@]}" 2>/dev/null | tail -n 1 | cut -f1)" \
+        && [ -n "$measured" ]; then
+        reclaimable="$measured"
+      fi
       echo "codedb-prune: $count stale indexes, $reclaimable reclaimable"
 
       if [ "$dry" -eq 1 ]; then
         for index in "''${stale[@]}"; do
-          printf '%s -> %s\n' "$index" "$(head -n 1 "$index/project.txt")"
+          printf '%s -> %s\n' "$index" "$(project_root "$index/project.txt" || echo '<marker unreadable>')"
         done
         exit 0
       fi
 
+      removed=0
+      kept=0
       for index in "''${stale[@]}"; do
+        if ! project="$(project_root "$index/project.txt")"; then
+          echo "codedb-prune: $index lost its project marker after the scan; left untouched"
+          kept=$((kept + 1))
+          continue
+        fi
+        if [ -e "$project" ]; then
+          echo "codedb-prune: $project exists again; keeping $index"
+          kept=$((kept + 1))
+          continue
+        fi
         rm -rf -- "$index"
+        removed=$((removed + 1))
       done
-      echo "codedb-prune: removed $count stale indexes, reclaimed $reclaimable"
+
+      echo "codedb-prune: removed $removed of $count stale indexes, reclaimed up to $reclaimable"
+      if [ "$kept" -gt 0 ]; then
+        echo "codedb-prune: $kept indexes were no longer stale at deletion time; left untouched"
+      fi
     '';
   };
 in
