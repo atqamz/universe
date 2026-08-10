@@ -30,6 +30,9 @@ The `gui` package additionally builds a frontend with `npm` inside the sandbox a
 A branch is not an immutable reference.
 `flake.lock` pins the exact revision, so builds stay reproducible, but `nix flake update` follows the branch rather than a tag, and a force-push on the fork changes what that name means.
 
+The weekly Dependabot `nix` update covers every flake input, so the fork branch is followed on a weekly cadence rather than only on a manual `nix flake update`.
+Such a bump lands through the normal build/check gated auto-merge path like any other input.
+
 The fork is under the same owner as this repo, so that is a controlled risk rather than a third-party one.
 It is still the reason this input deserves a written exit condition instead of being left to look like every other entry in the list.
 
