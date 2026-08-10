@@ -37,9 +37,5 @@
     "enabled": false,
     "mode": "hold"
   },
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "normal",
-  "autoCompactEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "voiceEnabled": false
+  "skipDangerousModePermissionPrompt": true
 }

@@ -24,101 +24,21 @@
       "description": "NixOS system and home configs - fish, hypr, fastfetch, zed, cs2, herdr, caelestia"
     }
   },
-  "provider": {
-    "9router": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "9router",
-      "options": {
-        "baseURL": "https://router.luckynee.com/v1",
-        "apiKey": "{file:/run/secrets/ninerouter-api-key}"
-      },
-      "models": {
-        "atqa-gpt-glm": {
-          "name": "atqa-gpt-glm"
-        },
-        "Free": {
-          "name": "Free"
-        },
-        "glm-5.2-visual": {
-          "name": "glm-5.2-visual"
-        },
-        "kr/claude-opus-4.8": {
-          "name": "kr/claude-opus-4.8"
-        },
-        "kr/claude-opus-5": {
-          "name": "kr/claude-opus-5"
-        },
-        "kr/claude-opus-5-agentic": {
-          "name": "kr/claude-opus-5-agentic"
-        },
-        "kr/claude-opus-5-thinking": {
-          "name": "kr/claude-opus-5-thinking",
-          "reasoning": true
-        },
-        "kr/claude-opus-5-thinking-agentic": {
-          "name": "kr/claude-opus-5-thinking-agentic"
-        },
-        "kr/claude-sonnet-5": {
-          "name": "kr/claude-sonnet-5"
-        },
-        "kr/gpt-5.6-luna": {
-          "name": "kr/gpt-5.6-luna"
-        },
-        "kr/gpt-5.6-luna-agentic": {
-          "name": "kr/gpt-5.6-luna-agentic"
-        },
-        "kr/gpt-5.6-luna-thinking": {
-          "name": "kr/gpt-5.6-luna-thinking",
-          "reasoning": true
-        },
-        "kr/gpt-5.6-luna-thinking-agentic": {
-          "name": "kr/gpt-5.6-luna-thinking-agentic"
-        },
-        "kr/gpt-5.6-sol": {
-          "name": "kr/gpt-5.6-sol"
-        },
-        "kr/gpt-5.6-sol-agentic": {
-          "name": "kr/gpt-5.6-sol-agentic"
-        },
-        "kr/gpt-5.6-sol-thinking": {
-          "name": "kr/gpt-5.6-sol-thinking",
-          "reasoning": true
-        },
-        "kr/gpt-5.6-sol-thinking-agentic": {
-          "name": "kr/gpt-5.6-sol-thinking-agentic"
-        },
-        "kr/gpt-5.6-terra": {
-          "name": "kr/gpt-5.6-terra"
-        },
-        "kr/gpt-5.6-terra-agentic": {
-          "name": "kr/gpt-5.6-terra-agentic"
-        },
-        "kr/gpt-5.6-terra-thinking": {
-          "name": "kr/gpt-5.6-terra-thinking",
-          "reasoning": true
-        },
-        "kr/gpt-5.6-terra-thinking-agentic": {
-          "name": "kr/gpt-5.6-terra-thinking-agentic"
-        },
-        "nvidia/minimaxai/minimax-m3": {
-          "name": "nvidia/minimaxai/minimax-m3"
-        },
-        "nvidia/nemotron-3-ultra-550b-a55b": {
-          "name": "nvidia/nemotron-3-ultra-550b-a55b"
-        },
-        "nvidia/parakeet-ctc-1.1b-asr": {
-          "name": "nvidia/parakeet-ctc-1.1b-asr"
-        },
-        "nvidia/z-ai/glm-5.2": {
-          "name": "nvidia/z-ai/glm-5.2"
-        },
-        "openrouter/openrouter/free": {
-          "name": "openrouter/openrouter/free"
-        },
-        "tkr/moonshotai/kimi-k3-free": {
-          "name": "tkr/moonshotai/kimi-k3-free"
-        }
+  "mcp": {
+    "codedb": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/etc/profiles/per-user/atqa/bin/codedb", "mcp"],
+      "environment": {
+        "CODEDB_NO_AUTO_UPDATE": "1",
+        "CODEDB_NO_CODEX_POLICY": "1"
       }
+    },
+    "qmd": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/etc/profiles/per-user/atqa/bin/qmd", "mcp"],
+      "environment": {}
     }
   },
   "compaction": {

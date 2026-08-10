@@ -7,10 +7,11 @@ Symlinked live from my NixOS config ([universe](https://github.com/atqamz/univer
 
 ## Layout
 
-- `AGENTS.md` - the canonical rules, including the always-on caveman and ponytail modes; `CLAUDE.md` is a symlink to it so every agent shares one source
+- `AGENTS.md` - the canonical rules, including the always-on efficiency rules; `CLAUDE.md` is a symlink to it so every agent shares one source
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
-- `opencode/` - opencode config (`opencode.json`)
-- `skills/manifest.txt` - one skill manifest feeding every Agent Skills-compatible harness (Claude Code, Codex, opencode); Universe (`modules/home/dotagents.nix`) owns the `skills-sync` installer/timer targets that run `bunx skills`
+- `opencode/` - opencode config (`opencode.json`), including the MCP servers every harness shares
+
+Skills are not listed here. Universe (`modules/home/skills-sync.nix`) owns the allowlist of source repositories and wanted skills, and runs `bunx skills` for every Agent Skills-compatible harness (Claude Code, Codex, opencode).
 
 Plugin-free by design: no Claude-only plugins. Behavior rules live in `AGENTS.md` (Claude Code, Codex, and opencode all read it), on-demand tooling comes from skills. Nothing is tied to one agent.
 
