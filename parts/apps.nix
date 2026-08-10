@@ -97,6 +97,15 @@ _: {
             local reason="$1"
             local path="$2"
 
+            case "$path" in
+              */.agents/skills | */.claude/skills | */.codex/skills | */.config/opencode/skills \
+                | */.claude/plugins | */.claude/plugins/cache | */.claude/plugins/marketplaces \
+                | */.config/opencode/agents | */.config/opencode/commands)
+                echo "refuse: $path is a harness discovery root, not migration residue" >&2
+                exit 1
+                ;;
+            esac
+
             if [ ! -e "$path" ] && [ ! -L "$path" ]; then
               return 0
             fi
@@ -165,7 +174,6 @@ _: {
             drop "command belonged to a removed skill" "$HOME/.config/opencode/commands/$name.md"
           done
           drop "runtime marker of a removed skill" "$HOME/.config/opencode/.caveman-active"
-          drop "empty misnamed OpenCode skill root" "$HOME/.config/opencode/skills"
 
           echo "== duplicate and removed Claude plugins =="
           drop "plugin superseded by skills-sync" "$HOME/.claude/plugins/cache/claude-plugins-official/superpowers"

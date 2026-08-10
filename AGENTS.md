@@ -75,6 +75,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Codex `[features] hooks = true` must be persisted in `config.toml`; `codex --enable hooks` is per-invocation only.
 - Herdr hook assets come from the pinned `herdr` flake input at the exact paths `herdr integration status` inspects, so `herdr integration install` is never run. The RTK OpenCode plugin comes from `pkgs.rtk.src`, so it cannot drift from the `rtk` binary.
 - The skill allowlist is a Nix attrset of source repository to wanted skill names. Never widen it with `--skill '*'`; upstream additions must be accepted deliberately.
+- `ai-stack-cleanup` removes exactly identified migration residue. It must never remove a harness discovery root such as `~/.config/opencode/skills`; a guard refuses those paths so a future rule cannot reintroduce that class of deletion.
 - Every integration carries a doctor contract derived from its own declaration. Doctor asks each harness (`opencode debug config`, `opencode debug skill`, `codex mcp list --json`, `herdr integration status`, `qmd status`) instead of reading its files. `opencode debug config` exits 0 on invalid config, so check its output parses.
 
 ## Packaging and developer tools
