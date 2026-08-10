@@ -75,6 +75,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
 - Unity runs on `programs.nix-ld`, not a separate FHS wrapper (`docs/adr/0008-unity-runs-on-nix-ld-not-fhs.md`).
 - OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
+- The `koma` input is temporarily pinned to the fork branch `github:atqamz/koma/157-nix-flake`; repoint it at upstream and drop this rule when `aula-id/koma#159` merges (`docs/adr/0014-koma-tracks-a-fork-branch-until-upstream-lands.md`).
 
 ### qmd
 
