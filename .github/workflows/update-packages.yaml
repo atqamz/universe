@@ -50,6 +50,8 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: update package
         id: update
+        env:
+          NIX_PATH: nixpkgs=flake:nixpkgs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
