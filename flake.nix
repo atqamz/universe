@@ -34,7 +34,7 @@
     };
 
     caelestia-shell = {
-      url = "github:caelestia-dots/shell/v2.2.0";
+      url = "github:caelestia-dots/shell/v2.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
     };
