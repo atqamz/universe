@@ -24,3 +24,7 @@ WezTerm remains available for workflows that need it and can serve as a distinct
 
 The split does not claim to solve a compositor, kernel, or GPU failure that affects the whole graphical session.
 A Linux virtual terminal remains the recovery path when the compositor itself is unavailable.
+
+The change is cross-repository and ordered.
+The paired `dotfiles` change (atqamz/dotfiles#9) must merge before this configuration is applied to a machine, because that repository owns the keybinds and the Caelestia launcher.
+Applying Universe first would put WezTerm on XWayland and software rasterization while it is still the terminal the desktop launches by default.
