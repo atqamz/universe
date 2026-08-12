@@ -86,7 +86,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `modules/home/packages.nix` is passive inventory. Application behavior belongs in a named module: Zed in `zed.nix`, browsers in `browsers.nix`, AI tool wrappers/update policy in `ai-tools.nix`, Unity in `unity.nix`.
 - Zed is wrapped with its language servers on PATH. `nixd` is the single Nix LSP; keep `go` beside `gopls` because Zed's Go extension may invoke the Go toolchain.
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
-- Unity runs on `programs.nix-ld`, not a separate FHS wrapper (`docs/adr/0008-unity-runs-on-nix-ld-not-fhs.md`).
+- Unity Hub, CLI, and Editor wrappers share `unityBase.fhsEnv`; `programs.nix-ld` remains for other foreign binaries and is not imported by minimal host variants (`docs/adr/0008-unity-uses-one-shared-fhs-runtime.md`).
 - OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
 
 ### qmd
