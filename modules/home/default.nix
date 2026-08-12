@@ -17,6 +17,7 @@ _: {
     ./dotfiles.nix
     ./eye-break.nix
     ./file-management.nix
+    ./foot.nix
     ./git.nix
     ./gpg-preset.nix
     ./gtk.nix
