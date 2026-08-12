@@ -22,8 +22,8 @@ let
     mcpServers = config.universe.doctor.mcpServers;
     herdrIntegrations = config.universe.doctor.herdrIntegrations;
     qmdCollections = config.universe.doctor.qmdCollections;
+    qmdRequiredCollections = config.universe.doctor.qmdRequiredCollections;
     expectedSkills = config.universe.doctor.expectedSkills;
-    forbiddenSkills = config.universe.doctor.forbiddenSkills;
     skillLedger = config.universe.doctor.skillLedger;
   };
 in
@@ -77,16 +77,16 @@ in
       description = "qmd collection name to indexed absolute source path.";
     };
 
+    qmdRequiredCollections = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "qmd collections whose sources and indexed state are required for workstation health.";
+    };
+
     expectedSkills = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Skill directory names that must be discoverable by every harness.";
-    };
-
-    forbiddenSkills = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Skill directory names that must not exist in any harness discovery root.";
     };
 
     skillLedger = lib.mkOption {

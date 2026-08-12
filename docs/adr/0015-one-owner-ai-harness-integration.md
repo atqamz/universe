@@ -46,7 +46,7 @@ Ownership comes from the ledger, never from a directory merely existing under `~
 The ledger is replaced atomically after the sync succeeds, so a failed sync retries the same retirement instead of forgetting it.
 
 Every one of these gains a doctor contract.
-`universe.doctor` grew `commands`, `paths`, `absentPaths`, `mcpServers`, `herdrIntegrations`, `qmdCollections`, `expectedSkills`, and `forbiddenSkills`, and the checks are derived from the same declarations the modules already make.
+`universe.doctor` grew `commands`, `paths`, `absentPaths`, `mcpServers`, `herdrIntegrations`, `qmdCollections`, `qmdRequiredCollections`, and `expectedSkills`, and the checks are derived from the same declarations the modules already make.
 
 ## Consequence
 

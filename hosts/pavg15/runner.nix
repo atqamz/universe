@@ -2,7 +2,7 @@
 let
   count = 4;
   runnerName = "pavg15";
-  image = "docker.io/myoung34/github-runner:2.335.1-ubuntu-noble";
+  image = "docker.io/myoung34/github-runner:2.335.1-ubuntu-noble@sha256:65e12ef91693ca37a71ecf2194260e4c9903b89cea3b2312d545469b62680fc8";
   memory = "7g";
   cpus = "2.5";
   appPemPath = "/var/lib/github-runner/app-key.pem";

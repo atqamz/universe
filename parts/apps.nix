@@ -66,138 +66,9 @@ _: {
               echo "==> cloning $repo"
               git clone "git@github.com:atqamz/$repo.git" "$dest"
             else
-              echo "==> updating $repo"
-              git -C "$dest" pull --ff-only
+              echo "==> keeping existing $repo checkout"
             fi
           done
-        '';
-      };
-
-      aiCleanup = pkgs.writeShellApplication {
-        name = "ai-stack-cleanup";
-        runtimeInputs = with pkgs; [
-          coreutils
-          jq
-        ];
-        text = ''
-          dry=0
-          case "''${1-}" in
-            --dry-run) dry=1 ;;
-            "") ;;
-            *)
-              echo "usage: ai-stack-cleanup [--dry-run]" >&2
-              exit 2
-              ;;
-          esac
-
-          removed=0
-          kept=0
-
-          drop() {
-            local reason="$1"
-            local path="$2"
-
-            case "$path" in
-              */.agents/skills | */.claude/skills | */.codex/skills | */.config/opencode/skills \
-                | */.claude/plugins | */.claude/plugins/cache | */.claude/plugins/marketplaces \
-                | */.config/opencode/agents | */.config/opencode/commands)
-                echo "refuse: $path is a harness discovery root, not migration residue" >&2
-                exit 1
-                ;;
-            esac
-
-            if [ ! -e "$path" ] && [ ! -L "$path" ]; then
-              return 0
-            fi
-            if [ -L "$path" ] && readlink -- "$path" | grep -q '^/nix/store/'; then
-              echo "keep: $path is a declaratively owned store link"
-              kept=$((kept + 1))
-              return 0
-            fi
-
-            local size measured
-            if [ -L "$path" ] && [ ! -e "$path" ]; then
-              size="dangling link"
-            elif measured="$(du -shL -- "$path" 2>/dev/null | cut -f1)" && [ -n "$measured" ]; then
-              size="$measured"
-            else
-              size="unknown size"
-            fi
-            echo "remove: $path ($size) - $reason"
-            if [ "$dry" -eq 0 ]; then
-              rm -rf -- "$path"
-            fi
-            removed=$((removed + 1))
-          }
-
-          prune_json() {
-            local file="$1"
-            local filter="$2"
-            local what="$3"
-
-            [ -f "$file" ] || return 0
-            if ! jq -e "($filter) | length > 0" "$file" >/dev/null 2>&1; then
-              return 0
-            fi
-            echo "remove: $what from $file"
-            if [ "$dry" -eq 0 ]; then
-              local staging
-              staging="$(mktemp "$file.XXXXXX")"
-              jq "delpaths($filter)" "$file" >"$staging"
-              mv "$staging" "$file"
-            fi
-            removed=$((removed + 1))
-          }
-
-          echo "== superseded codedb payloads =="
-          drop "codedb is Nix-owned; no self-updated copy may shadow it" "$HOME/bin/codedb"
-          drop "codedb self-update is disabled" "$HOME/.codedb/last_auto_update_check"
-          drop "codedb Codex policy injection is disabled" "$HOME/.codedb/codex-policy-registered"
-
-          echo "== superseded RTK and Herdr artifacts =="
-          drop "RTK instructions now live in dotagents/AGENTS.md" "$HOME/.claude/RTK.md"
-          drop "editor backup of a Home Manager owned file" "$HOME/.codex/AGENTS.md.bak"
-          drop "editor backup of a Home Manager owned file" "$HOME/.config/opencode/AGENTS.md.save"
-
-          echo "== removed skill delivery =="
-          for name in caveman caveman-commit caveman-compress caveman-help caveman-review \
-            caveman-stats cavecrew ponytail ponytail-audit ponytail-debt ponytail-gain \
-            ponytail-help ponytail-review; do
-            drop "skill removed from the manifest" "$HOME/.agents/skills/$name"
-            drop "skill removed from the manifest" "$HOME/.claude/skills/$name"
-            drop "skill removed from the manifest" "$HOME/.codex/skills/$name"
-          done
-          for name in cavecrew-builder cavecrew-investigator cavecrew-reviewer; do
-            drop "agent belonged to a removed skill" "$HOME/.config/opencode/agents/$name.md"
-          done
-          for name in caveman caveman-commit caveman-compress caveman-help caveman-review caveman-stats; do
-            drop "command belonged to a removed skill" "$HOME/.config/opencode/commands/$name.md"
-          done
-          drop "runtime marker of a removed skill" "$HOME/.config/opencode/.caveman-active"
-
-          echo "== duplicate and removed Claude plugins =="
-          drop "plugin superseded by skills-sync" "$HOME/.claude/plugins/cache/claude-plugins-official/superpowers"
-          for name in caveman ponytail; do
-            drop "plugin marketplace of a removed skill" "$HOME/.claude/plugins/marketplaces/$name"
-            drop "plugin cache of a removed skill" "$HOME/.claude/plugins/cache/$name"
-          done
-          prune_json "$HOME/.claude/plugins/installed_plugins.json" \
-            '[(.plugins // {}) | keys[] | select(test("^(caveman|ponytail)")) | ["plugins", .]]' \
-            "removed plugin registrations"
-          prune_json "$HOME/.claude/plugins/installed_plugins.json" \
-            '[(.plugins // {}) | keys[] | select(. == "superpowers@claude-plugins-official") | ["plugins", .]]' \
-            "duplicate superpowers registration"
-          prune_json "$HOME/.claude/plugins/known_marketplaces.json" \
-            '[keys[] | select(. == "caveman" or . == "ponytail") | [.]]' \
-            "removed plugin marketplaces"
-
-          echo ""
-          echo "== summary =="
-          echo "removed: $removed"
-          echo "kept: $kept"
-          if [ "$dry" -eq 1 ]; then
-            echo "dry run: nothing was deleted"
-          fi
         '';
       };
 
@@ -261,6 +132,17 @@ _: {
             else
               report "$relative direct symlink" 1
             fi
+          }
+
+          # shellcheck disable=SC2329
+          check_qmd_collection() {
+            local name="$1"
+            awk -v name="$name" '
+              index($0, "  " name " (qmd://") == 1 { in_collection=1; next }
+              in_collection && $0 ~ /^  [^ ]+ \(qmd:\/\// { in_collection=0 }
+              in_collection && $0 ~ /^ +Files: +[1-9][0-9]*([[:space:]]|$)/ { found=1 }
+              END { exit found ? 0 : 1 }
+            ' "$probe/qmd.txt"
           }
 
           echo "== universe-doctor =="
@@ -348,11 +230,10 @@ _: {
             check "no stale codedb indexes" bash -c 'codedb-prune --dry-run | grep -q "no stale indexes"'
           fi
 
-          while IFS=$'\t' read -r name path; do
+          while IFS= read -r name; do
             [ -n "$name" ] || continue
-            check "qmd collection $name source present" test -d "$path"
-            check "qmd collection $name loaded" grep -qE "^ +$name \(qmd://" "$probe/qmd.txt"
-          done < <(jq -r '.qmdCollections | to_entries[] | [.key, .value] | @tsv' "$manifest")
+            check "qmd required collection $name loaded with documents" check_qmd_collection "$name"
+          done < <(jq -r '.qmdRequiredCollections[]' "$manifest")
 
           if jq -e '.qmdCollections | length > 0' "$manifest" >/dev/null; then
             check "qmd config parses" test -s "$probe/qmd.txt"
@@ -378,21 +259,6 @@ _: {
             check "skill $skill discoverable by codex" test -e "$HOME/.codex/skills/$skill/SKILL.md"
             check "skill $skill discoverable by opencode" grep -qF "$skill" "$probe/opencode-skills.txt"
           done < <(jq -r '.expectedSkills[]' "$manifest")
-
-          while IFS= read -r skill; do
-            [ -n "$skill" ] || continue
-            # shellcheck disable=SC2016
-            check "skill $skill absent" bash -c \
-              '! test -e "$HOME/.agents/skills/$1" && ! test -L "$HOME/.claude/skills/$1" && ! test -e "$HOME/.codex/skills/$1"' _ "$skill"
-          done < <(jq -r '.forbiddenSkills[]' "$manifest")
-
-          plugins="$HOME/.claude/plugins/installed_plugins.json"
-          # shellcheck disable=SC2016
-          check "no removed claude plugins registered" bash -c \
-            '! test -f "$1" || ! jq -e ".plugins | keys[] | select(test(\"^(caveman|ponytail)\"))" "$1" >/dev/null 2>&1' _ "$plugins"
-          # shellcheck disable=SC2016
-          check "superpowers delivered only by skills-sync" bash -c \
-            '! test -f "$1" || ! jq -e ".plugins | has(\"superpowers@claude-plugins-official\")" "$1" >/dev/null 2>&1' _ "$plugins"
 
           while IFS= read -r unit; do
             [ -n "$unit" ] || continue
@@ -466,20 +332,9 @@ _: {
           program = "${doctor}/bin/universe-doctor";
           meta.description = "Verify declarative and live universe invariants";
         };
-        bootstrap-check = {
-          type = "app";
-          program = "${doctor}/bin/universe-doctor";
-          meta.description = "Compatibility alias for universe doctor";
-        };
-        ai-stack-cleanup = {
-          type = "app";
-          program = "${aiCleanup}/bin/ai-stack-cleanup";
-          meta.description = "Remove AI harness runtime residue superseded by declarative ownership";
-        };
       };
 
       checks = {
-        app-ai-stack-cleanup = aiCleanup;
         app-bootstrap = bootstrap;
         app-doctor = doctor;
         app-secrets-export = export;

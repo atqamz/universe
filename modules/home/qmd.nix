@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   osConfig,
   pkgs,
@@ -7,15 +8,38 @@
 }:
 let
   corpus = osConfig.universe.capabilities.knowledgeCorpus;
+  system = pkgs.stdenv.hostPlatform.system;
+  upstreamQmd = inputs.qmd.packages.${system}.default;
+  qmd = upstreamQmd.overrideAttrs (old: {
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.autoPatchelfHook ];
+    buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.stdenv.cc.cc.lib ];
+    autoPatchelfIgnoreMissingDeps = (old.autoPatchelfIgnoreMissingDeps or [ ]) ++ [
+      "libc.musl-x86_64.so.1"
+      "libcublas.so.12"
+      "libcublas.so.13"
+      "libcuda.so.1"
+      "libcudart.so.12"
+      "libcudart.so.13"
+      "libvulkan.so.1"
+    ];
+    patches = (old.patches or [ ]) ++ [ ./qmd-mcp-require-explicit-collections.patch ];
+    postFixup = (old.postFixup or "") + ''
+      wrapProgram "$out/bin/qmd" \
+        --set QMD_LLAMA_GPU false
+    '';
+  });
   bin = "${config.home.profileDirectory}/bin/qmd";
   github = "${config.home.homeDirectory}/github";
 
-  collections = {
+  requiredCollections = {
     atqamz-universe = {
       path = "${config.home.homeDirectory}/universe";
       subdir = "docs";
       context = "NixOS workstation fleet: host composition, state ownership, ADRs, install and recovery runbooks.";
     };
+  };
+
+  optionalCollections = {
     atqamz-secondhand = {
       path = "${github}/atqamz/secondhand";
       subdir = "docs";
@@ -73,7 +97,13 @@ let
     };
   };
 
+  collections = requiredCollections // optionalCollections;
   paths = lib.mapAttrs (_: entry: "${entry.path}/${entry.subdir}") collections;
+  requiredPaths = [ "universe/docs" ];
+  requiredSource = "${config.home.homeDirectory}/${builtins.head requiredPaths}";
+
+  indexYaml = (pkgs.formats.yaml { }).generate "qmd-index.yml" index;
+  indexJson = (pkgs.formats.json { }).generate "qmd-index.json" index;
 
   index = {
     global_context = "Durable project documentation only, one collection per repository documentation root, named <profile>-<repo>. Source code is not indexed here: navigate code with codedb instead.";
@@ -94,26 +124,30 @@ let
   refresh = pkgs.writeShellApplication {
     name = "qmd-refresh";
     runtimeInputs = [
-      pkgs.qmd
+      qmd
       pkgs.coreutils
+      pkgs.jq
     ];
     text = ''
-      missing=0
-      ${lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (name: path: ''
-          if [ ! -d ${lib.escapeShellArg path} ]; then
-            echo "qmd-refresh: collection ${name} source missing: ${path}" >&2
-            missing=$((missing + 1))
-          fi
-        '') paths
-      )}
-      if [ "$missing" -gt 0 ]; then
-        echo "qmd-refresh: $missing configured collections have no source directory" >&2
+      config_dir="$(mktemp -d)"
+      trap 'rm -rf "$config_dir"' EXIT
+      if [ ! -d ${lib.escapeShellArg requiredSource} ]; then
+        echo "qmd-refresh: required collection atqamz-universe source is absent" >&2
         exit 1
       fi
-
-      qmd update
-      qmd embed
+      cp ${indexJson} "$config_dir/index.yml"
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: entry: ''
+          if [ ! -d ${lib.escapeShellArg "${entry.path}/${entry.subdir}"} ]; then
+            echo "qmd-refresh: skipping optional collection ${name}: ${entry.path}/${entry.subdir} is absent" >&2
+            jq --arg name ${lib.escapeShellArg name} 'del(.collections[$name])' "$config_dir/index.yml" >"$config_dir/index.yml.tmp"
+            mv "$config_dir/index.yml.tmp" "$config_dir/index.yml"
+          fi
+        '') optionalCollections
+      )}
+      QMD_CONFIG_DIR="$config_dir" qmd update
+      QMD_CONFIG_DIR="$config_dir" qmd embed
+      qmd status >/dev/null
     '';
   };
 in
@@ -127,14 +161,16 @@ in
 
     doctor = {
       commands = [ "qmd" ];
+      paths = lib.mkIf corpus requiredPaths;
       qmdCollections = lib.mkIf corpus paths;
+      qmdRequiredCollections = lib.mkIf corpus (lib.attrNames requiredCollections);
     };
   };
 
-  home.packages = lib.mkIf corpus [ refresh ];
+  home.packages = [ qmd ] ++ lib.optional corpus refresh;
 
   xdg.configFile."qmd/index.yml" = lib.mkIf corpus {
-    source = (pkgs.formats.yaml { }).generate "qmd-index.yml" index;
+    source = indexYaml;
   };
 
   services.userTimers = lib.mkIf corpus {

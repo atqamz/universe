@@ -178,10 +178,10 @@ Six repos, four mechanisms. See `docs/adr/0002-cross-repo-layout.md` for why.
 
 | Repo | Purpose | Cloned by | Kept current by |
 | --- | --- | --- | --- |
-| `~/universe` | this flake | step 8, by hand | `universe-sync.timer` |
+| `~/universe` | this flake | step 8, by hand | deliberate Git workflow; approved remote `main` is deployed by `system.autoUpgrade` |
 | `~/vault` | private keys and secrets | `nix run .#bootstrap` | `vault-sync.timer` |
-| `~/dotagents` | agent config | `nix run .#bootstrap` | `dotagents-sync.timer` |
-| `~/dotfiles` | app config | `nix run .#bootstrap` | `dotfiles-sync.timer` |
+| `~/dotagents` | agent config | `nix run .#bootstrap` | deliberate Git workflow |
+| `~/dotfiles` | app config | `nix run .#bootstrap` | deliberate Git workflow |
 | `~/.password-store` | pass store | `vault/scripts/import.sh` | `password-store-sync.timer` |
 | `~/.local/share/zen-profile` | encrypted Zen profile | `zen-profile-pull` on first run | `zen-profile-sync.timer` |
 
@@ -193,7 +193,6 @@ nix run .#doctor
 
 It checks core host access, generated user-service/timer expectations, direct
 writable symlink contracts, host-specific critical services, and failed units.
-`nix run .#bootstrap-check` remains a compatibility alias.
 
 ## 10. Verify hibernate
 
