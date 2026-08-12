@@ -50,6 +50,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Use `onActivation = "try"` when activation should not block a rebuild but the same command must still fail under systemd.
 - Retry policy belongs to systemd when practical. A watcher detects an edge and triggers a oneshot job; it does not become an invisible retry engine.
 - `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.
+- `treehouse-prune` is intentionally an audit-only weekly job. Do not add `--yes` or `--prune-orphans` until upstream Treehouse can distinguish reusable warm-pool capacity from disposable worktrees and correctly recognize the repository's squash-merge workflow (`docs/adr/0018-treehouse-prune-is-audit-only.md`).
 
 ## Doctor
 
