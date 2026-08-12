@@ -13,7 +13,7 @@ Short by design: context, decision, consequence.
 | [0005](0005-cachix-only-substituter.md) | Cachix is the only extra substituter, in CI and on machines |
 | [0006](0006-minimal-host-variants.md) | Every host gets a genuinely minimal variant |
 | [0007](0007-no-comments-in-nix.md) | Nix files carry no comments; rationale lives here |
-| [0008](0008-unity-runs-on-nix-ld-not-fhs.md) | Unity uses one shared FHS runtime for every entry point |
+| [0008](0008-unity-uses-one-shared-fhs-runtime.md) | Unity uses one shared FHS runtime for every entry point |
 | [0009](0009-gpu-benchmarks-fetch-unversioned-urls.md) | GPU benchmarks are quarantined in their own module |
 | [0010](0010-host-capabilities-not-hostname-flags.md) | Shared modules consume capabilities, not hostname flags |
 | [0011](0011-explicit-update-ownership.md) | Every mutable artifact has one update owner |

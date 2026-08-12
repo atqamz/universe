@@ -26,6 +26,8 @@ The official CLI was observed launching `unityhub-unity-editor-*` with `-useHub`
 
 Its `extraPkgs` explicitly owns `ffmpeg`, `python3`, and `shared-mime-info`.
 
+`ffmpeg` is load-bearing: Unity's FSBTool shells out to it to encode AAC audio for WebGL builds, and fails the build with no useful message when it is absent.
+
 `unityBase.fhsEnv` is the canonical runtime boundary for every Unity entry point.
 
 The new process trees are:
@@ -41,6 +43,8 @@ The `unity` wrapper is workstation integration around `pkgs.unity-cli`.
 The `pkgs/unity-cli` package remains responsible for the upstream binary, its CLI dependencies, certificates, and update metadata.
 
 PRIME environment variables are exported by each workstation wrapper before entering the shared runtime.
+
+The offload environment itself stays factored into `lib/prime.nix` and is shared with `modules/nixos/gaming.nix` and `modules/home/benchmarks.nix` instead of being written per consumer.
 
 The upstream `unityhub-fhs-env` executable name is retained because it is an implementation detail of the nixpkgs package.
 
