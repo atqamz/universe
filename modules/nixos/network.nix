@@ -37,9 +37,19 @@
       tailscaled-set.wantedBy = lib.mkForce [ ];
     };
 
-    targets.multi-user.unitConfig.Wants = [
+    targets.tailscale-bootstrap.unitConfig.Wants = [
       "tailscaled-autoconnect.service"
       "tailscaled-set.service"
     ];
+
+    timers.tailscale-bootstrap = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "30s";
+        Unit = "tailscale-bootstrap.target";
+      };
+    };
   };
+
+  universe.doctor.systemTimers = [ "tailscale-bootstrap" ];
 }

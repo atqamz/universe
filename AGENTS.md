@@ -115,7 +115,7 @@ Deletion re-reads the marker and re-tests the project root, so a worktree recrea
 
 ## SFX14 power and display policy
 
-- `hosts/sfx14/power.nix` is the single owner of SFX14 CPU power state. `low`, `normal`, and `high` are canonical 15 W, 20 W, and 25 W states; each sets RAPL, PPD, EPP, and undervolt-timer state from any prior mode.
+- `services.undervolt` applies initial RAPL limits once; it has no recurring timer that owns runtime policy. `hosts/sfx14/power.nix` is the single owner of runtime SFX14 CPU state: `low`, `normal`, and `high` set canonical 15 W, 20 W, and 25 W RAPL, PPD, and EPP states (`docs/adr/0019-sfx14-boot-and-power-ownership.md`).
 - NVIDIA voltage/frequency policy is independent from CPU power mode. Do not make a generic power name secretly lower or raise GPU policy.
 - The selected CPU mode is restored after resume; GPU tuning is reapplied after resume as a separate invariant.
 - SFX14-only i2c/backlight permissions live with the SFX14 power/display feature, not in shared power configuration.
