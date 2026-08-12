@@ -61,7 +61,7 @@ in
           RemainAfterExit = true;
           Restart = "on-failure";
           RestartSec = "30s";
-          TimeoutStartSec = "infinity";
+          TimeoutStartSec = "300s";
         };
       };
     };

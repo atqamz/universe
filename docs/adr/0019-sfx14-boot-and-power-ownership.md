@@ -18,7 +18,9 @@ The default mode service is wanted by `graphical.target` and requires the packag
 `tailscale-bootstrap.timer` is the only installed helper trigger, with `OnBootSec=30s` and `Unit=tailscale-bootstrap.service`, and is wanted by `timers.target`.
 The retryable `tailscale-bootstrap.service` starts `tailscaled-autoconnect.service` and waits for it to succeed before starting `tailscaled-set.service`.
 `tailscaled-set.service` also requires `tailscaled-autoconnect.service`, in addition to its existing `After=tailscaled.service tailscaled-autoconnect.service` ordering.
-The bootstrap service uses systemd `Restart=on-failure` with a 30-second delay and no outer start timeout, so an offline boot retries until authentication succeeds and then remains active without periodic polling.
+The bootstrap service uses systemd `Restart=on-failure` with a 30-second delay and a finite 300-second `TimeoutStartSec`, so an offline boot retries until authentication succeeds and then remains active without periodic polling.
+The explicit outer timeout is required because `Type=oneshot` disables the start timeout by default and neither helper bounds its own start, so a helper wedged on the tailscaled LocalAPI socket would otherwise leave the bootstrap service `activating` forever and `Restart=on-failure` would never fire.
+A timed-out start is a failed start, so the hang becomes an observable failure that retries on the same 30-second delay.
 Because only the timer is in the normal boot graph, neither `multi-user.target` nor `graphical.target` waits for the bootstrap service or either helper.
 No `DefaultDependencies=no` override or boot-path sleep is used.
 
