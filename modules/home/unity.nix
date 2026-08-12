@@ -6,9 +6,10 @@
 let
   prime = import ../../lib/prime.nix { inherit lib; };
 
-  unityhubBase = pkgs.unityhub.override {
+  unityBase = pkgs.unityhub.override {
     extraPkgs =
       p: with p; [
+        ffmpeg
         python3
         shared-mime-info
       ];
@@ -16,23 +17,27 @@ let
 
   unityhub = pkgs.symlinkJoin {
     name = "unityhub-offload";
-    paths = [ unityhubBase ];
+    paths = [ unityBase ];
     nativeBuildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       rm -f $out/bin/unityhub
-      makeWrapper ${unityhubBase}/bin/unityhub $out/bin/unityhub \
-        ${prime.wrapperArgs} \
-        --prefix PATH : ${lib.makeBinPath [ pkgs.ffmpeg ]}
+      makeWrapper ${unityBase}/bin/unityhub $out/bin/unityhub \
+        ${prime.wrapperArgs}
 
       desktop=$out/share/applications/unityhub.desktop
       if [ -e "$desktop" ]; then
         src=$(readlink -f "$desktop")
         rm -f "$desktop"
         substitute "$src" "$desktop" \
-          --replace-fail "${unityhubBase}/opt/unityhub/unityhub" "$out/bin/unityhub"
+          --replace-fail "${unityBase}/opt/unityhub/unityhub" "$out/bin/unityhub"
       fi
     '';
   };
+
+  unity = pkgs.writeShellScriptBin "unity" ''
+    ${prime.exports}
+    exec ${unityBase.fhsEnv}/bin/unityhub-fhs-env ${lib.getExe pkgs.unity-cli} "$@"
+  '';
 
   unity-editor = pkgs.writeShellScriptBin "unity-editor" ''
     ${prime.exports}
@@ -44,12 +49,12 @@ let
       echo "unity-editor: no editor under ~/Unity/Hub/Editor/*/Editor/Unity (set FM_UNITY_EDITOR)" >&2
       exit 1
     fi
-    exec ${unityhubBase.fhsEnv}/bin/unityhub-fhs-env "$editor" "$@"
+    exec ${unityBase.fhsEnv}/bin/unityhub-fhs-env "$editor" "$@"
   '';
 in
 {
   home.packages = [
-    pkgs.unity-cli
+    unity
     unityhub
     unity-editor
   ];

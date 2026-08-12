@@ -1,28 +1,65 @@
-# 0008. Unity runs on nix-ld, not an FHS wrapper
+# 0008. Unity uses one shared FHS runtime
 
 ## Context
 
-`unityhub` from nixpkgs is wrapped, but Unity's CLI tools are not reachable through that wrapper.
-`modules/home/unity.nix` puts `${config.home.homeDirectory}/.unity/bin` on the login PATH, and the tools there exec the editor binary raw - no FHS wrapper anywhere in the chain.
-So the editor's own dynamic loading has to succeed on its own, against a NixOS filesystem with no `/usr/lib`.
+Unity has three user-facing launch paths: `unityhub`, `unity`, and `unity-editor`.
 
-Two further wrinkles are Unity-specific rather than general packaging:
+Before this decision, Hub and `unity-editor` entered nixpkgs' Unity FHS environment, while the official CLI launched an installed Editor directly.
 
-- Unity's FSBTool shells out to `ffmpeg` to encode AAC audio for WebGL builds, and fails the build with no useful message when it is absent.
-- The editor needs the NVIDIA PRIME offload environment to render on the discrete GPU, and so does everything in `modules/nixos/gaming.nix`.
+The old process trees were:
+
+```text
+unityhub -> FHS -> Hub -> Editor
+unity-editor -> FHS -> Editor
+unity -> official CLI -> raw Editor -> nix-ld
+```
+
+The raw Editor could load selected shared libraries through `programs.nix-ld`, but it did not receive the FHS userspace used by Hub.
+
+That made executable subprocesses such as `python3` and `ffmpeg` depend on the launch path.
+
+The official CLI was observed launching `unityhub-unity-editor-*` with `-useHub` and `-hubIPC` arguments.
 
 ## Decision
 
-Satisfy the editor's unresolved libraries through `programs.nix-ld.libraries` (`modules/nixos/nix-ld.nix`) rather than by wrapping it in an FHS environment.
-The library list is the empirically minimal set of the editor's unresolved `ldd` entries - GL, X11, GTK, ICU - not the full FHS superset.
+`modules/home/unity.nix` defines `unityBase` from `pkgs.unityhub.override`.
 
-`modules/home/unity.nix` prefixes `ffmpeg` onto PATH for both the hub and the `unity-editor` wrapper it defines.
-The PRIME offload env is factored into `lib/prime.nix` and shared with `modules/nixos/gaming.nix` instead of being written twice.
+Its `extraPkgs` explicitly owns `ffmpeg`, `python3`, and `shared-mime-info`.
 
-## Consequence
+`unityBase.fhsEnv` is the canonical runtime boundary for every Unity entry point.
 
-`programs.nix-ld` is load-bearing for Unity, and separately for Zed, which downloads and runs its own prebuilt `node` for the JS language servers.
-It is therefore imported from `modules/nixos/default.nix` and not from `minimal.nix` - see ADR 0006.
+The new process trees are:
 
-The library list is empirical, so a Unity upgrade that links something new fails at editor startup with a missing-library error rather than at build time.
-The fix is to `ldd` the editor binary and add what is unresolved, not to switch to an FHS wrapper.
+```text
+unityhub -> unityBase.fhsEnv -> Hub -> Editor
+unity -> unityBase.fhsEnv -> official CLI -> Editor helper
+unity-editor -> unityBase.fhsEnv -> Editor
+```
+
+The `unity` wrapper is workstation integration around `pkgs.unity-cli`.
+
+The `pkgs/unity-cli` package remains responsible for the upstream binary, its CLI dependencies, certificates, and update metadata.
+
+PRIME environment variables are exported by each workstation wrapper before entering the shared runtime.
+
+The upstream `unityhub-fhs-env` executable name is retained because it is an implementation detail of the nixpkgs package.
+
+## nix-ld boundary
+
+The explicit Unity graphics, GTK, ICU, and X11 library list was removed from `modules/nixos/nix-ld.nix`.
+
+The installed Editor starts through the FHS wrapper and the generated FHS rootfs contains the required runtime tools, including `/usr/bin/python3`, `/usr/bin/ffmpeg`, `/usr/bin/git`, and `/usr/bin/clang`.
+
+`programs.nix-ld.enable` remains enabled for other foreign binaries, including Zed's prebuilt language-server runtime.
+
+The nix-ld module stays in the full NixOS composition and is not imported by minimal host variants.
+
+## Consequences
+
+Hub, CLI, and direct Editor launches now share executable and library availability.
+
+Adding a shared Editor subprocess dependency is a change to `unityBase`, not a PATH-only change to one launcher.
+
+The full Unity FHS closure remains a full-host concern and does not enter minimal host variants.
+
+Future Unity or nixpkgs changes must be checked against the shared FHS boundary and the Editor subprocess contract.
