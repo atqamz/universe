@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   networking.networkmanager.enable = true;
 
@@ -29,5 +29,17 @@
   networking.firewall = {
     trustedInterfaces = [ "tailscale0" ];
     allowedUDPPorts = [ config.services.tailscale.port ];
+  };
+
+  systemd = {
+    services = {
+      tailscaled-autoconnect.wantedBy = lib.mkForce [ ];
+      tailscaled-set.wantedBy = lib.mkForce [ ];
+    };
+
+    targets.multi-user.unitConfig.Wants = [
+      "tailscaled-autoconnect.service"
+      "tailscaled-set.service"
+    ];
   };
 }
