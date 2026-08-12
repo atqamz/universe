@@ -53,7 +53,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 ## Doctor
 
-`nix run .#doctor` is the runtime contract checker; `bootstrap-check` is a compatibility alias.
+`nix run .#doctor` is the runtime contract checker.
 
 - Installed user timers/services are derived from evaluated Home Manager systemd configuration, not copied into a manual list.
 - Critical host-specific system services/timers are declared through `universe.doctor.*`.
@@ -77,7 +77,6 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Herdr hook assets come from the pinned `herdr` flake input at the exact paths `herdr integration status` inspects, so `herdr integration install` is never run. The RTK OpenCode plugin comes from `pkgs.rtk.src`, so it cannot drift from the `rtk` binary.
 - The skill allowlist is a Nix attrset of source repository to wanted skill names. Never widen it with `--skill '*'`; upstream additions must be accepted deliberately.
 - A skill dropped from the allowlist is retired from the delivery roots on the next sync, driven by the `managed-skills` ledger of the last successful run. Ownership comes from that ledger only; never infer it from a directory existing under `~/.agents/skills`, or an independently managed skill like `no-mistakes` gets deleted. The ledger is replaced atomically after success, so a failed sync does not advance it.
-- `ai-stack-cleanup` removes exactly identified migration residue. It must never remove a harness discovery root such as `~/.config/opencode/skills`; a guard refuses those paths so a future rule cannot reintroduce that class of deletion.
 - Every integration carries a doctor contract derived from its own declaration. Doctor asks each harness (`opencode debug config`, `opencode debug skill`, `codex mcp list --json`, `herdr integration status`, `qmd status`) instead of reading its files. `opencode debug config` exits 0 on invalid config, so check its output parses.
 
 ## Packaging and developer tools
@@ -92,20 +91,17 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 ### qmd
 
-`qmd` is `buildNpmPackage` for an upstream that ships no `package-lock.json`; Universe vendors one generated against the release tag.
-`nix-update` cannot regenerate it. If upstream dependency ranges changed and `npm ci` fails with `ENOTCACHED`, regenerate the lockfile against the new tag and refresh `npmDepsHash` manually.
-Security advisories in the vendored lockfile are handled manually; repo-level Dependabot security updates are deliberately disabled because its npm fetcher cannot use this package layout and the relevant alerts are commonly transitive.
-Check whether an advisory is dev-only before changing the package: `npmInstallHook` prunes dev dependencies.
-Native prebuilt ELF dependencies are fixed by `autoPatchelfHook`; `better-sqlite3` is the exception that is rebuilt. qmd is intentionally CPU-only and wrapped with the nixpkgs Node runtime.
-
-`pkgs/qmd/mcp-require-explicit-collections.patch` makes the MCP `query` tool require a non-empty `collections` argument, because one index holds several profiles' corpora and upstream falls back to every default collection when the argument is omitted (`docs/adr/0016-qmd-mcp-search-is-collection-scoped.md`).
-Re-check that patch on every qmd bump; the isolation is the reason the package is patched, so never drop the patch to make a version bump build. CLI search stays unscoped on purpose.
+`qmd` comes from the pinned upstream v2.5.3 flake input.
+`modules/home/qmd.nix` owns its CPU-only wrapper and the downstream patch that makes the MCP `query` tool require a non-empty `collections` argument, because one index holds several profiles' corpora and upstream falls back to every default collection when the argument is omitted (`docs/adr/0016-qmd-mcp-search-is-collection-scoped.md`).
+The patch lives at `modules/home/qmd-mcp-require-explicit-collections.patch` and must be re-checked on every qmd bump.
+The isolation is the reason the package is patched, so never drop the patch to make a version bump build. CLI search stays unscoped on purpose.
 
 `modules/home/qmd.nix` owns `~/.config/qmd/index.yml`. That filename is resolved by qmd upstream, so it stays `.yml` against the global YAML rule.
 Collections, the refresh timer, and their doctor contracts are gated on `universe.capabilities.knowledgeCorpus`; the binary and MCP registration are unconditional.
 A host that does not own the documentation repositories must not be required to have their paths.
 Collections index documentation only, are named `<profile>-<repo>`, and each carries a context description; a profile earns a collection when it has a real corpus, not to look complete.
-`qmd-refresh` fails when a configured source directory is missing, then runs `qmd update` and `qmd embed`. It never pulls Git: `repo-sync` owns Git pulls.
+`qmd-refresh` fails when the required Universe docs source is missing, filters absent optional collections through an ephemeral config, then runs `qmd update` and `qmd embed`.
+It never pulls Git; repository checkouts are maintained by their owners and the remaining vault/password-store sync jobs.
 
 ### codedb
 
@@ -144,8 +140,8 @@ Deletion re-reads the marker and re-tests the project root, so a worktree recrea
 - Flake app implementations are also derivation checks, so `writeShellApplication` scripts are built/shellchecked by `nix flake check` rather than merely having valid app schemas.
 - Pre-commit covers treefmt, statix, deadnix, shellcheck, and actionlint.
 - Cachix is the only extra substituter; do not add a restored Nix-store CI cache (`docs/adr/0005-cachix-only-substituter.md`).
-- The package updater rebases onto current `main` before its final `nix flake check`; the exact checked commit is the commit pushed. Its GITHUB_TOKEN push does not get a second CI run, so this ordering is a correctness boundary.
-- Dependabot auto-merge remains gated on the normal build/check workflow.
+- The package updater is manually dispatched, rebases onto current `main` before its final `nix flake check`, and pushes only the exact checked commit. Its GITHUB_TOKEN push does not get a second CI run, so this ordering is a correctness boundary.
+- Dependabot continues creating update PRs, but merging them into `main` requires an intentional human decision.
 - `system.autoUpgrade` intentionally uses `git+https://` rather than `github:` to avoid the GitHub API rate-limit path.
 
 ## Secrets and install

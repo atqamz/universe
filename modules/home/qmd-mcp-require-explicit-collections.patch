@@ -1,6 +1,6 @@
 --- a/src/mcp/server.ts
 +++ b/src/mcp/server.ts
-@@ -120,7 +120,8 @@
+@@ -120,7 +120,8 @@ async function buildInstructions(store: QMDStore): Promise<string> {
    if (status.collections.length > 0) {
      lines.push("");
      const names = status.collections.map(c => c.name).join(", ");
@@ -10,7 +10,7 @@
      lines.push("Call the `status` tool for collection descriptions, paths, and per-collection doc counts.");
    }
  
-@@ -174,9 +175,6 @@
+@@ -174,9 +175,6 @@ async function createMcpServer(store: QMDStore): Promise<McpServer> {
      { instructions: await buildInstructions(store) },
    );
  
@@ -20,7 +20,7 @@
    // ---------------------------------------------------------------------------
    // Resource: qmd://{path} - read-only access to documents by path
    // Note: No list() - documents are discovered via search tools
-@@ -307,7 +305,9 @@
+@@ -307,7 +305,9 @@ Intent-aware lex (C++ performance, not sports):
          candidateLimit: z.number().optional().describe(
            "Maximum candidates to rerank (default: 40, lower = faster but may miss results)"
          ),
@@ -31,7 +31,7 @@
          intent: z.string().optional().describe(
            "Background context to disambiguate the query. Example: query='performance', intent='web page load times and Core Web Vitals'. Does not search on its own."
          ),
-@@ -323,12 +323,9 @@
+@@ -323,12 +323,9 @@ Intent-aware lex (C++ performance, not sports):
          query: s.query,
        }));
  
@@ -45,7 +45,7 @@
          limit,
          minScore,
          candidateLimit,
-@@ -599,9 +596,6 @@
+@@ -599,9 +596,6 @@ export async function startMcpHttpServer(
      ...(existsSync(configPath) ? { configPath } : {}),
    });
  
@@ -55,7 +55,7 @@
    // Session map: each client gets its own McpServer + Transport pair (MCP spec requirement).
    // The store is shared — it's stateless SQLite, safe for concurrent access.
    const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
-@@ -702,6 +696,12 @@
+@@ -702,6 +696,12 @@ export async function startMcpHttpServer(
            return;
          }
  
@@ -68,7 +68,7 @@
          // Map to internal format
          const searches = params.searches as RestSearchInput[];
          const queries: ExpandedQuery[] = searches.map((s) => ({
-@@ -709,12 +709,9 @@
+@@ -709,12 +709,9 @@ export async function startMcpHttpServer(
            query: String(s.query || ""),
          }));
  

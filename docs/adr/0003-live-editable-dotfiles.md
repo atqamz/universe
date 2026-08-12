@@ -17,4 +17,4 @@ Without it, the app's atomic write replaces the symlink, and the next activation
 ## Consequence
 
 Reproducibility is traded for iteration speed on config only, never on packages.
-A fresh machine is not complete until `nix run .#bootstrap` has cloned both repos, which is why `bootstrap-check` asserts them.
+A fresh machine is not complete until `nix run .#bootstrap` has cloned both repos, which is why `doctor` asserts them.

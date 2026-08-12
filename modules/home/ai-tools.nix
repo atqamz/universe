@@ -39,7 +39,6 @@ in
       rtk
       codedb
       no-mistakes
-      qmd
     ];
 
     sessionVariables.OPENCODE_DISABLE_AUTOUPDATE = "1";
