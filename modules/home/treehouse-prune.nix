@@ -12,7 +12,7 @@ let
       pkgs.git
     ];
     text = ''
-      treehouse prune --all --yes
+      treehouse prune --all --verbose
     '';
   };
 in
