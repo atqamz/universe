@@ -20,4 +20,3 @@ Retry policy belongs to systemd when practical. Long-running watchers detect eve
 ## Consequence
 
 A green unit means the repair actually succeeded or intentionally skipped.
-The legacy `bootstrap-check` app remains only as an alias for `doctor`.

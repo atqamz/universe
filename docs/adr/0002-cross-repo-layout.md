@@ -12,7 +12,7 @@ Without an ownership rule, package declarations drift into config repos and unat
 - `dotfiles` and `dotagents` own live-editable application and agent configuration. Universe links them but does not rewrite or push them.
 - `vault` owns key material and secret export/import logic.
 - `password-store` owns password entries.
-- Human-maintained sibling repos are pull-only from Universe automation. Pulls are `--ff-only` and never overwrite dirty work.
+- Human-maintained sibling repos are maintained through deliberate Git workflows. Universe links them but does not pull, push, or rewrite them.
 - `zen-profile` is the explicit exception: it contains machine-generated replicated state rather than authored configuration. Exactly one host has `universe.roles.zenProfileWriter = true`; every other host is read-only.
 
 The install runbook is authoritative for how each repo is cloned and refreshed.

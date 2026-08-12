@@ -38,22 +38,6 @@ let
 
   expected = lib.concatLists (lib.attrValues sources);
 
-  forbidden = [
-    "caveman"
-    "caveman-commit"
-    "caveman-compress"
-    "caveman-help"
-    "caveman-review"
-    "caveman-stats"
-    "cavecrew"
-    "ponytail"
-    "ponytail-audit"
-    "ponytail-debt"
-    "ponytail-gain"
-    "ponytail-help"
-    "ponytail-review"
-  ];
-
   install = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (
       source: skills:
@@ -110,15 +94,6 @@ let
         ln -sfn "$real" "$HOME/.codex/skills/$skill"
       done
 
-      for skill in ${lib.escapeShellArgs forbidden}; do
-        for root in ${lib.escapeShellArgs roots}; do
-          if [ -e "$HOME/$root/$skill" ] || [ -L "$HOME/$root/$skill" ]; then
-            echo "skills-sync: removed skill still present: $HOME/$root/$skill" >&2
-            exit 1
-          fi
-        done
-      done
-
       mkdir -p "$(dirname "$ledger")"
       staging="$(mktemp "$ledger.XXXXXX")"
       trap 'rm -f "$staging"' EXIT
@@ -131,20 +106,8 @@ in
 {
   home.packages = [ sync ];
 
-  services.userTimers.skills-sync = {
-    description = "Sync global agent skills";
-    timerDescription = "Periodic global agent skills sync";
-    command = "${sync}/bin/skills-sync";
-    timer = {
-      OnStartupSec = "3min";
-      OnUnitActiveSec = "1d";
-      Persistent = true;
-    };
-  };
-
   universe.doctor = {
     expectedSkills = expected;
-    forbiddenSkills = forbidden;
     skillLedger = ledgerRelative;
   };
 }

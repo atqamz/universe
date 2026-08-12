@@ -16,7 +16,7 @@ Instructing the model to always pass `collections` does not fix it either: a pro
 ## Decision
 
 The boundary is enforced in the package, not in a prompt.
-`pkgs/qmd/mcp-require-explicit-collections.patch` is a downstream patch against the pinned 2.5.3 source: `collections` becomes a required `z.array(z.string()).min(1)`, and the `collections ?? defaultCollectionNames` fallback is deleted, so an omitted or empty argument is an MCP validation error before any search runs.
+`modules/home/qmd-mcp-require-explicit-collections.patch` is a downstream patch applied to the pinned upstream v2.5.3 flake package: `collections` becomes a required `z.array(z.string()).min(1)`, and the `collections ?? defaultCollectionNames` fallback is deleted, so an omitted or empty argument is an MCP validation error before any search runs.
 The optional HTTP transport's REST search endpoint gets the same requirement, because it is the same bypass in the same binary.
 The patch also corrects the instruction text to the plural parameter the schema actually exposes.
 
