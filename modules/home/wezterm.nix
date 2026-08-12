@@ -12,7 +12,8 @@ _: {
         default_cursor_style = 'SteadyBlock',
         window_close_confirmation = 'NeverPrompt',
         hide_tab_bar_if_only_one_tab = true,
-        enable_wayland = true,
+        enable_wayland = false,
+        front_end = 'Software',
         mux_enable_ssh_agent = false,
       }
     '';
