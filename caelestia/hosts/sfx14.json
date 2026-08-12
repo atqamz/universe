@@ -60,9 +60,8 @@
                 "thunar"
             ],
             "terminal": [
-                "wezterm",
-                "start",
-                "--cwd",
+                "foot",
+                "--working-directory",
                 "."
             ]
         },

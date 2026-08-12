@@ -43,10 +43,11 @@ hl.window_rule({ match = { float = true, xwayland = false }, center = true })
 hl.gesture({ fingers = 3, direction = "vertical", action = "workspace" })
 
 local mod = "SUPER"
-local terminal = "wezterm"
+local terminal = "foot"
 local fileExplorer = "thunar"
 
 hl.bind(mod .. " + Return", hl.dsp.exec_cmd(terminal))
+hl.bind(mod .. " + CTRL + Return", hl.dsp.exec_cmd("wezterm"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(fileExplorer))
 hl.bind(mod .. " + C", hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind(mod .. " + Space", hl.dsp.global("caelestia:launcher"))

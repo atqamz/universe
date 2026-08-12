@@ -11,7 +11,7 @@ Per-tool config. Anything host-specific keys off the hostname passed in by unive
 - `caelestia/hosts/<hostname>.json` - per-host caelestia shell config
 - `zed/` - Zed editor
 - `gtk/` - Thunar GTK theming
-- `cava/`, `herdr/`, `rtk/`, `cs2/` - per-tool config
+- `foot/`, `cava/`, `herdr/`, `rtk/`, `cs2/` - per-tool config
 
 ## License
 
