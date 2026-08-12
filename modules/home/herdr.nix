@@ -28,6 +28,10 @@ in
     ".codex/herdr-agent-state.sh".source = "${assets}/codex/herdr-agent-state.sh";
     ".codex/hooks.json".text = builtins.toJSON codexHooks;
     ".config/opencode/plugins/herdr-agent-state.js".source = "${assets}/opencode/herdr-agent-state.js";
+    ".config/opencode/herdr-tui-session.js".source = "${assets}/opencode/herdr-tui-session.js";
+    ".config/opencode/tui.jsonc".text = builtins.toJSON {
+      plugin = [ "./herdr-tui-session.js" ];
+    };
   };
 
   universe.aiHarness = {
@@ -42,6 +46,8 @@ in
       ".codex/herdr-agent-state.sh"
       ".codex/hooks.json"
       ".config/opencode/plugins/herdr-agent-state.js"
+      ".config/opencode/herdr-tui-session.js"
+      ".config/opencode/tui.jsonc"
     ];
     herdrIntegrations = [
       "claude"
