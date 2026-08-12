@@ -51,6 +51,7 @@ in
       tailscaled-autoconnect.wantedBy = lib.mkForce [ ];
       tailscaled-set.wantedBy = lib.mkForce [ ];
       tailscaled-set.requires = [ "tailscaled-autoconnect.service" ];
+      tailscaled-set.serviceConfig.TimeoutStartSec = "300s";
 
       tailscale-bootstrap = {
         description = "Retryable asynchronous Tailscale bootstrap";
@@ -75,5 +76,8 @@ in
     };
   };
 
-  universe.doctor.systemTimers = [ "tailscale-bootstrap" ];
+  universe.doctor = {
+    activeSystemServices = [ "tailscale-bootstrap" ];
+    systemTimers = [ "tailscale-bootstrap" ];
+  };
 }

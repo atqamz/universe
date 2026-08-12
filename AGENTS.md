@@ -52,6 +52,15 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.
 - `treehouse-prune` is intentionally an audit-only weekly job. Do not add `--yes` or `--prune-orphans` until upstream Treehouse can distinguish reusable warm-pool capacity from disposable worktrees and correctly recognize the repository's squash-merge workflow (`docs/adr/0018-treehouse-prune-is-audit-only.md`).
 
+## Network and Tailscale bootstrap
+
+`modules/nixos/network.nix` is imported by `modules/nixos/minimal.nix`, so these rules apply to every host and every `-minimal` variant, not only to the SFX14 machine whose boot path motivated them (`docs/adr/0019-sfx14-boot-and-power-ownership.md`).
+
+- Keep the upstream generated helpers. Never reimplement `authKeyFile`, `tailscale up`, or `tailscale set` in a local unit.
+- `tailscaled.service` stays a normal `multi-user.target` service. `tailscaled-autoconnect.service` and `tailscaled-set.service` have no install target, and `tailscale-bootstrap.timer` is their only trigger, so authentication is never on the boot critical path.
+- Because of that detachment, `nixos-rebuild switch` no longer reapplies `services.tailscale.extraUpFlags` / `extraSetFlags`. They take effect at the next bootstrap run; start `tailscale-bootstrap.service` by hand to apply them sooner.
+- Every unit in the bootstrap chain needs a finite `TimeoutStartSec`. `Type=oneshot` disables the start timeout by default, and one unbounded helper turns a wedged `tailscaled` into a retry loop that can never re-run the command.
+
 ## Doctor
 
 `nix run .#doctor` is the runtime contract checker.

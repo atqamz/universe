@@ -13,6 +13,7 @@ Tailscale's declarative auth helpers were wanted by `multi-user.target`, and the
 `sfx14-power` owns runtime RAPL, EPP, and PPD mode transitions for the 15 W, 20 W, and 25 W SFX14 modes.
 The default mode service is wanted by `graphical.target` and requires the package-provided PPD service after the initial undervolt service.
 
+`modules/nixos/network.nix` is shared by every host and every `-minimal` variant, so the Tailscale decisions below are repo-wide even though the boot problem was observed on SFX14.
 `tailscaled.service` remains a normal `multi-user.target` service.
 `tailscaled-autoconnect.service` and `tailscaled-set.service` have no install target.
 `tailscale-bootstrap.timer` is the only installed helper trigger, with `OnBootSec=30s` and `Unit=tailscale-bootstrap.service`, and is wanted by `timers.target`.
@@ -21,6 +22,8 @@ The retryable `tailscale-bootstrap.service` starts `tailscaled-autoconnect.servi
 The bootstrap service uses systemd `Restart=on-failure` with a 30-second delay and a finite 300-second `TimeoutStartSec`, so an offline boot retries until authentication succeeds and then remains active without periodic polling.
 The explicit outer timeout is required because `Type=oneshot` disables the start timeout by default and neither helper bounds its own start, so a helper wedged on the tailscaled LocalAPI socket would otherwise leave the bootstrap service `activating` forever and `Restart=on-failure` would never fire.
 A timed-out start is a failed start, so the hang becomes an observable failure that retries on the same 30-second delay.
+`tailscaled-set.service` carries the same finite 300-second `TimeoutStartSec`, because it is the one generated helper that is `Type=oneshot` without a start bound of its own; `tailscaled-autoconnect.service` is `Type=notify` and is already capped by `DefaultTimeoutStartSec`.
+Without that inner bound the outer timeout would terminate only the bootstrap cgroup while the enqueued `tailscaled-set` job kept sitting in `activating`, and every retry would re-attach to the same stuck job instead of re-running the command.
 Because only the timer is in the normal boot graph, neither `multi-user.target` nor `graphical.target` waits for the bootstrap service or either helper.
 No `DefaultDependencies=no` override or boot-path sleep is used.
 
@@ -31,5 +34,8 @@ The SFX14 systemd-boot timeout is intentionally one second.
 Power ownership is deterministic and the recurring timer cannot overwrite runtime modes.
 PPD failures remain observable without arbitrary waits.
 Tailscale authentication and configuration are triggered after boot, retry on failure, and remain declarative without delaying local desktop availability.
-The timer is doctor-visible as an enabled system timer.
+Doctor asserts both that `tailscale-bootstrap.timer` is enabled and that `tailscale-bootstrap.service` is active.
+Because the service sets `RemainAfterExit=true`, `active` means the last bootstrap succeeded, so a host stuck on offline authentication, expired credentials, or a wedged helper is a doctor failure instead of a green check with Tailscale SSH down.
+The one false alarm is running doctor within the first 30 seconds after boot, before the timer has fired.
+Changing `extraUpFlags` or `extraSetFlags` therefore takes effect at the next bootstrap run rather than at `nixos-rebuild switch`.
 The GPU policy, GameMode integration, resume restoration, UWSM, Hyprland, and Caelestia architecture remain separate invariants.
