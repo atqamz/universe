@@ -1,4 +1,19 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  tailscaleBootstrap = pkgs.writeShellApplication {
+    name = "tailscale-bootstrap";
+    runtimeInputs = [ pkgs.systemd ];
+    text = ''
+      systemctl start --wait tailscaled-autoconnect.service
+      systemctl start --wait tailscaled-set.service
+    '';
+  };
+in
 {
   networking.networkmanager.enable = true;
 
@@ -35,18 +50,27 @@
     services = {
       tailscaled-autoconnect.wantedBy = lib.mkForce [ ];
       tailscaled-set.wantedBy = lib.mkForce [ ];
-    };
+      tailscaled-set.requires = [ "tailscaled-autoconnect.service" ];
 
-    targets.tailscale-bootstrap.unitConfig.Wants = [
-      "tailscaled-autoconnect.service"
-      "tailscaled-set.service"
-    ];
+      tailscale-bootstrap = {
+        description = "Retryable asynchronous Tailscale bootstrap";
+        wantedBy = [ ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${tailscaleBootstrap}/bin/tailscale-bootstrap";
+          RemainAfterExit = true;
+          Restart = "on-failure";
+          RestartSec = "30s";
+          TimeoutStartSec = "infinity";
+        };
+      };
+    };
 
     timers.tailscale-bootstrap = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "30s";
-        Unit = "tailscale-bootstrap.target";
+        Unit = "tailscale-bootstrap.service";
       };
     };
   };

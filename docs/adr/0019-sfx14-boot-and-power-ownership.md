@@ -15,10 +15,11 @@ The default mode service is wanted by `graphical.target` and requires the packag
 
 `tailscaled.service` remains a normal `multi-user.target` service.
 `tailscaled-autoconnect.service` and `tailscaled-set.service` have no install target.
-`tailscale-bootstrap.timer` is the only installed helper trigger, with `OnBootSec=30s` and `Unit=tailscale-bootstrap.target`, and is wanted by `timers.target`.
-The private `tailscale-bootstrap.target` wants both helper services.
-The existing `After=tailscaled.service tailscaled-autoconnect.service` on `tailscaled-set.service` keeps configuration after authentication.
-Because only the timer is in the normal boot graph, neither `multi-user.target` nor `graphical.target` waits for either helper.
+`tailscale-bootstrap.timer` is the only installed helper trigger, with `OnBootSec=30s` and `Unit=tailscale-bootstrap.service`, and is wanted by `timers.target`.
+The retryable `tailscale-bootstrap.service` starts `tailscaled-autoconnect.service` and waits for it to succeed before starting `tailscaled-set.service`.
+`tailscaled-set.service` also requires `tailscaled-autoconnect.service`, in addition to its existing `After=tailscaled.service tailscaled-autoconnect.service` ordering.
+The bootstrap service uses systemd `Restart=on-failure` with a 30-second delay and no outer start timeout, so an offline boot retries until authentication succeeds and then remains active without periodic polling.
+Because only the timer is in the normal boot graph, neither `multi-user.target` nor `graphical.target` waits for the bootstrap service or either helper.
 No `DefaultDependencies=no` override or boot-path sleep is used.
 
 The SFX14 systemd-boot timeout is intentionally one second.
@@ -27,6 +28,6 @@ The SFX14 systemd-boot timeout is intentionally one second.
 
 Power ownership is deterministic and the recurring timer cannot overwrite runtime modes.
 PPD failures remain observable without arbitrary waits.
-Tailscale authentication and configuration are triggered after boot and remain declarative without delaying local desktop availability.
+Tailscale authentication and configuration are triggered after boot, retry on failure, and remain declarative without delaying local desktop availability.
 The timer is doctor-visible as an enabled system timer.
 The GPU policy, GameMode integration, resume restoration, UWSM, Hyprland, and Caelestia architecture remain separate invariants.
