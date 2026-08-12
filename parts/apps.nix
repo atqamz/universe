@@ -134,6 +134,17 @@ _: {
             fi
           }
 
+          # shellcheck disable=SC2329
+          check_qmd_collection() {
+            local name="$1"
+            awk -v name="$name" '
+              index($0, "  " name " (qmd://") == 1 { in_collection=1; next }
+              in_collection && $0 ~ /^  [^ ]+ \(qmd:\/\// { in_collection=0 }
+              in_collection && $0 ~ /^ +Files: +[1-9][0-9]*([[:space:]]|$)/ { found=1 }
+              END { exit found ? 0 : 1 }
+            ' "$probe/qmd.txt"
+          }
+
           echo "== universe-doctor =="
           check "doctor manifest present" test -f "$manifest"
           if [ ! -f "$manifest" ]; then
@@ -221,7 +232,7 @@ _: {
 
           while IFS= read -r name; do
             [ -n "$name" ] || continue
-            check "qmd required collection $name loaded" grep -qE "^ +$name \(qmd://" "$probe/qmd.txt"
+            check "qmd required collection $name loaded with documents" check_qmd_collection "$name"
           done < <(jq -r '.qmdRequiredCollections[]' "$manifest")
 
           if jq -e '.qmdCollections | length > 0' "$manifest" >/dev/null; then

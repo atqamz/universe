@@ -11,9 +11,21 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   upstreamQmd = inputs.qmd.packages.${system}.default;
   qmd = upstreamQmd.overrideAttrs (old: {
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.autoPatchelfHook ];
+    buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.stdenv.cc.cc.lib ];
+    autoPatchelfIgnoreMissingDeps = (old.autoPatchelfIgnoreMissingDeps or [ ]) ++ [
+      "libc.musl-x86_64.so.1"
+      "libcublas.so.12"
+      "libcublas.so.13"
+      "libcuda.so.1"
+      "libcudart.so.12"
+      "libcudart.so.13"
+      "libvulkan.so.1"
+    ];
     patches = (old.patches or [ ]) ++ [ ./qmd-mcp-require-explicit-collections.patch ];
     postFixup = (old.postFixup or "") + ''
-      sed -i '2i export QMD_LLAMA_GPU=false' "$out/bin/qmd"
+      wrapProgram "$out/bin/qmd" \
+        --set QMD_LLAMA_GPU false
     '';
   });
   bin = "${config.home.profileDirectory}/bin/qmd";
@@ -90,6 +102,9 @@ let
   requiredPaths = [ "universe/docs" ];
   requiredSource = "${config.home.homeDirectory}/${builtins.head requiredPaths}";
 
+  indexYaml = (pkgs.formats.yaml { }).generate "qmd-index.yml" index;
+  indexJson = (pkgs.formats.json { }).generate "qmd-index.json" index;
+
   index = {
     global_context = "Durable project documentation only, one collection per repository documentation root, named <profile>-<repo>. Source code is not indexed here: navigate code with codedb instead.";
     collections = lib.mapAttrs (name: entry: {
@@ -120,7 +135,7 @@ let
         echo "qmd-refresh: required collection atqamz-universe source is absent" >&2
         exit 1
       fi
-      cp ${lib.escapeShellArg "${config.xdg.configHome}/qmd/index.yml"} "$config_dir/index.yml"
+      cp ${indexJson} "$config_dir/index.yml"
       ${lib.concatStringsSep "\n" (
         lib.mapAttrsToList (name: entry: ''
           if [ ! -d ${lib.escapeShellArg "${entry.path}/${entry.subdir}"} ]; then
@@ -155,7 +170,7 @@ in
   home.packages = [ qmd ] ++ lib.optional corpus refresh;
 
   xdg.configFile."qmd/index.yml" = lib.mkIf corpus {
-    source = (pkgs.formats.yaml { }).generate "qmd-index.yml" index;
+    source = indexYaml;
   };
 
   services.userTimers = lib.mkIf corpus {
