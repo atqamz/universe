@@ -37,5 +37,5 @@ Tailscale authentication and configuration are triggered after boot, retry on fa
 Doctor asserts both that `tailscale-bootstrap.timer` is enabled and that `tailscale-bootstrap.service` is active.
 Because the service sets `RemainAfterExit=true`, `active` means the last bootstrap succeeded, so a host stuck on offline authentication, expired credentials, or a wedged helper is a doctor failure instead of a green check with Tailscale SSH down.
 The one false alarm is running doctor within the first 30 seconds after boot, before the timer has fired.
-Changing `extraUpFlags` or `extraSetFlags` therefore takes effect at the next bootstrap run rather than at `nixos-rebuild switch`.
+Changing `extraUpFlags` or `extraSetFlags` therefore takes effect at the next bootstrap run rather than at `nixos-rebuild switch`, and the manual escape hatch is `systemctl restart tailscale-bootstrap.service`, since starting an already-active `RemainAfterExit` oneshot does not re-run it.
 The GPU policy, GameMode integration, resume restoration, UWSM, Hyprland, and Caelestia architecture remain separate invariants.

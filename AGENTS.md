@@ -58,7 +58,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 - Keep the upstream generated helpers. Never reimplement `authKeyFile`, `tailscale up`, or `tailscale set` in a local unit.
 - `tailscaled.service` stays a normal `multi-user.target` service. `tailscaled-autoconnect.service` and `tailscaled-set.service` have no install target, and `tailscale-bootstrap.timer` is their only trigger, so authentication is never on the boot critical path.
-- Because of that detachment, `nixos-rebuild switch` no longer reapplies `services.tailscale.extraUpFlags` / `extraSetFlags`. They take effect at the next bootstrap run; start `tailscale-bootstrap.service` by hand to apply them sooner.
+- Because of that detachment, `nixos-rebuild switch` no longer reapplies `services.tailscale.extraUpFlags` / `extraSetFlags`. They take effect at the next bootstrap run; `systemctl restart tailscale-bootstrap.service` applies them sooner. `start` is a no-op there, because the successful bootstrap left that `RemainAfterExit` oneshot active.
 - Every unit in the bootstrap chain needs a finite `TimeoutStartSec`. `Type=oneshot` disables the start timeout by default, and one unbounded helper turns a wedged `tailscaled` into a retry loop that can never re-run the command.
 
 ## Doctor
