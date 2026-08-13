@@ -28,7 +28,7 @@ let
     text = ''
       target="$1"
 
-      if [ -e "$target" ]; then
+      if [ -e "$target" ] || [ -L "$target" ]; then
         # hand update owns overwriting this file and switching channels; activation must never race it.
         exit 0
       fi
@@ -49,11 +49,11 @@ let
       cd "$workdir" || exit 1
 
       # a transient GitHub outage must not fail activation; only a failed checksum verification does.
-      if ! curl -fsSLO --connect-timeout 10 --max-time 60 "$base_url/$asset"; then
+      if ! curl -fsSLO --connect-timeout 10 --speed-limit 1 --speed-time 30 "$base_url/$asset"; then
         echo "hand-install: download of $asset failed, leaving hand uninstalled" >&2
         exit 0
       fi
-      if ! curl -fsSLO --connect-timeout 10 --max-time 60 "$base_url/checksums.txt"; then
+      if ! curl -fsSLO --connect-timeout 10 --speed-limit 1 --speed-time 30 "$base_url/checksums.txt"; then
         echo "hand-install: download of checksums.txt failed, leaving hand uninstalled" >&2
         exit 0
       fi
@@ -73,9 +73,13 @@ let
       mkdir -p "$(dirname "$target")"
       staged="$(mktemp "$target.XXXXXX")"
       install -m755 hand "$staged"
-      if ! ln "$staged" "$target" 2>/dev/null; then
-        echo "hand-install: $target appeared during download, leaving it untouched" >&2
-        exit 0
+      if ! link_error="$(ln "$staged" "$target" 2>&1)"; then
+        if [ -e "$target" ] || [ -L "$target" ]; then
+          echo "hand-install: $target appeared during download, leaving it untouched" >&2
+          exit 0
+        fi
+        echo "hand-install: could not publish $target: $link_error" >&2
+        exit 1
       fi
       rm -f "$staged"
       staged=""
