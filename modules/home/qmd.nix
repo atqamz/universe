@@ -40,10 +40,10 @@ let
   };
 
   optionalCollections = {
-    atqamz-secondhand = {
-      path = "${github}/atqamz/secondhand";
+    atqamz-hand = {
+      path = "${github}/atqamz/hand";
       subdir = "docs";
-      context = "Secondhand marketplace application: architecture, data model, and operational notes.";
+      context = "hand, the agent fleet orchestrator: ADRs on worker lifecycle, watch and event delivery, release channels, and the superpowers guides.";
     };
     atqamz-rucika = {
       path = "${github}/atqamz/rucika";
