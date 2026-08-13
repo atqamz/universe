@@ -7,6 +7,10 @@
 let
   channel = "edge";
 
+  asset = "hand-linux-amd64.tar.gz";
+
+  assetLinePattern = " \\*?${lib.escapeRegex asset}$";
+
   target = "${config.home.homeDirectory}/.local/bin/hand";
 
   install = pkgs.writeShellApplication {
@@ -26,17 +30,24 @@ let
       fi
 
       channel="${channel}"
-      asset="hand-linux-amd64.tar.gz"
+      asset="${asset}"
       base_url="https://github.com/atqamz/hand/releases/download/$channel"
 
       workdir="$(mktemp -d)"
-      trap 'rm -rf "$workdir"' EXIT
+      staged=""
+      cleanup() {
+        rm -rf "$workdir"
+        if [ -n "$staged" ]; then
+          rm -f "$staged"
+        fi
+      }
+      trap cleanup EXIT
       cd "$workdir" || exit 1
 
       curl -fsSLO "$base_url/$asset"
       curl -fsSLO "$base_url/checksums.txt"
 
-      line="$(grep -F " $asset" checksums.txt)" || {
+      line="$(grep -E '${assetLinePattern}' checksums.txt)" || {
         echo "hand-install: checksums.txt has no entry for $asset" >&2
         exit 1
       }
@@ -47,7 +58,12 @@ let
       fi
 
       tar -xzf "$asset" hand
-      install -D -m755 hand "$target"
+
+      mkdir -p "$(dirname "$target")"
+      staged="$(mktemp "$target.XXXXXX")"
+      install -m755 hand "$staged"
+      mv -f "$staged" "$target"
+      staged=""
     '';
   };
 in
