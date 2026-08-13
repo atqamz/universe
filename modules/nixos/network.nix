@@ -49,9 +49,11 @@ in
   systemd = {
     services = {
       tailscaled-autoconnect.wantedBy = lib.mkForce [ ];
-      tailscaled-set.wantedBy = lib.mkForce [ ];
-      tailscaled-set.requires = [ "tailscaled-autoconnect.service" ];
-      tailscaled-set.serviceConfig.TimeoutStartSec = "300s";
+      tailscaled-set = {
+        wantedBy = lib.mkForce [ ];
+        requires = [ "tailscaled-autoconnect.service" ];
+        serviceConfig.TimeoutStartSec = "300s";
+      };
 
       tailscale-bootstrap = {
         description = "Retryable asynchronous Tailscale bootstrap";
