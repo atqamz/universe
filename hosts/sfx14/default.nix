@@ -9,6 +9,7 @@ _: {
   universe = {
     capabilities = {
       ambientLight = true;
+      handFleet = true;
       knowledgeCorpus = true;
     };
     roles.zenProfileWriter = true;

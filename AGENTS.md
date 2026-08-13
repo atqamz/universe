@@ -40,6 +40,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
 - Nix-owned binaries do not self-update. Update them through their flake/package owner. `koma` is the one exception: it has no opt-out switch, so the containment is not running `koma update` (`docs/adr/0014-koma-comes-from-its-upstream-flake.md`).
 - Runtime-managed payloads are explicit exceptions. Their installer version and repair mechanism are still declared by Universe.
+- `hand` is a runtime-managed payload, not a package: never bind it to the store, and never let activation overwrite an existing `~/.local/bin/hand`. `hand update` rewrites that file in place to update and to switch release channels (`docs/adr/0011-explicit-update-ownership.md`).
 - Compatibility shims are scoped to the program that needs them. Claude's Bun-backed `node`/`npx` exist only in Claude's wrapper PATH, not globally.
 
 ## Automation and failure semantics
@@ -47,6 +48,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Every timer-driven Home Manager job uses `services.userTimers` unless it genuinely is not a timer. That abstraction attaches `notify-failure@` automatically.
 - Expected non-action is success: dirty repo, application currently running, another valid sync holding a lock.
 - Broken repair is failure: auth/network failure, divergence, invalid encrypted data, registration failure, or a command that could not restore its invariant. Do not hide these behind `|| true` (`docs/adr/0012-automation-failures-are-observable.md`).
+- `hand-install` is the one named exception to the network half of that rule: it installs a runtime-managed payload only when absent, so a failed download warns and exits 0 and `universe.doctor.paths` reports the absent binary, while a checksum failure stays fatal. Do not "fix" it into failing loudly on network errors (`docs/adr/0011-explicit-update-ownership.md`).
 - Use `onActivation = "try"` when activation should not block a rebuild but the same command must still fail under systemd.
 - Retry policy belongs to systemd when practical. A watcher detects an edge and triggers a oneshot job; it does not become an invisible retry engine.
 - `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.

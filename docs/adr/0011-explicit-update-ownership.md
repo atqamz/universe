@@ -23,3 +23,8 @@ OpenCode stays Nix-owned instead of bypassing the nixpkgs auto-update guard.
 The `skills` CLI invoked by `skills-sync` is version-pinned and runs only when that command is invoked deliberately.
 Claude's Bun-backed `node`/`npx` compatibility exists only in Claude's wrapper PATH.
 `koma` is the named exception to the disabled-self-update rule: it exposes no opt-out switch, so the rule is not to run `koma update` (`0014-koma-comes-from-its-upstream-flake.md`).
+`hand` at `~/.local/bin/hand` is a runtime-managed payload: Home Manager activation installs it only when absent, and `hand update` owns every subsequent overwrite and channel switch (`modules/home/hand.nix`).
+It is deliberately not a flake input, a `home.packages` entry, or a `nix profile install`, because those all make the path read-only, and `hand update` rewrites the binary in place both to update it and to select a release channel.
+The absent-only activation check is what keeps activation and `hand update` from fighting over the file on every switch; `universe.doctor.paths` is what reports the binary going missing.
+The install step is gated behind `universe.capabilities.handFleet`, enabled only on the host that runs a hand fleet (sfx14), so a headless host such as pavg15 never gains an activation-time GitHub download or a doctor requirement for a tool it does not use.
+A download failure warns to stderr and lets activation succeed, since a transient GitHub outage must not fail a `nixos-rebuild switch`, let alone an unattended `system.autoUpgrade` run; only a checksum verification failure is fatal, because that is not transient and continuing quietly would install unverified content.

@@ -21,6 +21,7 @@ _: {
     ./git.nix
     ./gpg-preset.nix
     ./gtk.nix
+    ./hand.nix
     ./herdr.nix
     ./hypr.nix
     ./mise.nix
