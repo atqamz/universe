@@ -52,6 +52,16 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.
 - `treehouse-prune` is intentionally an audit-only weekly job. Do not add `--yes` or `--prune-orphans` until upstream Treehouse can distinguish reusable warm-pool capacity from disposable worktrees and correctly recognize the repository's squash-merge workflow (`docs/adr/0018-treehouse-prune-is-audit-only.md`).
 
+## Network and Tailscale bootstrap
+
+`modules/nixos/network.nix` is imported by `modules/nixos/minimal.nix`, so these rules apply to every host and every `-minimal` variant, not only to the SFX14 machine whose boot path motivated them (`docs/adr/0019-sfx14-boot-and-power-ownership.md`).
+
+- Keep the upstream generated helpers. Never reimplement `authKeyFile`, `tailscale up`, or `tailscale set` in a local unit.
+- `tailscaled.service` stays a normal `multi-user.target` service. `tailscaled-autoconnect.service` and `tailscaled-set.service` have no install target, and `tailscale-bootstrap.timer` is their only trigger, so authentication is never on the boot critical path.
+- Because of that detachment, `nixos-rebuild switch` no longer reapplies `services.tailscale.extraSetFlags`. They take effect at the next bootstrap run; `systemctl restart tailscale-bootstrap.service` applies them sooner. `start` is a no-op there, because the successful bootstrap left that `RemainAfterExit` oneshot active.
+- `extraUpFlags` are weaker than that. Upstream `tailscaled-autoconnect` calls `tailscale up` only from `NeedsLogin`, `NeedsMachineAuth`, or `Stopped` and exits as soon as the backend reports `Running`, so a changed `--ssh` or `--advertise-tags` lands when the node next takes the upstream authentication path, not at the next bootstrap, restart, or reboot of an already-connected node. Never reimplement `tailscale up` in the bootstrap to force it.
+- Every unit in the bootstrap chain needs a finite `TimeoutStartSec`. `Type=oneshot` disables the start timeout by default, and one unbounded helper turns a wedged `tailscaled` into a retry loop that can never re-run the command.
+
 ## Doctor
 
 `nix run .#doctor` is the runtime contract checker.
@@ -115,9 +125,10 @@ Deletion re-reads the marker and re-tests the project root, so a worktree recrea
 
 ## SFX14 power and display policy
 
-- `hosts/sfx14/power.nix` is the single owner of SFX14 CPU power state. `low`, `normal`, and `high` are canonical 15 W, 20 W, and 25 W states; each sets RAPL, PPD, EPP, and undervolt-timer state from any prior mode.
+- `services.undervolt` applies initial RAPL limits once; it has no recurring timer that owns runtime policy. `hosts/sfx14/power.nix` is the single owner of runtime SFX14 CPU state: `low`, `normal`, and `high` set canonical 15 W, 20 W, and 25 W RAPL, PPD, and EPP states (`docs/adr/0019-sfx14-boot-and-power-ownership.md`).
 - NVIDIA voltage/frequency policy is independent from CPU power mode. Do not make a generic power name secretly lower or raise GPU policy.
 - The selected CPU mode is restored after resume; GPU tuning is reapplied after resume as a separate invariant.
+- Upstream `undervolt-sleep.service` and `sleep-actions.service` both do their resume work in a stop hook off `sleep.target`. `undervolt-sleep` is ordered `after` `sleep-actions`, which reverses on stop, so the upstream fallback RAPL write lands first and `sfx14-power restore` writes the selected mode last. Any further RAPL writer on the resume path needs the same ordering.
 - SFX14-only i2c/backlight permissions live with the SFX14 power/display feature, not in shared power configuration.
 - `auto-brightness.nix` consumes `universe.capabilities.ambientLight`; it must not know which hostname owns the sensor.
 

@@ -14,5 +14,8 @@ _: {
     roles.zenProfileWriter = true;
   };
 
-  boot.loader.systemd-boot.configurationLimit = 3;
+  boot.loader = {
+    systemd-boot.configurationLimit = 3;
+    timeout = 1;
+  };
 }

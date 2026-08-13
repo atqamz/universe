@@ -25,7 +25,6 @@ let
     name = "sfx14-power";
     runtimeInputs = [
       pkgs.coreutils
-      pkgs.systemd
       pkgs.power-profiles-daemon
     ];
     text = ''
@@ -46,19 +45,16 @@ let
       apply() {
         case "$1" in
           low)
-            systemctl stop undervolt.timer
             set_rapl 15000000
             powerprofilesctl set power-saver
             set_epp power
             ;;
           normal)
-            systemctl start undervolt.timer
             set_rapl 20000000
             powerprofilesctl set balanced
             set_epp balance_power
             ;;
           high)
-            systemctl stop undervolt.timer
             set_rapl 25000000
             powerprofilesctl set balanced
             set_epp balance_performance
@@ -100,7 +96,7 @@ in
 
   services.undervolt = {
     enable = true;
-    useTimer = true;
+    useTimer = false;
     p1 = {
       limit = 20;
       window = 28.0;
@@ -112,10 +108,16 @@ in
   };
 
   systemd.services = {
+    undervolt-sleep.after = [ "sleep-actions.service" ];
+
     sfx14-power-default = {
       description = "Apply the default SFX14 power mode";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "undervolt.service" ];
+      wantedBy = [ "graphical.target" ];
+      after = [
+        "undervolt.service"
+        "power-profiles-daemon.service"
+      ];
+      requires = [ "power-profiles-daemon.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
