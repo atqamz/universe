@@ -23,3 +23,4 @@ OpenCode stays Nix-owned instead of bypassing the nixpkgs auto-update guard.
 The `skills` CLI invoked by `skills-sync` is version-pinned and runs only when that command is invoked deliberately.
 Claude's Bun-backed `node`/`npx` compatibility exists only in Claude's wrapper PATH.
 `koma` is the named exception to the disabled-self-update rule: it exposes no opt-out switch, so the rule is not to run `koma update` (`0014-koma-comes-from-its-upstream-flake.md`).
+`hand` at `~/.local/bin/hand` is a runtime-managed payload: Home Manager activation installs it only when absent, and `hand update` owns every subsequent overwrite and channel switch (`modules/home/hand.nix`).
