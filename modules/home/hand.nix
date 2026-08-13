@@ -46,6 +46,8 @@ let
         fi
       }
       trap cleanup EXIT
+      trap 'cleanup; exit 130' INT
+      trap 'cleanup; exit 143' TERM
       cd "$workdir" || exit 1
 
       # a transient GitHub outage must not fail activation; only a failed checksum verification does.
@@ -71,7 +73,7 @@ let
       tar -xzf "$asset" hand
 
       mkdir -p "$(dirname "$target")"
-      staged="$(mktemp "$target.XXXXXX")"
+      staged="$(mktemp "$(dirname "$target")/.$(basename "$target").XXXXXX")"
       install -m755 hand "$staged"
       if ! link_error="$(ln "$staged" "$target" 2>&1)"; then
         if [ -e "$target" ] || [ -L "$target" ]; then

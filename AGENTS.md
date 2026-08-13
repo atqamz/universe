@@ -48,6 +48,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 - Every timer-driven Home Manager job uses `services.userTimers` unless it genuinely is not a timer. That abstraction attaches `notify-failure@` automatically.
 - Expected non-action is success: dirty repo, application currently running, another valid sync holding a lock.
 - Broken repair is failure: auth/network failure, divergence, invalid encrypted data, registration failure, or a command that could not restore its invariant. Do not hide these behind `|| true` (`docs/adr/0012-automation-failures-are-observable.md`).
+- `hand-install` is the one named exception to the network half of that rule: it installs a runtime-managed payload only when absent, so a failed download warns and exits 0 and `universe.doctor.paths` reports the absent binary, while a checksum failure stays fatal. Do not "fix" it into failing loudly on network errors (`docs/adr/0011-explicit-update-ownership.md`).
 - Use `onActivation = "try"` when activation should not block a rebuild but the same command must still fail under systemd.
 - Retry policy belongs to systemd when practical. A watcher detects an edge and triggers a oneshot job; it does not become an invisible retry engine.
 - `writeShellApplication` must declare every external command it calls in `runtimeInputs`, or invoke an explicit Nix store path. Ambient workstation PATH is not a dependency declaration.

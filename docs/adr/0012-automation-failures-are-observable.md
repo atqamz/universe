@@ -11,6 +11,9 @@ Automation exits successfully only for expected non-actions, such as a dirty rep
 
 Broken repair work returns non-zero: authentication failures, failed network operations after their own retry policy, divergence, invalid encrypted data, registration failures, and similar conditions become failed systemd units.
 
+`hand-install` is the named exception to the network half of that rule: it bootstraps a runtime-managed payload only when the binary is absent, so a failed download warns to stderr and exits successfully, and `universe.doctor.paths` reports the still-absent binary instead of a failed unit (`0011-explicit-update-ownership.md`).
+A checksum verification failure there is still fatal, because that is not transient.
+
 Activation-time work that should not block a rebuild uses `onActivation = "try"`; the underlying command still fails normally when systemd runs it later.
 
 Retry policy belongs to systemd when practical. Long-running watchers detect events and trigger oneshot jobs rather than hiding retry loops internally.
