@@ -20,6 +20,7 @@ let
       gnutar
       coreutils
       gnugrep
+      gzip
     ];
     text = ''
       target="''${1:-$HOME/.local/bin/hand}"
