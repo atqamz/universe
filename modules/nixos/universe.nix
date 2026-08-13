@@ -3,6 +3,7 @@
   options.universe = {
     capabilities = {
       ambientLight = lib.mkEnableOption "ambient-light-driven display brightness";
+      handFleet = lib.mkEnableOption "the hand agent fleet orchestrator running on this host";
       knowledgeCorpus = lib.mkEnableOption "the local documentation corpus that qmd collections index";
     };
     roles.zenProfileWriter = lib.mkEnableOption "the single Zen profile writer role";

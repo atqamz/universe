@@ -2,9 +2,12 @@
   pkgs,
   lib,
   config,
+  osConfig,
   ...
 }:
 let
+  enabled = osConfig.universe.capabilities.handFleet;
+
   channel = "edge";
 
   asset = "hand-linux-amd64.tar.gz";
@@ -45,11 +48,18 @@ let
       trap cleanup EXIT
       cd "$workdir" || exit 1
 
-      curl -fsSLO "$base_url/$asset"
-      curl -fsSLO "$base_url/checksums.txt"
+      # a transient GitHub outage must not fail activation; only a failed checksum verification does.
+      if ! curl -fsSLO "$base_url/$asset"; then
+        echo "hand-install: download of $asset failed, leaving hand uninstalled" >&2
+        exit 0
+      fi
+      if ! curl -fsSLO "$base_url/checksums.txt"; then
+        echo "hand-install: download of checksums.txt failed, leaving hand uninstalled" >&2
+        exit 0
+      fi
 
       line="$(grep -E '${assetLinePattern}' checksums.txt)" || {
-        echo "hand-install: checksums.txt has no entry for $asset" >&2
+        echo "hand-install: checksums.txt has no entry for $asset, refusing to install" >&2
         exit 1
       }
 
@@ -68,7 +78,7 @@ let
     '';
   };
 in
-{
+lib.mkIf enabled {
   home.activation.handInstall = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${install}/bin/hand-install "${target}"
   '';
