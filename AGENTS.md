@@ -128,6 +128,7 @@ Deletion re-reads the marker and re-tests the project root, so a worktree recrea
 - `services.undervolt` applies initial RAPL limits once; it has no recurring timer that owns runtime policy. `hosts/sfx14/power.nix` is the single owner of runtime SFX14 CPU state: `low`, `normal`, and `high` set canonical 15 W, 20 W, and 25 W RAPL, PPD, and EPP states (`docs/adr/0019-sfx14-boot-and-power-ownership.md`).
 - NVIDIA voltage/frequency policy is independent from CPU power mode. Do not make a generic power name secretly lower or raise GPU policy.
 - The selected CPU mode is restored after resume; GPU tuning is reapplied after resume as a separate invariant.
+- Upstream `undervolt-sleep.service` and `sleep-actions.service` both do their resume work in a stop hook off `sleep.target`. `undervolt-sleep` is ordered `after` `sleep-actions`, which reverses on stop, so the upstream fallback RAPL write lands first and `sfx14-power restore` writes the selected mode last. Any further RAPL writer on the resume path needs the same ordering.
 - SFX14-only i2c/backlight permissions live with the SFX14 power/display feature, not in shared power configuration.
 - `auto-brightness.nix` consumes `universe.capabilities.ambientLight`; it must not know which hostname owns the sensor.
 

@@ -12,6 +12,8 @@ Tailscale's declarative auth helpers were wanted by `multi-user.target`, and the
 `services.undervolt` applies initial RAPL limits once and does not run a recurring timer.
 `sfx14-power` owns runtime RAPL, EPP, and PPD mode transitions for the 15 W, 20 W, and 25 W SFX14 modes.
 The default mode service is wanted by `graphical.target` and requires the package-provided PPD service after the initial undervolt service.
+Upstream `undervolt-sleep.service` writes the configured fallback RAPL limits from a stop hook on the resume path, exactly like `sleep-actions.service` runs `powerManagement.resumeCommands` from `preStop`, and nothing orders those two hooks against each other.
+`undervolt-sleep.service` is therefore ordered `After=sleep-actions.service`, which reverses when both stop, so the upstream fallback write happens first and `sfx14-power restore` writes the selected mode last instead of racing it.
 
 `modules/nixos/network.nix` is shared by every host and every `-minimal` variant, so the Tailscale decisions below are repo-wide even though the boot problem was observed on SFX14.
 `tailscaled.service` remains a normal `multi-user.target` service.

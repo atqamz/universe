@@ -108,6 +108,8 @@ in
   };
 
   systemd.services = {
+    undervolt-sleep.after = [ "sleep-actions.service" ];
+
     sfx14-power-default = {
       description = "Apply the default SFX14 power mode";
       wantedBy = [ "graphical.target" ];
