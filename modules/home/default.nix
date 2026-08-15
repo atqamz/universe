@@ -3,6 +3,7 @@ _: {
     ./minimal.nix
     ./ai-harness.nix
     ./ai-tools.nix
+    ./no-mistakes.nix
     ./auto-brightness.nix
     ./browsers.nix
     ./benchmarks.nix

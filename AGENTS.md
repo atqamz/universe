@@ -83,6 +83,11 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 `modules/home/ai-harness.nix` is the single owner of cross-harness registration for Claude Code, Codex, and OpenCode (`docs/adr/0015-one-owner-ai-harness-integration.md`).
 
+`modules/home/no-mistakes.nix` is the sole owner of no-mistakes package delivery, global config linking, daemon reconciliation, generated skill refresh, and no-mistakes doctor contracts.
+The live-editable worker routing policy belongs in `dotagents/no-mistakes/config.yaml`; it must not be folded into interactive Claude settings, Codex global config, or `ai-harness-reconcile`.
+No-mistakes skill files are independently managed by that module and must not enter the `skills-sync` ledger.
+Daemon reconciliation defers while a no-mistakes run is pending or running, records the stale state, and retries through its bounded user timer.
+
 - Declare an MCP server once as `universe.aiHarness.mcpServers.<name>` and Codex-owned config keys as `universe.aiHarness.codexConfig`. Never write a per-harness registration timer or a `jq` patch inside a feature module.
 - OpenCode's `mcp` block is tracked config in `dotagents/opencode/opencode.json` and is enforced by doctor, not written at runtime. Claude `~/.claude.json` and Codex `~/.codex/config.toml` are application-owned, so `ai-harness-reconcile` writes them as a runtime-managed payload; it replaces only the owned keys and refuses to touch `~/.claude.json` when that file is not valid JSON.
 - Codex `[features] hooks = true` must be persisted in `config.toml`; `codex --enable hooks` is per-invocation only.

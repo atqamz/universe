@@ -51,6 +51,21 @@
                   ${lib.escapeShellArg sfx14.config.hardware.nvidia.package.version}
                 touch "$out"
               '';
+          no-mistakes-reconcile =
+            pkgs.runCommand "no-mistakes-reconcile-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  jq
+                ];
+              }
+              ''
+                bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
+                touch $out
+              '';
         };
     };
 }

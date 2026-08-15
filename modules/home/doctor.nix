@@ -25,6 +25,7 @@ let
     qmdRequiredCollections = config.universe.doctor.qmdRequiredCollections;
     expectedSkills = config.universe.doctor.expectedSkills;
     skillLedger = config.universe.doctor.skillLedger;
+    noMistakes = config.universe.doctor.noMistakes;
   };
 in
 {
@@ -93,6 +94,46 @@ in
       type = lib.types.str;
       default = "";
       description = "Home-relative path of the ledger naming the skills Universe managed on the last successful sync; its contents must equal expectedSkills.";
+    };
+
+    noMistakes = lib.mkOption {
+      type = lib.types.nullOr (
+        lib.types.submodule {
+          options = {
+            binary = lib.mkOption {
+              type = lib.types.str;
+              description = "Absolute Nix-owned no-mistakes executable path.";
+            };
+
+            config = lib.mkOption {
+              type = lib.types.str;
+              description = "Home-relative no-mistakes global configuration path.";
+            };
+
+            reconcile = lib.mkOption {
+              type = lib.types.str;
+              description = "Absolute no-mistakes reconciliation executable path.";
+            };
+
+            agents = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              description = "Native agents required by the workstation's global no-mistakes policy.";
+            };
+
+            skillSource = lib.mkOption {
+              type = lib.types.str;
+              description = "Absolute pinned package path for the generated no-mistakes skill.";
+            };
+
+            skills = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              description = "Home-relative global no-mistakes skill paths that must match skillSource.";
+            };
+          };
+        }
+      );
+      default = null;
+      description = "Runtime contract for the Nix-owned no-mistakes integration.";
     };
   };
 

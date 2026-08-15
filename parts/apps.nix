@@ -185,6 +185,33 @@ _: {
             check "$relative present" test -e "$HOME/$relative"
           done < <(jq -r '.paths[]' "$manifest")
 
+          if jq -e '.noMistakes != null' "$manifest" >/dev/null; then
+            no_mistakes_binary="$(jq -r '.noMistakes.binary' "$manifest")"
+            no_mistakes_config="$(jq -r '.noMistakes.config' "$manifest")"
+            no_mistakes_reconcile="$(jq -r '.noMistakes.reconcile' "$manifest")"
+            no_mistakes_skill_source="$(jq -r '.noMistakes.skillSource' "$manifest")"
+
+            check "no-mistakes Nix binary exists" test -x "$no_mistakes_binary"
+            # shellcheck disable=SC2016
+            check "no-mistakes resolves to the Nix binary" bash -c 'actual=$(readlink -f "$(command -v no-mistakes)") && test "$actual" = "$1"' _ "$no_mistakes_binary"
+            check "no-mistakes config is parseable" "$no_mistakes_binary" doctor
+
+            while IFS= read -r agent; do
+              [ -n "$agent" ] || continue
+              check "no-mistakes agent $agent available" command -v "$agent"
+            done < <(jq -r '.noMistakes.agents[]' "$manifest")
+
+            check "no-mistakes daemon identity" "$no_mistakes_reconcile" check
+
+            while IFS= read -r skill; do
+              [ -n "$skill" ] || continue
+              check "no-mistakes skill $skill present" test -f "$HOME/$skill"
+              check "no-mistakes skill $skill is current" cmp -s "$HOME/$skill" "$no_mistakes_skill_source"
+            done < <(jq -r '.noMistakes.skills[]' "$manifest")
+
+            check "no-mistakes config link target exists" test -e "$HOME/$no_mistakes_config"
+          fi
+
           while IFS= read -r relative; do
             [ -n "$relative" ] || continue
             # shellcheck disable=SC2016

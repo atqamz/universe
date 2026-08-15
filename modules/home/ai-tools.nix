@@ -38,7 +38,6 @@ in
       inputs.koma.packages.${system}.default
       rtk
       codedb
-      no-mistakes
     ];
 
     sessionVariables.OPENCODE_DISABLE_AUTOUPDATE = "1";
