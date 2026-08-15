@@ -1,4 +1,9 @@
-{ self, lib, ... }:
+{
+  inputs,
+  self,
+  lib,
+  ...
+}:
 {
   perSystem =
     { config, pkgs, ... }:
@@ -12,6 +17,11 @@
           sfx14.config.systemd.units."gpu-undervolt.service".text;
       targetModule = "${sfx14.config.hardware.nvidia.package.open}/lib/modules/${sfx14.config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz";
       targetSmi = "${sfx14.config.hardware.nvidia.package.bin}/bin/nvidia-smi";
+      claude =
+        (import inputs.nixpkgs {
+          system = pkgs.stdenv.hostPlatform.system;
+          config.allowUnfree = true;
+        }).claude-code;
     in
     {
       pre-commit.settings.hooks = {
@@ -49,6 +59,37 @@
                   ${lib.escapeShellArg targetModule} \
                   ${lib.escapeShellArg targetSmi} \
                   ${lib.escapeShellArg sfx14.config.hardware.nvidia.package.version}
+                touch "$out"
+              '';
+          no-mistakes-reconcile =
+            pkgs.runCommand "no-mistakes-reconcile-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gawk
+                  gnugrep
+                  gnused
+                  jq
+                ];
+              }
+              ''
+                bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
+                touch $out
+              '';
+          claude-skill-root-contract =
+            pkgs.runCommand "claude-skill-root-contract"
+              {
+                nativeBuildInputs = with pkgs; [
+                  claude
+                  coreutils
+                  gnugrep
+                ];
+              }
+              ''
+                help=$(claude plugin init --help)
+                grep -Fq 'Scaffold a new plugin at ~/.claude/skills/<name>/' <<<"$help"
+                grep -Fq 'auto-loads next session' <<<"$help"
                 touch "$out"
               '';
         };

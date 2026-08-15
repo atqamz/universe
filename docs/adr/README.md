@@ -25,3 +25,4 @@ Short by design: context, decision, consequence.
 | [0017](0017-foot-default-and-wezterm-backup.md) | Foot is the boring default terminal; WezTerm is an isolated graphical backup |
 | [0018](0018-treehouse-prune-is-audit-only.md) | The weekly Treehouse prune job is audit-only |
 | [0019](0019-sfx14-boot-and-power-ownership.md) | SFX14 power policy and boot helpers have explicit owners |
+| [0020](0020-no-mistakes-integration.md) | no-mistakes policy, runtime, and skill ownership is explicit |

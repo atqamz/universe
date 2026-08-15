@@ -6,7 +6,7 @@
 }:
 let
   system = pkgs.stdenv.hostPlatform.system;
-  claudeBase = inputs.claude-code.packages.${system}.default;
+  claudeBase = pkgs.claude-code;
   nodeShim = pkgs.writeShellScriptBin "node" ''exec ${pkgs.bun}/bin/bun "$@"'';
   npxShim = pkgs.writeShellScriptBin "npx" ''exec ${pkgs.bun}/bin/bunx "$@"'';
   claude = pkgs.symlinkJoin {
@@ -38,7 +38,6 @@ in
       inputs.koma.packages.${system}.default
       rtk
       codedb
-      no-mistakes
     ];
 
     sessionVariables.OPENCODE_DISABLE_AUTOUPDATE = "1";

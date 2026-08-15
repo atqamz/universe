@@ -28,7 +28,10 @@ buildGoModule rec {
 
   doCheck = false;
 
-  passthru.updateScript = nix-update-script { };
+  passthru = {
+    skill = "${src}/skills/no-mistakes/SKILL.md";
+    updateScript = nix-update-script { };
+  };
 
   meta = {
     description = "Push-gate that validates and auto-fixes agent changes in an isolated worktree";

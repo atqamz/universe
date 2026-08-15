@@ -85,6 +85,8 @@ _: {
           openssh
           systemd
           tailscale
+          codex
+          opencode
         ];
         text = ''
           manifest="$HOME/.config/universe/doctor.json"
@@ -111,6 +113,19 @@ _: {
             if "$@" >/dev/null 2>&1; then
               report "$name" 0
             else
+              report "$name" 1
+            fi
+          }
+
+          check_with_diagnostics() {
+            local name="$1"
+            shift
+            local output
+
+            if output="$("$@" 2>&1)"; then
+              report "$name" 0
+            else
+              printf '%s\n' "$output" >&2
               report "$name" 1
             fi
           }
@@ -184,6 +199,39 @@ _: {
             [ -n "$relative" ] || continue
             check "$relative present" test -e "$HOME/$relative"
           done < <(jq -r '.paths[]' "$manifest")
+
+          if jq -e '.noMistakes != null' "$manifest" >/dev/null; then
+            no_mistakes_binary="$(jq -r '.noMistakes.binary' "$manifest")"
+            no_mistakes_config="$(jq -r '.noMistakes.config' "$manifest")"
+            no_mistakes_claude_settings="$(jq -r '.noMistakes.claudeSettings' "$manifest")"
+            no_mistakes_reconcile="$(jq -r '.noMistakes.reconcile' "$manifest")"
+            no_mistakes_skill_source="$(jq -r '.noMistakes.skillSource' "$manifest")"
+
+            check "no-mistakes Nix binary exists" test -x "$no_mistakes_binary"
+            # shellcheck disable=SC2016
+            check "no-mistakes resolves to the Nix binary" bash -c 'actual=$(readlink -f "$(command -v no-mistakes)") && test "$actual" = "$1"' _ "$no_mistakes_binary"
+            check_with_diagnostics "no-mistakes configuration is healthy" "$no_mistakes_reconcile" doctor
+
+            while IFS= read -r agent; do
+              [ -n "$agent" ] || continue
+              check "no-mistakes agent $agent available" command -v "$agent"
+            done < <(jq -r '.noMistakes.agents[]' "$manifest")
+
+            check "no-mistakes daemon identity" "$no_mistakes_reconcile" check
+
+            while IFS= read -r skill; do
+              [ -n "$skill" ] || continue
+              check "no-mistakes skill $skill present" test -f "$HOME/$skill"
+              check "no-mistakes skill $skill is current" cmp -s "$HOME/$skill" "$no_mistakes_skill_source"
+            done < <(jq -r '.noMistakes.skills[]' "$manifest")
+
+            while IFS= read -r harness; do
+              [ -n "$harness" ] || continue
+              check_with_diagnostics "no-mistakes visible to $harness" "$no_mistakes_reconcile" discover "$harness" "$HOME/$no_mistakes_claude_settings"
+            done < <(jq -r '.noMistakes.harnesses[]' "$manifest")
+
+            check "no-mistakes config link target exists" test -e "$HOME/$no_mistakes_config"
+          fi
 
           while IFS= read -r relative; do
             [ -n "$relative" ] || continue
