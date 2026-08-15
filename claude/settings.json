@@ -2,7 +2,7 @@
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "claude-opus-5",
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -33,9 +33,5 @@
     "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
   },
   "autoCompactWindow": 200000,
-  "voice": {
-    "enabled": false,
-    "mode": "hold"
-  },
   "skipDangerousModePermissionPrompt": true
 }
