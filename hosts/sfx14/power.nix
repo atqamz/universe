@@ -1,5 +1,11 @@
 { pkgs, config, ... }:
 let
+  deferredExitCode = 75;
+
+  targetNvidiaModule = "${config.hardware.nvidia.package.open}/lib/modules/${config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz";
+  targetNvidiaSmi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
+  targetNvidiaVersion = config.hardware.nvidia.package.version;
+
   gpuOffset = pkgs.writeText "gpu-offset.py" ''
     import pynvml
     pynvml.nvmlInit()
@@ -11,13 +17,101 @@ let
   gpuUndervolt = pkgs.writeShellApplication {
     name = "gpu-undervolt";
     runtimeInputs = [
+      pkgs.coreutils
       config.hardware.nvidia.package.bin
       (pkgs.python3.withPackages (ps: [ ps.nvidia-ml-py ]))
     ];
     text = ''
-      nvidia-smi -pm 1
-      nvidia-smi -lgc 210,1540
-      python3 ${gpuOffset}
+      current_system="''${UNIVERSE_GPU_CURRENT_SYSTEM:-/run/current-system}"
+      booted_system="''${UNIVERSE_GPU_BOOTED_SYSTEM:-/run/booted-system}"
+      loaded_version_file="''${UNIVERSE_GPU_LOADED_NVIDIA_VERSION_FILE:-/sys/module/nvidia/version}"
+      nvidia_smi="''${UNIVERSE_GPU_NVIDIA_SMI:-nvidia-smi}"
+      python3_bin="''${UNIVERSE_GPU_PYTHON:-python3}"
+      target_kernel=""
+      booted_kernel=""
+      loaded_nvidia_version=""
+      target_smi_identity=""
+      booted_smi_identity=""
+      booted_nvidia_module="$booted_system/kernel-modules/lib/modules/${config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz"
+
+      defer() {
+        printf 'gpu-undervolt: DEFERRED until reboot: %s\n' "$1" >&2
+        printf 'gpu-undervolt: booted kernel=%s\n' "''${booted_kernel:-unavailable}" >&2
+        printf 'gpu-undervolt: target kernel=%s\n' "''${target_kernel:-unavailable}" >&2
+        printf 'gpu-undervolt: loaded NVIDIA=%s\n' "''${loaded_nvidia_version:-unavailable}" >&2
+        printf 'gpu-undervolt: target NVIDIA=%s\n' "${targetNvidiaVersion}" >&2
+        printf 'gpu-undervolt: target NVIDIA module=%s\n' "${targetNvidiaModule}" >&2
+        printf 'gpu-undervolt: booted NVIDIA module=%s\n' "$booted_nvidia_module" >&2
+        printf 'gpu-undervolt: target NVIDIA userspace=%s\n' "''${target_smi_identity:-unavailable}" >&2
+        printf 'gpu-undervolt: booted NVIDIA userspace=%s\n' "''${booted_smi_identity:-unavailable}" >&2
+        exit ${toString deferredExitCode}
+      }
+
+      if [ -r "$loaded_version_file" ]; then
+        if IFS= read -r loaded_nvidia_version < "$loaded_version_file"; then
+          :
+        else
+          loaded_nvidia_version=""
+        fi
+      fi
+
+      if [ -f "${targetNvidiaSmi}" ] \
+        && [ -f "$booted_system/sw/bin/nvidia-smi" ]; then
+        if target_smi_identity="$(readlink -f -- "${targetNvidiaSmi}" 2>/dev/null)" \
+          && booted_smi_identity="$(readlink -f -- "$booted_system/sw/bin/nvidia-smi" 2>/dev/null)"; then
+          :
+        else
+          target_smi_identity=""
+          booted_smi_identity=""
+        fi
+      fi
+
+      if target_kernel="$(readlink -f -- "$current_system/kernel" 2>/dev/null)" \
+        && booted_kernel="$(readlink -f -- "$booted_system/kernel" 2>/dev/null)" \
+        && [ "$target_kernel" != "$booted_kernel" ]; then
+        defer "active boot does not match target kernel generation"
+      fi
+
+      if [ -f "${targetNvidiaModule}" ] \
+        && [ -f "$booted_nvidia_module" ] \
+        && ! cmp -s -- "${targetNvidiaModule}" "$booted_nvidia_module"; then
+        defer "NVIDIA kernel module differs from the booted generation"
+      fi
+
+      if [ -n "$target_smi_identity" ] \
+        && [ -n "$booted_smi_identity" ] \
+        && [ "$target_smi_identity" != "$booted_smi_identity" ]; then
+        defer "NVIDIA userspace differs from the booted generation"
+      fi
+
+      if [ -n "$loaded_nvidia_version" ] \
+        && [ "$loaded_nvidia_version" != "${targetNvidiaVersion}" ]; then
+        defer "loaded NVIDIA version differs from the target generation"
+      fi
+
+      "$nvidia_smi" -pm 1
+      "$nvidia_smi" -lgc 210,1540
+      "$python3_bin" ${gpuOffset}
+    '';
+  };
+
+  gpuUndervoltResume = pkgs.writeShellApplication {
+    name = "gpu-undervolt-resume";
+    text = ''
+      gpu_rc=0
+      if ${gpuUndervolt}/bin/gpu-undervolt; then
+        gpu_rc=0
+      else
+        gpu_rc=$?
+      fi
+
+      case "$gpu_rc" in
+        0|${toString deferredExitCode})
+          ;;
+        *)
+          exit "$gpu_rc"
+          ;;
+      esac
     '';
   };
 
@@ -132,6 +226,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        SuccessExitStatus = [ deferredExitCode ];
         ExecStart = "${gpuUndervolt}/bin/gpu-undervolt";
       };
     };
@@ -139,6 +234,6 @@ in
 
   powerManagement.resumeCommands = ''
     ${powerMode}/bin/sfx14-power restore
-    ${gpuUndervolt}/bin/gpu-undervolt
+    ${gpuUndervoltResume}/bin/gpu-undervolt-resume
   '';
 }
