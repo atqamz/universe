@@ -59,6 +59,10 @@
             "explorer": [
                 "thunar"
             ],
+            "playback": [
+                "vlc",
+                "--started-from-file"
+            ],
             "terminal": [
                 "foot",
                 "--working-directory",
