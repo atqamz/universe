@@ -2,7 +2,7 @@
 
 ## Context
 
-`nix flake check` builds the full `toplevel` closure for every host including the `-minimal` variants, which pulls in caelestia-shell and other inputs with no upstream cache.
+`nix flake check` builds the full `toplevel` closure for every host including the `-minimal` variants, which pulls in desktop runtimes and other inputs with no upstream cache.
 The machines then need those same paths, twice a day, via `system.autoUpgrade`.
 
 CI previously ran `nix-community/cache-nix-action` before `cachix/cachix-action`.

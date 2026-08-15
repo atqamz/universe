@@ -27,7 +27,7 @@ Do not preserve an abstraction merely because it already exists: every abstracti
 ## Host composition
 
 - A `-minimal` configuration may import only `hosts/<host>/default.nix` and `modules/nixos/minimal.nix` plus the flake integration modules; it must not import Home Manager. `modules/home/minimal.nix` is the base layer of the full Home Manager configuration only. Full-only host code belongs in `hosts/<host>/full.nix` or a module imported from it (`docs/adr/0006-minimal-host-variants.md`).
-- Shared modules consume `universe.capabilities.*` or `universe.roles.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/caelestia/hosts/${hostname}.json`.
+- Shared modules consume `universe.capabilities.*` or `universe.roles.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/hypr/hosts/${hostname}.lua`.
 - Host-specific services belong with the host when there is only one real consumer. Do not build a generic option layer around one machine's job merely to make the file look reusable.
 
 ## State and update ownership
@@ -77,7 +77,7 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 - Read-only live config uses `config.lib.file.mkOutOfStoreSymlink` to absolute paths under `config.home.homeDirectory` (`docs/adr/0003-live-editable-dotfiles.md`).
 - Config that the application rewrites atomically cannot traverse Home Manager's store-hop symlink. Claude `settings.json` and OpenCode `opencode.json` are direct writable links generated from one `writableLinks` map in `modules/home/dotagents.nix`; the same map feeds activation, user tmpfiles, and doctor checks.
-- Caelestia `shell.json` remains host-specific and `force = true` because Caelestia atomically replaces that path.
+- Application-owned files that are atomically rewritten need `force = true` when linked from a live configuration repository.
 
 ## AI harness integration
 
@@ -104,7 +104,7 @@ Daemon reconciliation defers while a no-mistakes run is pending or running, reco
 - `modules/home/packages.nix` is passive inventory. Application behavior belongs in a named module: Zed in `zed.nix`, browsers in `browsers.nix`, AI tool wrappers/update policy in `ai-tools.nix`, Unity in `unity.nix`.
 - Zed is wrapped with its language servers on PATH. `nixd` is the single Nix LSP; keep `go` beside `gopls` because Zed's Go extension may invoke the Go toolchain.
 - The two GUI terminals are deliberately on different client-side graphics paths (`docs/adr/0017-foot-default-and-wezterm-backup.md`). Foot is the default and stays one independent native-Wayland process per launch: never enable Foot server mode or `footclient`. WezTerm stays installed as the isolated backup and keeps `enable_wayland = false` with `front_end = 'Software'`; do not converge them for performance.
-- Which terminal a keybind or Caelestia launches is owned by `dotfiles`; Universe owns only enablement and WezTerm's declarative config. A terminal role change lands in `dotfiles` first and is applied here only after that change merges.
+- Which terminal or presentation-shell action a keybind launches is owned by `dotfiles`; Universe owns only enablement and WezTerm's declarative config. A terminal role change lands in `dotfiles` first and is applied here only after that change merges.
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
 - Unity Hub, CLI, and Editor wrappers share `unityBase.fhsEnv`; `programs.nix-ld` remains for other foreign binaries and is not imported by minimal host variants (`docs/adr/0008-unity-uses-one-shared-fhs-runtime.md`).
 - OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
