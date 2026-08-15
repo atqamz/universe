@@ -17,7 +17,11 @@
           sfx14.config.systemd.units."gpu-undervolt.service".text;
       targetModule = "${sfx14.config.hardware.nvidia.package.open}/lib/modules/${sfx14.config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz";
       targetSmi = "${sfx14.config.hardware.nvidia.package.bin}/bin/nvidia-smi";
-      claude = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      claude =
+        (import inputs.nixpkgs {
+          system = pkgs.stdenv.hostPlatform.system;
+          config.allowUnfree = true;
+        }).claude-code;
     in
     {
       pre-commit.settings.hooks = {
