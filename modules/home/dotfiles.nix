@@ -1,6 +1,5 @@
 {
   config,
-  hostname,
   ...
 }:
 let
@@ -14,10 +13,6 @@ in
     ".config/zed".source = link "${root}/zed";
     ".config/herdr/config.toml" = {
       source = link "${root}/herdr/config.toml";
-      force = true;
-    };
-    ".config/caelestia/shell.json" = {
-      source = link "${root}/caelestia/hosts/${hostname}.json";
       force = true;
     };
     ".local/share/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/autoexec.cfg".source =

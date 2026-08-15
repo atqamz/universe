@@ -42,4 +42,4 @@ The one false alarm is running doctor within the first 30 seconds after boot, be
 Changing `extraSetFlags` therefore takes effect at the next bootstrap run rather than at `nixos-rebuild switch`, and the manual escape hatch is `systemctl restart tailscale-bootstrap.service`, since starting an already-active `RemainAfterExit` oneshot does not re-run it.
 `extraUpFlags` are not reapplied by that restart, or by a reboot, because upstream `tailscaled-autoconnect` invokes `tailscale up` only from `NeedsLogin`, `NeedsMachineAuth`, or `Stopped` and exits as soon as the backend reports `Running`.
 Changed up flags land when the node next takes the upstream authentication path, and forcing them earlier is an explicit operator action rather than a reimplementation of `tailscale up` inside the bootstrap.
-The GPU policy, GameMode integration, resume restoration, UWSM, Hyprland, and Caelestia architecture remain separate invariants.
+The GPU policy, GameMode integration, resume restoration, UWSM, Hyprland, and presentation-shell architecture remain separate invariants.

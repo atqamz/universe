@@ -2,7 +2,7 @@
 
 Personal NixOS configuration as a flake.
 
-Hyprland + [caelestia](https://github.com/caelestia-dots/shell) desktop across two laptops, built with flake-parts, home-manager, sops-nix, and disko.
+Hyprland + pinned [Omanixy](https://github.com/atqamz/omanixy) Quattro desktop across two laptops, built with flake-parts, home-manager, sops-nix, and disko.
 
 ## Hosts
 
@@ -10,8 +10,8 @@ Each host builds a full variant and a genuinely stripped `-minimal` bootstrap va
 
 | Host | Machine | Desktop |
 | --- | --- | --- |
-| pavg15 | HP Pavilion Gaming 15-ec1047ax | Hyprland + caelestia |
-| sfx14 | Acer Swift X SFX14-72G-79PY | Hyprland + caelestia |
+| pavg15 | HP Pavilion Gaming 15-ec1047ax | Hyprland + Omanixy Quattro |
+| sfx14 | Acer Swift X SFX14-72G-79PY | Hyprland + Omanixy Quattro |
 
 ## Layout
 

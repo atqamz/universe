@@ -7,8 +7,6 @@ _: {
     ./auto-brightness.nix
     ./browsers.nix
     ./benchmarks.nix
-    ./caelestia.nix
-    ./caelestia-theme.nix
     ./clipboard.nix
     ./codedb.nix
     ./cursor.nix
@@ -25,12 +23,16 @@ _: {
     ./hand.nix
     ./herdr.nix
     ./hypr.nix
+    ./lock.nix
     ./mise.nix
     ./nightlight.nix
     ./nix-access-token.nix
     ./notify-failure.nix
+    ./notifications.nix
+    ./omanixy.nix
     ./packages.nix
     ./passmenu.nix
+    ./presentation.nix
     ./qmd.nix
     ./qt.nix
     ./readline.nix

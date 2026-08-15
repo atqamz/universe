@@ -21,7 +21,6 @@
       slurp
       wl-clipboard
       cliphist
-      fuzzel
       brightnessctl
       pavucontrol
       obs-studio

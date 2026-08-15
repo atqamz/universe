@@ -33,10 +33,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    caelestia-shell = {
-      url = "github:caelestia-dots/shell/v2.3.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    omanixy = {
+      url = "github:atqamz/omanixy/c756f85dc2ad546fa2cfbad1fdf3b51913bc6723";
     };
 
     zen-browser = {
