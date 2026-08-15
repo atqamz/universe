@@ -1,8 +1,11 @@
-_: {
+{ inputs, ... }:
+{
   perSystem =
     { pkgs, ... }:
     let
       vault = "$HOME/vault";
+      system = pkgs.stdenv.hostPlatform.system;
+      claude = inputs.claude-code.packages.${system}.default;
       secretsTools = with pkgs; [
         age
         coreutils
@@ -85,6 +88,9 @@ _: {
           openssh
           systemd
           tailscale
+          claude
+          codex
+          opencode
         ];
         text = ''
           manifest="$HOME/.config/universe/doctor.json"
@@ -221,6 +227,11 @@ _: {
               check "no-mistakes skill $skill present" test -f "$HOME/$skill"
               check "no-mistakes skill $skill is current" cmp -s "$HOME/$skill" "$no_mistakes_skill_source"
             done < <(jq -r '.noMistakes.skills[]' "$manifest")
+
+            while IFS= read -r harness; do
+              [ -n "$harness" ] || continue
+              check_with_diagnostics "no-mistakes visible to $harness" "$no_mistakes_reconcile" discover "$harness"
+            done < <(jq -r '.noMistakes.harnesses[]' "$manifest")
 
             check "no-mistakes config link target exists" test -e "$HOME/$no_mistakes_config"
           fi

@@ -36,6 +36,13 @@ Malformed structured findings do not trigger fallback.
 The v1.51.1 configuration model supports per-agent argument overrides but not separate models for review, test, documentation, lint, CI, and fixer steps.
 No downstream scheduler or upstream fork is introduced for that unsupported capability.
 
+The pinned skill is version-coupled to the no-mistakes package and remains outside the generic skills-sync ledger.
+The no-mistakes doctor contract checks exact content in both `.agents/skills/no-mistakes/SKILL.md` and `.claude/skills/no-mistakes/SKILL.md`, then verifies discovery through each supported harness without inference.
+Claude Code has no supported read-only skill enumeration surface in the installed version, so Universe uses its installed `claude plugin init --help` skill-root contract together with the exact file check as filesystem-backed discovery verification.
+Codex is checked through the read-only app-server `skills/list` method from `/tmp`, requiring an enabled user-scoped entry whose path is the `.agents` skill.
+OpenCode is checked through `opencode debug skill --pure` from `/tmp`, requiring a `no-mistakes` entry from either intended global root so its compatible duplicate visibility is valid.
+No additional Codex or OpenCode skill copies are created.
+
 v1.51.1 has no machine-readable configuration validation command.
 Its `doctor` command records a failed check as telemetry status `error` but returns exit status zero.
 The Universe reconciliation helper therefore invokes `doctor` with `NO_COLOR=1` and `TERM=dumb`, rejects `some checks failed`, requires the stable `gate validation ... is runnable` result, and verifies the reported effective agent with `command -v`.

@@ -20,6 +20,12 @@ assert_file_contains() {
   grep -Fqx "$expected" "$file" || fail "${file} does not contain ${expected}"
 }
 
+assert_file_contains_fragment() {
+  local file=$1
+  local expected=$2
+  grep -Fq "$expected" "$file" || fail "${file} does not contain ${expected}"
+}
+
 assert_success() {
   local label=$1
   shift
@@ -42,9 +48,53 @@ assert_failure() {
 
 new_case() {
   case_root=$(mktemp -d "$test_root/case.XXXXXX")
-  mkdir -p "$case_root/bin" "$case_root/home/.no-mistakes" "$case_root/home/.config/systemd/user"
-  : >"$case_root/bin/codex"
+  mkdir -p \
+    "$case_root/bin" \
+    "$case_root/home/.agents/skills/no-mistakes" \
+    "$case_root/home/.claude/skills/no-mistakes" \
+    "$case_root/home/.no-mistakes" \
+    "$case_root/home/.config/systemd/user"
+  printf 'generated skill\n' >"$case_root/home/.agents/skills/no-mistakes/SKILL.md"
+  cp "$case_root/home/.agents/skills/no-mistakes/SKILL.md" "$case_root/home/.claude/skills/no-mistakes/SKILL.md"
+  : >"$case_root/claude-output"
+  printf '0\n' >"$case_root/claude-status"
+  : >"$case_root/codex-output"
+  printf '0\n' >"$case_root/codex-status"
+  : >"$case_root/opencode-output"
+  printf '0\n' >"$case_root/opencode-status"
+  cat >"$case_root/bin/claude" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ ${1:-} == plugin && ${2:-} == init && ${3:-} == --help ]]; then
+  cat "$FAKE_CLAUDE_OUTPUT_FILE"
+  exit "$(cat "$FAKE_CLAUDE_STATUS_FILE")"
+fi
+exit 64
+EOF
+  sed -i "1c#!$bash_path" "$case_root/bin/claude"
+  chmod +x "$case_root/bin/claude"
+  cat >"$case_root/bin/codex" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ ${1:-} == app-server ]]; then
+  cat "$FAKE_CODEX_OUTPUT_FILE"
+  exit "$(cat "$FAKE_CODEX_STATUS_FILE")"
+fi
+exit 64
+EOF
+  sed -i "1c#!$bash_path" "$case_root/bin/codex"
   chmod +x "$case_root/bin/codex"
+  cat >"$case_root/bin/opencode" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ ${1:-} == debug && ${2:-} == skill ]]; then
+  cat "$FAKE_OPENCODE_OUTPUT_FILE"
+  exit "$(cat "$FAKE_OPENCODE_STATUS_FILE")"
+fi
+exit 64
+EOF
+  sed -i "1c#!$bash_path" "$case_root/bin/opencode"
+  chmod +x "$case_root/bin/opencode"
   : >"$case_root/restarts"
   : >"$case_root/starts"
   printf '0\n' >"$case_root/active-runs"
@@ -120,6 +170,12 @@ export FAKE_TEST_PID=$test_pid
 export FAKE_ACTIVE_RUNS_FILE=$case_root/active-runs
 export FAKE_DOCTOR_OUTPUT_FILE=$case_root/doctor-output
 export FAKE_DOCTOR_STATUS_FILE=$case_root/doctor-status
+export FAKE_CLAUDE_OUTPUT_FILE=$case_root/claude-output
+export FAKE_CLAUDE_STATUS_FILE=$case_root/claude-status
+export FAKE_CODEX_OUTPUT_FILE=$case_root/codex-output
+export FAKE_CODEX_STATUS_FILE=$case_root/codex-status
+export FAKE_OPENCODE_OUTPUT_FILE=$case_root/opencode-output
+export FAKE_OPENCODE_STATUS_FILE=$case_root/opencode-status
 export FAKE_RESTARTS_FILE=$case_root/restarts
 export FAKE_STARTS_FILE=$case_root/starts
 export FAKE_RUNNING_FILE=$case_root/running
@@ -151,6 +207,62 @@ printf 'fatal doctor process error\n' >"$case_root/doctor-output"
 printf '17\n' >"$case_root/doctor-status"
 assert_failure doctor_process_failure bash "$case_root/run" doctor
 assert_file_contains "$test_root/doctor_process_failure.stdout" 'fatal doctor process error'
+
+new_case
+printf 'Scaffold a new plugin at ~/.claude/skills/<name>/ (auto-loads next session as\n<name>@skills-dir)\n' >"$case_root/claude-output"
+assert_success claude_discovery bash "$case_root/run" discover claude
+
+new_case
+printf 'Usage: claude plugin init\n' >"$case_root/claude-output"
+assert_failure claude_discovery_missing bash "$case_root/run" discover claude
+assert_file_contains "$test_root/claude_discovery_missing.stdout" 'Usage: claude plugin init'
+
+new_case
+printf 'claude discovery command failed\n' >"$case_root/claude-output"
+printf '17\n' >"$case_root/claude-status"
+assert_failure claude_discovery_process_failure bash "$case_root/run" discover claude
+assert_file_contains "$test_root/claude_discovery_process_failure.stdout" 'claude discovery command failed'
+
+new_case
+printf '{"id":2,"result":{"data":[{"cwd":"/tmp","skills":[{"name":"no-mistakes","path":"%s","scope":"user","enabled":true}],"errors":[]}]}}\n' \
+  "$case_root/home/.agents/skills/no-mistakes/SKILL.md" >"$case_root/codex-output"
+assert_success codex_discovery bash "$case_root/run" discover codex
+
+new_case
+printf '{"id":2,"result":{"data":[{"cwd":"/tmp","skills":[{"name":"other-skill","path":"%s","scope":"user","enabled":true}],"errors":[]}]}}\n' \
+  "$case_root/home/.agents/skills/other-skill/SKILL.md" >"$case_root/codex-output"
+assert_failure codex_discovery_missing bash "$case_root/run" discover codex
+assert_file_contains_fragment "$test_root/codex_discovery_missing.stdout" 'other-skill'
+
+new_case
+printf '{"id":2,"result":{"data":[{"cwd":"/tmp","skills":[{"name":"no-mistakes","path":"%s","scope":"repo","enabled":true}],"errors":[]}]}}\n' \
+  "$case_root/project/.agents/skills/no-mistakes/SKILL.md" >"$case_root/codex-output"
+assert_failure codex_discovery_project_shadow bash "$case_root/run" discover codex
+assert_file_contains_fragment "$test_root/codex_discovery_project_shadow.stdout" '"scope":"repo"'
+
+new_case
+printf 'codex app-server failed\n' >"$case_root/codex-output"
+printf '17\n' >"$case_root/codex-status"
+assert_failure codex_discovery_process_failure bash "$case_root/run" discover codex
+assert_file_contains "$test_root/codex_discovery_process_failure.stdout" 'codex app-server failed'
+
+new_case
+printf '[\n  {"name": "no-mistakes", "location": "%s"},\n  {"name": "no-mistakes", "location": "%s"}\n]\n' \
+  "$case_root/home/.agents/skills/no-mistakes/SKILL.md" \
+  "$case_root/home/.claude/skills/no-mistakes/SKILL.md" >"$case_root/opencode-output"
+assert_success opencode_discovery bash "$case_root/run" discover opencode
+
+new_case
+printf '[\n  {"name": "other-skill", "location": "%s"}\n]\n' \
+  "$case_root/home/.agents/skills/other-skill/SKILL.md" >"$case_root/opencode-output"
+assert_failure opencode_discovery_missing bash "$case_root/run" discover opencode
+assert_file_contains_fragment "$test_root/opencode_discovery_missing.stdout" 'other-skill'
+
+new_case
+printf 'opencode debug skill failed\n' >"$case_root/opencode-output"
+printf '17\n' >"$case_root/opencode-status"
+assert_failure opencode_discovery_process_failure bash "$case_root/run" discover opencode
+assert_file_contains "$test_root/opencode_discovery_process_failure.stdout" 'opencode debug skill failed'
 
 new_case
 assert_success absent bash "$case_root/run" reconcile

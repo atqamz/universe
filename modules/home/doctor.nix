@@ -120,6 +120,11 @@ in
               description = "Native agents required by the workstation's global no-mistakes policy.";
             };
 
+            harnesses = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              description = "Interactive harnesses that must discover the pinned no-mistakes skill.";
+            };
+
             skillSource = lib.mkOption {
               type = lib.types.str;
               description = "Absolute pinned package path for the generated no-mistakes skill.";

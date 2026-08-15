@@ -1,20 +1,27 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
 }:
 let
   home = config.home.homeDirectory;
+  system = pkgs.stdenv.hostPlatform.system;
+  claude = inputs.claude-code.packages.${system}.default;
   link = config.lib.file.mkOutOfStoreSymlink;
   reconcile = pkgs.writeShellApplication {
     name = "no-mistakes-reconcile";
     runtimeInputs = [
+      claude
       pkgs.coreutils
+      pkgs.codex
       pkgs.gnugrep
       pkgs.gnused
+      pkgs.gawk
       pkgs.jq
       pkgs.no-mistakes
+      pkgs.opencode
       pkgs.sqlite
     ];
     text = builtins.readFile ./no-mistakes-reconcile.sh;
@@ -64,6 +71,11 @@ in
         agents = [
           "codex"
           "claude"
+        ];
+        harnesses = [
+          "claude"
+          "codex"
+          "opencode"
         ];
         skillSource = pkgs.no-mistakes.skill;
         skills = [
