@@ -107,18 +107,45 @@ discovery_failure() {
   die "$message"
 }
 
-discover_claude() {
+claude_visibility() {
+  local settings=$1
   local output
+  if [[ ! -f $settings ]]; then
+    die "Claude skill visibility settings are missing: $settings"
+  fi
+  if ! output=$(jq -er --arg skill "$skill_name" '
+    def skill_overrides:
+      if has("skillOverrides") then .skillOverrides else {} end;
+    if type != "object" then
+      error("settings root must be an object")
+    elif (skill_overrides | type) != "object" then
+      error("skillOverrides must be an object")
+    elif (skill_overrides | has($skill)) then
+      skill_overrides[$skill] as $state |
+      if ($state | type) != "string" then
+        error("skillOverrides." + $skill + " must be a string")
+      elif $state == "on" or $state == "name-only" or $state == "user-invocable-only" or $state == "off" then
+        $state
+      else
+        error("unsupported skill override for " + $skill + ": " + $state)
+      end
+    else
+      "on"
+    end
+  ' "$settings" 2>&1); then
+    discovery_failure "$output" "Claude user settings are invalid: $settings"
+  fi
+  if [[ $output == off ]]; then
+    die "Claude skill visibility disabled: skillOverrides.no-mistakes is off in $settings"
+  fi
+}
+
+discover_claude() {
+  local settings=${1:-$HOME/.claude/settings.json}
   if [[ ! -f $claude_skill ]]; then
     die "Claude skill discovery contract is missing $claude_skill"
   fi
-  if ! output=$(cd /tmp && timeout 10 claude plugin init --help 2>&1); then
-    discovery_failure "$output" 'Claude skill discovery contract command failed: claude plugin init --help'
-  fi
-  if ! printf '%s\n' "$output" | grep -Fq 'Scaffold a new plugin at ~/.claude/skills/<name>/' ||
-    ! printf '%s\n' "$output" | grep -Fq 'auto-loads next session'; then
-    discovery_failure "$output" 'Claude skill discovery contract does not advertise ~/.claude/skills/<name>/ as an auto-loaded root'
-  fi
+  claude_visibility "$settings"
 }
 
 discover_codex() {
@@ -186,9 +213,10 @@ discover_opencode() {
 
 discover() {
   local harness=${2:?usage: no-mistakes-reconcile discover HARNESS}
+  local claude_settings=${3:-$HOME/.claude/settings.json}
   case $harness in
   claude)
-    discover_claude
+    discover_claude "$claude_settings"
     ;;
   codex)
     discover_codex

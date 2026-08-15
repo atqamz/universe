@@ -38,7 +38,11 @@ No downstream scheduler or upstream fork is introduced for that unsupported capa
 
 The pinned skill is version-coupled to the no-mistakes package and remains outside the generic skills-sync ledger.
 The no-mistakes doctor contract checks exact content in both `.agents/skills/no-mistakes/SKILL.md` and `.claude/skills/no-mistakes/SKILL.md`, then verifies discovery through each supported harness without inference.
-Claude Code has no supported read-only skill enumeration surface in the installed version, so Universe uses its installed `claude plugin init --help` skill-root contract together with the exact file check as filesystem-backed discovery verification.
+Claude Code has no supported read-only skill enumeration surface in the installed version, so Universe uses the dotagents-owned user settings file at `~/.claude/settings.json` and the exact file check for source/filesystem-backed discovery and visibility verification.
+The Claude visibility contract accepts an absent override and `on`, `name-only`, or `user-invocable-only`; it fails only `skillOverrides.no-mistakes: off` or malformed relevant settings.
+`user-invocable-only` hides the skill from Claude's model listing but keeps it available in the user's slash-command menu, so invocation permissions remain outside this discovery contract.
+The check is intentionally limited to user scope: neutral `/tmp` excludes project and local settings, while managed policy is outside the dotagents-owned workstation contract.
+The installed `claude plugin init --help` wording remains a pinned-version `claude-skill-root-contract` regression check, not a runtime doctor predicate.
 Codex is checked through the read-only app-server `skills/list` method from `/tmp`, requiring an enabled user-scoped entry whose path is the `.agents` skill.
 OpenCode is checked through `opencode debug skill --pure` from `/tmp`, requiring a `no-mistakes` entry from either intended global root so its compatible duplicate visibility is valid.
 No additional Codex or OpenCode skill copies are created.

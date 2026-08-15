@@ -54,25 +54,13 @@ new_case() {
     "$case_root/home/.claude/skills/no-mistakes" \
     "$case_root/home/.no-mistakes" \
     "$case_root/home/.config/systemd/user"
+  printf '{}\n' >"$case_root/home/.claude/settings.json"
   printf 'generated skill\n' >"$case_root/home/.agents/skills/no-mistakes/SKILL.md"
   cp "$case_root/home/.agents/skills/no-mistakes/SKILL.md" "$case_root/home/.claude/skills/no-mistakes/SKILL.md"
-  : >"$case_root/claude-output"
-  printf '0\n' >"$case_root/claude-status"
   : >"$case_root/codex-output"
   printf '0\n' >"$case_root/codex-status"
   : >"$case_root/opencode-output"
   printf '0\n' >"$case_root/opencode-status"
-  cat >"$case_root/bin/claude" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ ${1:-} == plugin && ${2:-} == init && ${3:-} == --help ]]; then
-  cat "$FAKE_CLAUDE_OUTPUT_FILE"
-  exit "$(cat "$FAKE_CLAUDE_STATUS_FILE")"
-fi
-exit 64
-EOF
-  sed -i "1c#!$bash_path" "$case_root/bin/claude"
-  chmod +x "$case_root/bin/claude"
   cat >"$case_root/bin/codex" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -170,8 +158,6 @@ export FAKE_TEST_PID=$test_pid
 export FAKE_ACTIVE_RUNS_FILE=$case_root/active-runs
 export FAKE_DOCTOR_OUTPUT_FILE=$case_root/doctor-output
 export FAKE_DOCTOR_STATUS_FILE=$case_root/doctor-status
-export FAKE_CLAUDE_OUTPUT_FILE=$case_root/claude-output
-export FAKE_CLAUDE_STATUS_FILE=$case_root/claude-status
 export FAKE_CODEX_OUTPUT_FILE=$case_root/codex-output
 export FAKE_CODEX_STATUS_FILE=$case_root/codex-status
 export FAKE_OPENCODE_OUTPUT_FILE=$case_root/opencode-output
@@ -209,19 +195,34 @@ assert_failure doctor_process_failure bash "$case_root/run" doctor
 assert_file_contains "$test_root/doctor_process_failure.stdout" 'fatal doctor process error'
 
 new_case
-printf 'Scaffold a new plugin at ~/.claude/skills/<name>/ (auto-loads next session as\n<name>@skills-dir)\n' >"$case_root/claude-output"
-assert_success claude_discovery bash "$case_root/run" discover claude
+assert_success claude_discovery_default bash "$case_root/run" discover claude
 
 new_case
-printf 'Usage: claude plugin init\n' >"$case_root/claude-output"
-assert_failure claude_discovery_missing bash "$case_root/run" discover claude
-assert_file_contains "$test_root/claude_discovery_missing.stdout" 'Usage: claude plugin init'
+printf '{"skillOverrides":{"no-mistakes":"on"}}\n' >"$case_root/home/.claude/settings.json"
+assert_success claude_discovery_on bash "$case_root/run" discover claude
 
 new_case
-printf 'claude discovery command failed\n' >"$case_root/claude-output"
-printf '17\n' >"$case_root/claude-status"
-assert_failure claude_discovery_process_failure bash "$case_root/run" discover claude
-assert_file_contains "$test_root/claude_discovery_process_failure.stdout" 'claude discovery command failed'
+printf '{"skillOverrides":{"no-mistakes":"name-only"}}\n' >"$case_root/home/.claude/settings.json"
+assert_success claude_discovery_name_only bash "$case_root/run" discover claude
+
+new_case
+printf '{"skillOverrides":{"no-mistakes":"user-invocable-only"}}\n' >"$case_root/home/.claude/settings.json"
+assert_success claude_discovery_user_invocable_only bash "$case_root/run" discover claude
+
+new_case
+printf '{"skillOverrides":{"no-mistakes":"off"}}\n' >"$case_root/home/.claude/settings.json"
+assert_failure claude_discovery_off bash "$case_root/run" discover claude
+assert_file_contains_fragment "$test_root/claude_discovery_off.stderr" 'skillOverrides.no-mistakes is off'
+
+new_case
+printf '{"skillOverrides":{"no-mistakes":\n' >"$case_root/home/.claude/settings.json"
+assert_failure claude_discovery_malformed_settings bash "$case_root/run" discover claude
+assert_file_contains_fragment "$test_root/claude_discovery_malformed_settings.stdout" 'parse error'
+
+new_case
+printf '{"skillOverrides":{"no-mistakes":"unsupported"}}\n' >"$case_root/home/.claude/settings.json"
+assert_failure claude_discovery_invalid_override bash "$case_root/run" discover claude
+assert_file_contains_fragment "$test_root/claude_discovery_invalid_override.stdout" 'unsupported skill override'
 
 new_case
 printf '{"id":2,"result":{"data":[{"cwd":"/tmp","skills":[{"name":"no-mistakes","path":"%s","scope":"user","enabled":true}],"errors":[]}]}}\n' \

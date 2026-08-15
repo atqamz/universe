@@ -110,6 +110,11 @@ in
               description = "Home-relative no-mistakes global configuration path.";
             };
 
+            claudeSettings = lib.mkOption {
+              type = lib.types.str;
+              description = "Home-relative Claude user settings path whose no-mistakes skill visibility is checked.";
+            };
+
             reconcile = lib.mkOption {
               type = lib.types.str;
               description = "Absolute no-mistakes reconciliation executable path.";

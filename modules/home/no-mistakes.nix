@@ -1,19 +1,15 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 let
   home = config.home.homeDirectory;
-  system = pkgs.stdenv.hostPlatform.system;
-  claude = inputs.claude-code.packages.${system}.default;
   link = config.lib.file.mkOutOfStoreSymlink;
   reconcile = pkgs.writeShellApplication {
     name = "no-mistakes-reconcile";
     runtimeInputs = [
-      claude
       pkgs.coreutils
       pkgs.codex
       pkgs.gnugrep
@@ -67,6 +63,7 @@ in
       noMistakes = {
         binary = "${pkgs.no-mistakes}/bin/no-mistakes";
         config = ".no-mistakes/config.yaml";
+        claudeSettings = ".claude/settings.json";
         reconcile = "${reconcile}/bin/no-mistakes-reconcile";
         agents = [
           "codex"

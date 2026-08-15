@@ -1,11 +1,8 @@
-{ inputs, ... }:
-{
+_: {
   perSystem =
     { pkgs, ... }:
     let
       vault = "$HOME/vault";
-      system = pkgs.stdenv.hostPlatform.system;
-      claude = inputs.claude-code.packages.${system}.default;
       secretsTools = with pkgs; [
         age
         coreutils
@@ -88,7 +85,6 @@
           openssh
           systemd
           tailscale
-          claude
           codex
           opencode
         ];
@@ -207,6 +203,7 @@
           if jq -e '.noMistakes != null' "$manifest" >/dev/null; then
             no_mistakes_binary="$(jq -r '.noMistakes.binary' "$manifest")"
             no_mistakes_config="$(jq -r '.noMistakes.config' "$manifest")"
+            no_mistakes_claude_settings="$(jq -r '.noMistakes.claudeSettings' "$manifest")"
             no_mistakes_reconcile="$(jq -r '.noMistakes.reconcile' "$manifest")"
             no_mistakes_skill_source="$(jq -r '.noMistakes.skillSource' "$manifest")"
 
@@ -230,7 +227,7 @@
 
             while IFS= read -r harness; do
               [ -n "$harness" ] || continue
-              check_with_diagnostics "no-mistakes visible to $harness" "$no_mistakes_reconcile" discover "$harness"
+              check_with_diagnostics "no-mistakes visible to $harness" "$no_mistakes_reconcile" discover "$harness" "$HOME/$no_mistakes_claude_settings"
             done < <(jq -r '.noMistakes.harnesses[]' "$manifest")
 
             check "no-mistakes config link target exists" test -e "$HOME/$no_mistakes_config"
