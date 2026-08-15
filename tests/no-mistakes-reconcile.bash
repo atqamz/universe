@@ -43,9 +43,13 @@ assert_failure() {
 new_case() {
   case_root=$(mktemp -d "$test_root/case.XXXXXX")
   mkdir -p "$case_root/bin" "$case_root/home/.no-mistakes" "$case_root/home/.config/systemd/user"
+  : >"$case_root/bin/codex"
+  chmod +x "$case_root/bin/codex"
   : >"$case_root/restarts"
   : >"$case_root/starts"
   printf '0\n' >"$case_root/active-runs"
+  : >"$case_root/doctor-output"
+  printf '0\n' >"$case_root/doctor-status"
   printf 'old\n' >"$case_root/daemon-executable"
   cat >"$case_root/bin/readlink" <<'EOF'
 #!/usr/bin/env bash
@@ -75,6 +79,10 @@ if [[ ${1:-} == daemon && ${2:-} == status ]]; then
     printf 'daemon not running\n'
   fi
   exit 0
+fi
+if [[ ${1:-} == doctor ]]; then
+  cat "$FAKE_DOCTOR_OUTPUT_FILE"
+  exit "$(cat "$FAKE_DOCTOR_STATUS_FILE")"
 fi
 if [[ ${1:-} == daemon && ${2:-} == restart ]]; then
   printf 'restart\n' >>"$FAKE_RESTARTS_FILE"
@@ -110,6 +118,8 @@ export REAL_READLINK=$real_readlink
 export FAKE_DAEMON_EXECUTABLE_FILE=$case_root/daemon-executable
 export FAKE_TEST_PID=$test_pid
 export FAKE_ACTIVE_RUNS_FILE=$case_root/active-runs
+export FAKE_DOCTOR_OUTPUT_FILE=$case_root/doctor-output
+export FAKE_DOCTOR_STATUS_FILE=$case_root/doctor-status
 export FAKE_RESTARTS_FILE=$case_root/restarts
 export FAKE_STARTS_FILE=$case_root/starts
 export FAKE_RUNNING_FILE=$case_root/running
@@ -121,6 +131,26 @@ EOF
   sed -i "1c#!$bash_path" "$case_root/run"
   chmod +x "$case_root/run"
 }
+
+new_case
+printf 'warning rovodev not found\ngate validation  codex is runnable\n' >"$case_root/doctor-output"
+assert_success doctor_healthy bash "$case_root/run" doctor
+
+new_case
+printf 'gate validation  codex is runnable\nsome checks failed\n' >"$case_root/doctor-output"
+assert_failure doctor_soft_failure bash "$case_root/run" doctor
+assert_file_contains "$test_root/doctor_soft_failure.stdout" 'some checks failed'
+
+new_case
+printf 'gate validation  no configured agents are runnable\n' >"$case_root/doctor-output"
+assert_failure doctor_gate_failure bash "$case_root/run" doctor
+assert_file_contains "$test_root/doctor_gate_failure.stdout" 'gate validation  no configured agents are runnable'
+
+new_case
+printf 'fatal doctor process error\n' >"$case_root/doctor-output"
+printf '17\n' >"$case_root/doctor-status"
+assert_failure doctor_process_failure bash "$case_root/run" doctor
+assert_file_contains "$test_root/doctor_process_failure.stdout" 'fatal doctor process error'
 
 new_case
 assert_success absent bash "$case_root/run" reconcile

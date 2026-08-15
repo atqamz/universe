@@ -12,6 +12,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.gnugrep
+      pkgs.gnused
       pkgs.jq
       pkgs.no-mistakes
       pkgs.sqlite

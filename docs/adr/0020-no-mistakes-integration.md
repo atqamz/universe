@@ -36,6 +36,27 @@ Malformed structured findings do not trigger fallback.
 The v1.51.1 configuration model supports per-agent argument overrides but not separate models for review, test, documentation, lint, CI, and fixer steps.
 No downstream scheduler or upstream fork is introduced for that unsupported capability.
 
+v1.51.1 has no machine-readable configuration validation command.
+Its `doctor` command records a failed check as telemetry status `error` but returns exit status zero.
+The Universe reconciliation helper therefore invokes `doctor` with `NO_COLOR=1` and `TERM=dumb`, rejects `some checks failed`, requires the stable `gate validation ... is runnable` result, and verifies the reported effective agent with `command -v`.
+It preserves the upstream output when this predicate fails.
+Optional missing-agent warnings remain warnings unless they make the effective gate agent unavailable.
+
 An active validation run can leave the daemon stale across a rebuild until the bounded user timer retries.
 The marker makes that degraded state visible to `nix run .#doctor`.
 The timer is non-blocking during activation, but a genuine repair failure remains a failed systemd unit and triggers the existing notification path.
+
+## Deployment order
+
+The companion dotagents change must land before Universe applies its declared live config owner:
+
+1. Land `atqamz/dotagents#30`.
+2. Ensure the live `~/dotagents` checkout contains `no-mistakes/config.yaml`.
+3. Land and apply `atqamz/universe#43`.
+4. Perform the repository-approved NixOS rebuild.
+5. Run the full live Universe doctor.
+6. Run `no-mistakes doctor` and inspect its output.
+7. Run `no-mistakes-reconcile check`.
+8. Verify the CLI executable, daemon `/proc/<pid>/exe`, and systemd `ExecStart` agree.
+9. Verify both installed `SKILL.md` files equal the pinned package skill.
+10. Verify existing no-mistakes history and state remain intact.

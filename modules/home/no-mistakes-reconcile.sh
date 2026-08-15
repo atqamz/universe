@@ -61,6 +61,42 @@ active_runs() {
   printf '%s\n' "$count"
 }
 
+doctor() {
+  local output_file gate_line gate_agent line
+  output_file=$(mktemp)
+  if ! NO_COLOR=1 TERM=dumb no-mistakes doctor >"$output_file" 2>&1; then
+    cat "$output_file"
+    rm -f "$output_file"
+    die 'no-mistakes doctor process failed'
+  fi
+  if grep -Fq 'some checks failed' "$output_file"; then
+    cat "$output_file"
+    rm -f "$output_file"
+    die 'no-mistakes doctor reported failed checks'
+  fi
+  gate_line=
+  while IFS= read -r line; do
+    if [[ $line == *'gate validation'* && $line == *'is runnable'* ]]; then
+      gate_line=$line
+      break
+    fi
+  done <"$output_file"
+  if [[ -z $gate_line ]]; then
+    cat "$output_file"
+    rm -f "$output_file"
+    die 'no-mistakes doctor did not report a runnable gate agent'
+  fi
+  gate_agent=${gate_line#*gate validation}
+  gate_agent=${gate_agent%% is runnable*}
+  gate_agent=$(printf '%s' "$gate_agent" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  if [[ -z $gate_agent ]] || ! command -v "$gate_agent" >/dev/null 2>&1; then
+    cat "$output_file"
+    rm -f "$output_file"
+    die "no-mistakes doctor reported an unavailable gate agent: $gate_agent"
+  fi
+  rm -f "$output_file"
+}
+
 write_deferred_marker() {
   local current=$1
   local daemon=$2
@@ -170,6 +206,9 @@ refresh_skill() {
 }
 
 case $action in
+doctor)
+  doctor
+  ;;
 check)
   check
   ;;

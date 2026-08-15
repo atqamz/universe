@@ -115,6 +115,19 @@ _: {
             fi
           }
 
+          check_with_diagnostics() {
+            local name="$1"
+            shift
+            local output
+
+            if output="$("$@" 2>&1)"; then
+              report "$name" 0
+            else
+              printf '%s\n' "$output" >&2
+              report "$name" 1
+            fi
+          }
+
           check_link() {
             local relative="$1"
             local target="$2"
@@ -194,7 +207,7 @@ _: {
             check "no-mistakes Nix binary exists" test -x "$no_mistakes_binary"
             # shellcheck disable=SC2016
             check "no-mistakes resolves to the Nix binary" bash -c 'actual=$(readlink -f "$(command -v no-mistakes)") && test "$actual" = "$1"' _ "$no_mistakes_binary"
-            check "no-mistakes config is parseable" "$no_mistakes_binary" doctor
+            check_with_diagnostics "no-mistakes configuration is healthy" "$no_mistakes_reconcile" doctor
 
             while IFS= read -r agent; do
               [ -n "$agent" ] || continue
