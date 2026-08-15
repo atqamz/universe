@@ -4,14 +4,6 @@ hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_SIZE", "24")
 
-local function scheme_colour(key, fallback)
-    local f = io.open(os.getenv("HOME") .. "/.local/state/caelestia/scheme.json")
-    if not f then return fallback end
-    local data = f:read("a")
-    f:close()
-    return data:match('"' .. key .. '"%s*:%s*"(%x+)"') or fallback
-end
-
 hl.config({
     general = {
         gaps_in = 0,
@@ -19,8 +11,8 @@ hl.config({
         border_size = 0,
         layout = "dwindle",
         col = {
-            active_border = "rgba(" .. scheme_colour("primary", "c2c1ff") .. "ee)",
-            inactive_border = "rgba(" .. scheme_colour("surfaceContainerHigh", "2a292e") .. "aa)",
+            active_border = "rgba(c2c1ffee)",
+            inactive_border = "rgba(2a292eaa)",
         },
     },
     animations = {
@@ -50,12 +42,11 @@ hl.bind(mod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mod .. " + CTRL + Return", hl.dsp.exec_cmd("wezterm"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(fileExplorer))
 hl.bind(mod .. " + C", hl.dsp.exec_cmd("hyprpicker -a"))
-hl.bind(mod .. " + Space", hl.dsp.global("caelestia:launcher"))
-hl.bind(mod .. " + L", hl.dsp.global("caelestia:session"))
-hl.bind(mod .. " + SHIFT + L", hl.dsp.global("caelestia:lock"))
-hl.bind(mod .. " + V", hl.dsp.exec_cmd("caelestia clipboard"))
-hl.bind(mod .. " + ALT + V", hl.dsp.exec_cmd([[sh -c 'cliphist wipe && notify-send Clipboard "History cleared" || true']]))
-hl.bind(mod .. " + period", hl.dsp.exec_cmd("caelestia emoji --picker"))
+hl.bind(mod .. " + Space", hl.dsp.exec_cmd("omanixy-shell shell toggle omarchy.menu"))
+hl.bind(mod .. " + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
+hl.bind(mod .. " + V", hl.dsp.exec_cmd("clipboard-picker"))
+hl.bind(mod .. " + ALT + V", hl.dsp.exec_cmd("clipboard-wipe"))
+hl.bind(mod .. " + period", hl.dsp.exec_cmd("emoji-picker"))
 hl.bind(mod .. " + ALT + P", hl.dsp.exec_cmd("passmenu"))
 hl.bind(mod .. " + R", hl.dsp.exec_cmd("reading-mode"))
 
@@ -99,11 +90,11 @@ hl.bind(mod .. " + SHIFT + 3", hl.dsp.window.move({ workspace = "3" }))
 hl.bind(mod .. " + SHIFT + 4", hl.dsp.window.move({ workspace = "4" }))
 hl.bind(mod .. " + SHIFT + 5", hl.dsp.window.move({ workspace = "5" }))
 
-hl.bind("XF86AudioNext", hl.dsp.global("caelestia:mediaNext"))
-hl.bind("XF86AudioPrev", hl.dsp.global("caelestia:mediaPrev"))
-hl.bind("XF86AudioPlay", hl.dsp.global("caelestia:mediaToggle"))
-hl.bind("Print", hl.dsp.global("caelestia:screenshotClip"))
-hl.bind(mod .. " + SHIFT + S", hl.dsp.global("caelestia:screenshot"))
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("media-next"))
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("media-previous"))
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("media-play-pause"))
+hl.bind("Print", hl.dsp.exec_cmd("screenshot-clipboard"))
+hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("screenshot-region"))
 
 hl.bind(mod .. " + mouse:272", hl.dsp.window.drag())
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize())
@@ -112,8 +103,8 @@ hl.bind(mod .. " + SHIFT + mouse:272", hl.dsp.window.resize())
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), { locked = true, repeating = true })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp", hl.dsp.global("caelestia:brightnessUp"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.global("caelestia:brightnessDown"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightness-up"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightness-down"), { locked = true, repeating = true })
 
 local function host_name()
     local h
