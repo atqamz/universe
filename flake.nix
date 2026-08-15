@@ -44,11 +44,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    claude-code = {
-      url = "github:sadjow/claude-code-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     treehouse = {
       url = "github:kunchenguid/treehouse";
       inputs.nixpkgs.follows = "nixpkgs";
