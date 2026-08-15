@@ -1,6 +1,8 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 {
   services.mako.enable = true;
+
+  home.packages = [ pkgs.libnotify ];
 
   systemd.user.services.mako = {
     Unit = {
@@ -18,5 +20,8 @@
     Install.WantedBy = [ "graphical-session.target" ];
   };
 
-  universe.doctor.activeUserServices = [ "mako" ];
+  universe.doctor = {
+    activeUserServices = [ "mako" ];
+    commands = [ "notify-send" ];
+  };
 }
