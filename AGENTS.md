@@ -54,6 +54,7 @@ Global operating rules for AI coding agents. Canonical, model-agnostic source. P
 - No planning jargon in commits, PRs, or issues (no phase/step/milestone/part-X/task-id). Say what the change does.
 - `gh` CLI for all GitHub ops. No raw curl, no web UI.
 - No push, PR, or commit unless asked; applies to subagents too - every commit-capable subagent prompt states it.
+- A merge grant is per-PR and expires with the PRs in front of Atqa. "merge all" means that batch, not the repo and not the future. Never widen a grant; state which PRs I read it as covering.
 - Assignee `atqamz` on every PR and issue.
 - Planning/spec scratch docs (specs, plans, handovers) stay untracked. Never commit them to a product repo.
 
