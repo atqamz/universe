@@ -177,7 +177,6 @@ read_stale_cache() {
 # or still in the future. Otherwise return 1 so callers fall through to an error
 # response rather than lying about post-reset usage numbers.
 stale_cache_if_valid() {
-    local fallback_error="$1"
     local stale now_ts session_reset_at session_reset_epoch has_error
     stale=$(read_stale_cache) || return 1
     [[ -n "$stale" ]] || return 1
@@ -231,7 +230,7 @@ fetch_usage_data() {
     local token
     token=$(get_usage_token)
     if [[ -z "$token" ]]; then
-        stale_cache_if_valid "no-credentials" || { create_error_response "no-credentials"; return 1; }
+        stale_cache_if_valid || { create_error_response "no-credentials"; return 1; }
         return 0
     fi
 
@@ -239,7 +238,7 @@ fetch_usage_data() {
     local lock_info
     if lock_info=$(read_active_lock); then
         local lock_error="${lock_info%%:*}"
-        stale_cache_if_valid "$lock_error" || { create_error_response "$lock_error"; return 1; }
+        stale_cache_if_valid || { create_error_response "$lock_error"; return 1; }
         return 0
     fi
 
@@ -255,14 +254,14 @@ fetch_usage_data() {
             local usage_data
             usage_data=$(parse_api_response "$result_value")
             if [[ -z "$usage_data" ]]; then
-                stale_cache_if_valid "parse-error" || { create_error_response "parse-error"; return 1; }
+                stale_cache_if_valid || { create_error_response "parse-error"; return 1; }
                 return 0
             fi
             local has_session has_weekly
             has_session=$(echo "$usage_data" | jq -r '.sessionUsage // empty' 2>/dev/null)
             has_weekly=$(echo "$usage_data" | jq -r '.weeklyUsage // empty' 2>/dev/null)
             if [[ -z "$has_session" && -z "$has_weekly" ]]; then
-                stale_cache_if_valid "parse-error" || { create_error_response "parse-error"; return 1; }
+                stale_cache_if_valid || { create_error_response "parse-error"; return 1; }
                 return 0
             fi
             ensure_cache_dir
@@ -285,11 +284,11 @@ fetch_usage_data() {
                 write_backoff_count $(( count + 1 ))
             fi
             write_lock $(( now_ts + backoff_secs )) "rate-limited"
-            stale_cache_if_valid "rate-limited" || { create_error_response "rate-limited"; return 1; }
+            stale_cache_if_valid || { create_error_response "rate-limited"; return 1; }
             return 0
             ;;
         *)
-            stale_cache_if_valid "api-error" || { create_error_response "api-error"; return 1; }
+            stale_cache_if_valid || { create_error_response "api-error"; return 1; }
             return 0
             ;;
     esac

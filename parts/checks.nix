@@ -85,10 +85,6 @@
     in
     {
       pre-commit.settings = {
-        excludes = [
-          "^configs/dotfiles/"
-          "^configs/dotagents/"
-        ];
         hooks = {
           actionlint.enable = true;
           deadnix.enable = true;
@@ -96,6 +92,10 @@
           statix.enable = true;
           treefmt = {
             enable = true;
+            excludes = [
+              "configs/dotagents/claude/fetch-usage.sh"
+              "configs/dotagents/claude/statusline-command.sh"
+            ];
             packageOverrides.treefmt = config.treefmt.build.wrapper;
           };
         };

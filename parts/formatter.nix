@@ -8,8 +8,8 @@ _: {
         shfmt.enable = true;
       };
       settings.excludes = [
-        "configs/dotfiles/**"
-        "configs/dotagents/**"
+        "configs/dotagents/claude/fetch-usage.sh"
+        "configs/dotagents/claude/statusline-command.sh"
       ];
     };
   };
