@@ -7,9 +7,6 @@ let
   dynamicModelLinks = {
     ".config/opencode/dynamic-models" = "dotagents/opencode/dynamic-models";
   };
-  liveLinks = {
-    ".config/opencode/plugins/mocin-models.ts" = "dotagents/opencode/plugins/mocin-models.ts";
-  };
   writableLinks = {
     ".claude/settings.json" = "dotagents/claude/settings.json";
     ".config/opencode/opencode.json" = "dotagents/opencode/opencode.json";
@@ -26,8 +23,7 @@ in
 
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
   }
-  // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) dynamicModelLinks
-  // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) liveLinks;
+  // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) dynamicModelLinks;
 
   systemd.user.tmpfiles.rules = [
     "d %h/.claude 0700 - - - -"
@@ -55,7 +51,7 @@ in
 
     symlinks =
       writableLinks
-      // liveLinks
+      // dynamicModelLinks
       // {
         ".codex/AGENTS.md" = "dotagents/AGENTS.md";
       };
