@@ -207,7 +207,7 @@ _: {
             fi
 
             local ahead=0 behind=0 state
-            state="$(git -C "$path" rev-list --left-right --count HEAD...@{u} 2>/dev/null)"
+            state="$(git -C "$path" rev-list --left-right --count "HEAD...@{u}" 2>/dev/null)"
             if [ -n "$state" ]; then
               behind="''${state%%	*}"
               ahead="''${state##*	}"
