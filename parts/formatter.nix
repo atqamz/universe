@@ -7,10 +7,6 @@ _: {
         shellcheck.enable = true;
         shfmt.enable = true;
       };
-      settings.excludes = [
-        "configs/dotagents/claude/fetch-usage.sh"
-        "configs/dotagents/claude/statusline-command.sh"
-      ];
     };
   };
 }

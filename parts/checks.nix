@@ -92,10 +92,6 @@
           statix.enable = true;
           treefmt = {
             enable = true;
-            excludes = [
-              "configs/dotagents/claude/fetch-usage.sh"
-              "configs/dotagents/claude/statusline-command.sh"
-            ];
             packageOverrides.treefmt = config.treefmt.build.wrapper;
           };
         };
