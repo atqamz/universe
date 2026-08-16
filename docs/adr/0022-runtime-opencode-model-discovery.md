@@ -10,7 +10,11 @@ OpenCode 1.18.16 loads global TypeScript plugins before materializing custom pro
 
 `dotagents` owns the authored Mocin provider definition, curated metadata overrides, and discovery plugin source.
 
-The plugin fetches the vendor model inventory when a new OpenCode process starts, accepts only the observed `{ total, models }` contract with active entries and valid model IDs, and builds the runtime model map only from the current inventory.
+The plugin fetches the vendor model inventory when a new OpenCode process starts, requires a root object with a `models` array and boolean `active` fields, and requires a non-empty, unchanged `model` ID only for active entries.
+
+The `total` field and unrelated vendor metadata are ignored because they are not consumed for availability.
+
+The runtime model map is built only from the current inventory.
 
 Universe delivers the plugin through a read-only out-of-store symlink and checks the resolved provider through OpenCode's debug configuration output.
 

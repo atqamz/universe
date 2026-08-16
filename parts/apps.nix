@@ -3,6 +3,7 @@ _: {
     { pkgs, ... }:
     let
       vault = "$HOME/vault";
+      opencodeProviderContract = import ../lib/opencode-provider-contract.nix;
       secretsTools = with pkgs; [
         age
         coreutils
@@ -257,13 +258,13 @@ _: {
             # shellcheck disable=SC2016
             check "$provider provider resolves" jq -e \
               --arg p "$provider" --arg n "$npm" --arg u "$base_url" \
-              '.provider[$p] | type == "object" and .npm == $n and .options.baseURL == $u' \
+              '${opencodeProviderContract.provider}' \
               "$probe/opencode-config.json"
             if [ "$require_models" = true ]; then
               # shellcheck disable=SC2016
               check "$provider has runtime models" jq -e \
                 --arg p "$provider" \
-                '.provider[$p].models | type == "object" and length > 0' \
+                '${opencodeProviderContract.models}' \
                 "$probe/opencode-config.json"
             fi
           done < <(jq -r '.opencodeProviders | to_entries[] | [.key, .value.npm, .value.baseURL, (.value.requireModels | tostring)] | @tsv' "$manifest")
