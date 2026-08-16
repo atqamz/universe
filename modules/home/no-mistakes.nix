@@ -26,7 +26,7 @@ in
 {
   home = {
     file.".no-mistakes/config.yaml" = {
-      source = link "${home}/dotagents/no-mistakes/config.yaml";
+      source = link "${home}/universe/configs/dotagents/no-mistakes/config.yaml";
       force = true;
     };
 
@@ -59,7 +59,7 @@ in
         "no-mistakes"
         "no-mistakes-reconcile"
       ];
-      symlinks.".no-mistakes/config.yaml" = "dotagents/no-mistakes/config.yaml";
+      symlinks.".no-mistakes/config.yaml" = "universe/configs/dotagents/no-mistakes/config.yaml";
       noMistakes = {
         binary = "${pkgs.no-mistakes}/bin/no-mistakes";
         config = ".no-mistakes/config.yaml";
