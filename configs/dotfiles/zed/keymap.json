@@ -1,0 +1,35 @@
+// Zed keymap
+//
+// Pass shortcuts through to the integrated terminal when it is focused.
+// Zed has no wildcard passthrough; each colliding default binding is
+// disabled here with `null` so the terminal (and TUI apps like tmux/nvim)
+// receive the keystroke instead.
+//
+// ponytail: curated collision list, not every Zed default. Add a `null`
+// line if a specific key still gets eaten while the terminal is focused.
+[
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-n": null,
+      "ctrl-shift-n": null,
+      "ctrl-t": null,
+      "ctrl-shift-t": null,
+      "ctrl-w": null,
+      "ctrl-shift-w": null,
+      "ctrl-p": null,
+      "ctrl-shift-p": null,
+      "ctrl-b": null,
+      "ctrl-`": null,
+      "ctrl-j": null,
+      "ctrl-,": null,
+      "ctrl-q": null,
+      "ctrl-\\": null,
+      "ctrl-=": null,
+      "ctrl--": null,
+      "ctrl-o": null,
+      "ctrl-shift-e": null,
+      "ctrl-k": null
+    }
+  }
+]
