@@ -29,12 +29,12 @@
       "description": "Secrets and age keys"
     },
     "dotagents": {
-      "path": "~/dotagents",
+      "path": "~/universe/configs/dotagents",
       "description": "AI agent configs and AGENTS.md rules"
     },
     "dotfiles": {
-      "path": "~/dotfiles",
-      "description": "NixOS system and home configs - fish, hypr, fastfetch, zed, cs2, herdr, caelestia"
+      "path": "~/universe/configs/dotfiles",
+      "description": "NixOS live-editable app config - foot, hypr, zed, cs2, herdr, rtk, cava"
     }
   },
   "mcp": {

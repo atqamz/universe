@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repo-specific rules. Global rules (`~/dotagents/AGENTS.md`) apply unless overridden here.
+Repo-specific rules. Global rules (`~/universe/configs/dotagents/AGENTS.md`) apply unless overridden here.
 
 ## Layout
 

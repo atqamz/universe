@@ -3,13 +3,14 @@
 Model-agnostic operating config for AI coding agents.
 
 One canonical rule set, shared across Claude Code, Codex, opencode, and any other agent that reads an instruction file at session start.
-Symlinked live from my NixOS config ([universe](https://github.com/atqamz/universe), `modules/home/dotagents.nix`) via `mkOutOfStoreSymlink`, so edits apply instantly with no rebuild.
+Part of the [universe](https://github.com/atqamz/universe) monorepo at `universe/configs/dotagents`.
+Symlinked live from Universe (`modules/home/dotagents.nix`) via `mkOutOfStoreSymlink`, so edits apply instantly with no rebuild.
 
 ## Layout
 
 - `AGENTS.md` - the canonical rules, including the always-on efficiency rules; `CLAUDE.md` is a symlink to it so every agent shares one source
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
-- `opencode/` - opencode config (`opencode.json`) and plugins, including the MCP servers every harness shares
+- `opencode/` - opencode config (`opencode.json`) and dynamic model discovery, including the MCP servers every harness shares
 
 The opencode integration keeps provider intent and curated metadata in `opencode/opencode.json`, with runtime model discovery under `opencode/dynamic-models/`.
 
@@ -28,17 +29,17 @@ No Claude-only plugins. Behavior rules live in `AGENTS.md` (Claude Code, Codex, 
 Agent tools auto-load one instruction file at session start, by filename: `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex, opencode, Copilot, Cursor, Zed; the cross-vendor standard).
 Canonical rules live in `AGENTS.md` for the broadest support, with `CLAUDE.md` symlinked to it.
 
-Instruction fan-out, from this repo's canonical `AGENTS.md` to each harness's global instruction file:
+Instruction fan-out, from the canonical `~/universe/configs/dotagents/AGENTS.md` to each harness's global instruction file:
 
 ```text
-dotagents/AGENTS.md
+~/universe/configs/dotagents/AGENTS.md
     |
     +-> ~/.claude/CLAUDE.md            (Claude Code)
     +-> ~/.codex/AGENTS.md             (Codex)
     +-> ~/.config/opencode/AGENTS.md   (opencode)
 ```
 
-This repo owns the source file.
+This subtree owns the source file.
 Universe (`modules/home/dotagents.nix`) owns the actual filesystem symlinks.
 Same filenames at a project root override these globals.
 
@@ -67,6 +68,5 @@ Use `no-mistakes stats --run <run-id>` for one pipeline's detailed invocation ti
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
-This is a personal repo: read it, fork it, open an issue.
-Pull requests are not accepted, see [CONTRIBUTING.md](CONTRIBUTING.md).
+MIT, see the universe [LICENSE](../LICENSE).
+Pull requests are not accepted; see the universe [CONTRIBUTING.md](../CONTRIBUTING.md).

@@ -1,6 +1,7 @@
 # dotfiles
 
-Out-of-store dotfiles, symlinked into `~/.config` from my NixOS config ([universe](https://github.com/atqamz/universe), `modules/home/dotfiles.nix`) via `mkOutOfStoreSymlink`.
+Out-of-store live-editable application configuration, part of the [universe](https://github.com/atqamz/universe) monorepo at `universe/configs/dotfiles`.
+Universe links it into `~/.config` from `modules/home/dotfiles.nix` via `mkOutOfStoreSymlink`.
 Edit in place, no rebuild; Hyprland hot-reloads `hypr/hyprland.lua` on save.
 
 ## Layout
@@ -14,6 +15,5 @@ Per-tool config. Anything host-specific keys off the hostname passed in by unive
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
-This is a personal repo: read it, fork it, open an issue.
-Pull requests are not accepted, see [CONTRIBUTING.md](CONTRIBUTING.md).
+MIT, see the universe [LICENSE](../LICENSE).
+Pull requests are not accepted; see the universe [CONTRIBUTING.md](../CONTRIBUTING.md).
