@@ -26,9 +26,9 @@
       opencodeProviderContract = import ../lib/opencode-provider-contract.nix;
       opencodeProviderHealthy = pkgs.writeText "opencode-provider-healthy.json" (
         builtins.toJSON {
-          provider.mocin = {
+          provider.fixture-provider = {
             npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "https://beta.masven.dev/v1";
+            options.baseURL = "https://fixture.invalid/v1";
             models.A = { };
           };
         }
@@ -38,16 +38,16 @@
       );
       opencodeProviderWrongNpm = pkgs.writeText "opencode-provider-wrong-npm.json" (
         builtins.toJSON {
-          provider.mocin = {
+          provider.fixture-provider = {
             npm = "other-sdk";
-            options.baseURL = "https://beta.masven.dev/v1";
+            options.baseURL = "https://fixture.invalid/v1";
             models.A = { };
           };
         }
       );
       opencodeProviderWrongUrl = pkgs.writeText "opencode-provider-wrong-url.json" (
         builtins.toJSON {
-          provider.mocin = {
+          provider.fixture-provider = {
             npm = "@ai-sdk/openai-compatible";
             options.baseURL = "https://other.example/v1";
             models.A = { };
@@ -56,18 +56,18 @@
       );
       opencodeProviderEmptyModels = pkgs.writeText "opencode-provider-empty-models.json" (
         builtins.toJSON {
-          provider.mocin = {
+          provider.fixture-provider = {
             npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "https://beta.masven.dev/v1";
+            options.baseURL = "https://fixture.invalid/v1";
             models = { };
           };
         }
       );
       opencodeProviderNonObjectModels = pkgs.writeText "opencode-provider-nonobject-models.json" (
         builtins.toJSON {
-          provider.mocin = {
+          provider.fixture-provider = {
             npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "https://beta.masven.dev/v1";
+            options.baseURL = "https://fixture.invalid/v1";
             models = [ "A" ];
           };
         }
@@ -180,14 +180,14 @@
                   fi
                 }
 
-                provider_args=(--arg p mocin --arg n '@ai-sdk/openai-compatible' --arg u 'https://beta.masven.dev/v1')
+                provider_args=(--arg p fixture-provider --arg n '@ai-sdk/openai-compatible' --arg u 'https://fixture.invalid/v1')
                 expect_success jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderHealthy}
-                expect_success jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderHealthy}
+                expect_success jq -e --arg p fixture-provider '${opencodeProviderContract.models}' ${opencodeProviderHealthy}
                 expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderMissing}
                 expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderWrongNpm}
                 expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderWrongUrl}
-                expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderEmptyModels}
-                expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderNonObjectModels}
+                expect_failure jq -e --arg p fixture-provider '${opencodeProviderContract.models}' ${opencodeProviderEmptyModels}
+                expect_failure jq -e --arg p fixture-provider '${opencodeProviderContract.models}' ${opencodeProviderNonObjectModels}
                 expect_failure jq -e . ${opencodeProviderMalformed}
 
                 expect_success env \
