@@ -8,6 +8,7 @@
   perSystem =
     { config, pkgs, ... }:
     let
+      system = pkgs.stdenv.hostPlatform.system;
       sfx14 = self.nixosConfigurations.sfx14;
       gpuService = sfx14.config.systemd.services.gpu-undervolt;
       gpuExec = gpuService.serviceConfig.ExecStart;
@@ -22,6 +23,65 @@
           system = pkgs.stdenv.hostPlatform.system;
           config.allowUnfree = true;
         }).claude-code;
+      opencodeProviderContract = import ../lib/opencode-provider-contract.nix;
+      opencodeProviderHealthy = pkgs.writeText "opencode-provider-healthy.json" (
+        builtins.toJSON {
+          provider.mocin = {
+            npm = "@ai-sdk/openai-compatible";
+            options.baseURL = "https://beta.masven.dev/v1";
+            models.A = { };
+          };
+        }
+      );
+      opencodeProviderMissing = pkgs.writeText "opencode-provider-missing.json" (
+        builtins.toJSON { provider = { }; }
+      );
+      opencodeProviderWrongNpm = pkgs.writeText "opencode-provider-wrong-npm.json" (
+        builtins.toJSON {
+          provider.mocin = {
+            npm = "other-sdk";
+            options.baseURL = "https://beta.masven.dev/v1";
+            models.A = { };
+          };
+        }
+      );
+      opencodeProviderWrongUrl = pkgs.writeText "opencode-provider-wrong-url.json" (
+        builtins.toJSON {
+          provider.mocin = {
+            npm = "@ai-sdk/openai-compatible";
+            options.baseURL = "https://other.example/v1";
+            models.A = { };
+          };
+        }
+      );
+      opencodeProviderEmptyModels = pkgs.writeText "opencode-provider-empty-models.json" (
+        builtins.toJSON {
+          provider.mocin = {
+            npm = "@ai-sdk/openai-compatible";
+            options.baseURL = "https://beta.masven.dev/v1";
+            models = { };
+          };
+        }
+      );
+      opencodeProviderNonObjectModels = pkgs.writeText "opencode-provider-nonobject-models.json" (
+        builtins.toJSON {
+          provider.mocin = {
+            npm = "@ai-sdk/openai-compatible";
+            options.baseURL = "https://beta.masven.dev/v1";
+            models = [ "A" ];
+          };
+        }
+      );
+      opencodeProviderMalformed = pkgs.writeText "opencode-provider-malformed.json" "{";
+      opencodeDoctorManifest =
+        pkgs.writeText "opencode-doctor-manifest.json"
+          self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
+      opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
+        printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
+      '';
+      opencodeDoctorMissing = pkgs.writeShellScriptBin "opencode-doctor-missing" ''
+        printf '%s\n' '{"provider":{}}'
+      '';
     in
     {
       pre-commit.settings.hooks = {
@@ -90,6 +150,54 @@
                 help=$(claude plugin init --help)
                 grep -Fq 'Scaffold a new plugin at ~/.claude/skills/<name>/' <<<"$help"
                 grep -Fq 'auto-loads next session' <<<"$help"
+                touch "$out"
+              '';
+          opencode-provider-contract =
+            pkgs.runCommand "opencode-provider-contract"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  jq
+                ];
+              }
+              ''
+                export HOME="$TMPDIR/home"
+                mkdir -p "$HOME/.config/universe"
+                cp ${opencodeDoctorManifest} "$HOME/.config/universe/doctor.json"
+
+                expect_success() {
+                  if ! "$@" >/dev/null; then
+                    echo "expected command to succeed: $*" >&2
+                    exit 1
+                  fi
+                }
+
+                expect_failure() {
+                  if "$@" >/dev/null 2>&1; then
+                    echo "expected command to fail: $*" >&2
+                    exit 1
+                  fi
+                }
+
+                provider_args=(--arg p mocin --arg n '@ai-sdk/openai-compatible' --arg u 'https://beta.masven.dev/v1')
+                expect_success jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderHealthy}
+                expect_success jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderHealthy}
+                expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderMissing}
+                expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderWrongNpm}
+                expect_failure jq -e "''${provider_args[@]}" '${opencodeProviderContract.provider}' ${opencodeProviderWrongUrl}
+                expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderEmptyModels}
+                expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderNonObjectModels}
+                expect_failure jq -e . ${opencodeProviderMalformed}
+
+                expect_success env \
+                  UNIVERSE_DOCTOR_OPENCODE=${opencodeDoctorHealthy}/bin/opencode-doctor-healthy \
+                  UNIVERSE_DOCTOR_PROVIDER_ONLY=1 \
+                  ${self.apps.${system}.doctor.program}
+                expect_failure env \
+                  UNIVERSE_DOCTOR_OPENCODE=${opencodeDoctorMissing}/bin/opencode-doctor-missing \
+                  UNIVERSE_DOCTOR_PROVIDER_ONLY=1 \
+                  ${self.apps.${system}.doctor.program}
                 touch "$out"
               '';
         };

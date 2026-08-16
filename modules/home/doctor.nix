@@ -26,6 +26,7 @@ let
     expectedSkills = config.universe.doctor.expectedSkills;
     skillLedger = config.universe.doctor.skillLedger;
     noMistakes = config.universe.doctor.noMistakes;
+    opencodeProviders = config.universe.doctor.opencodeProviders;
   };
 in
 {
@@ -144,6 +145,32 @@ in
       );
       default = null;
       description = "Runtime contract for the Nix-owned no-mistakes integration.";
+    };
+
+    opencodeProviders = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            npm = lib.mkOption {
+              type = lib.types.str;
+              description = "Expected SDK package for the resolved OpenCode provider.";
+            };
+
+            baseURL = lib.mkOption {
+              type = lib.types.str;
+              description = "Expected base URL for the resolved OpenCode provider.";
+            };
+
+            requireModels = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Whether the resolved provider must have at least one runtime model.";
+            };
+          };
+        }
+      );
+      default = { };
+      description = "OpenCode provider contracts checked against its resolved runtime configuration.";
     };
   };
 
