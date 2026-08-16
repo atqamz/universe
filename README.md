@@ -11,7 +11,12 @@ Symlinked live from my NixOS config ([universe](https://github.com/atqamz/univer
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
 - `opencode/` - opencode config (`opencode.json`) and plugins, including the MCP servers every harness shares
 
-The opencode integration keeps provider intent and curated metadata in `opencode/opencode.json`, with runtime-specific behavior isolated under `opencode/plugins/`.
+The opencode integration keeps provider intent and curated metadata in `opencode/opencode.json`, with runtime model discovery under `opencode/dynamic-models/`.
+
+To add a standard OpenAI-compatible provider, add its provider configuration and a small declaration under `opencode/dynamic-models/providers/`, then restart opencode.
+
+A vendor-specific provider adds one narrow adapter and reuses the same engine.
+No Universe link or generated model list is needed.
 
 Skills are not listed here. Universe (`modules/home/skills-sync.nix`) owns the allowlist of source repositories and wanted skills, and runs `bunx skills` for every Agent Skills-compatible harness (Claude Code, Codex, opencode).
 The independently managed no-mistakes skill is the exception and is refreshed by `modules/home/no-mistakes.nix` from the pinned package.
