@@ -73,9 +73,9 @@
         }
       );
       opencodeProviderMalformed = pkgs.writeText "opencode-provider-malformed.json" "{";
-      opencodeDoctorManifest = pkgs.writeText "opencode-doctor-manifest.json" (
-        self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text
-      );
+      opencodeDoctorManifest =
+        pkgs.writeText "opencode-doctor-manifest.json"
+          self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
       opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
         printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
       '';
