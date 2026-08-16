@@ -1,0 +1,15 @@
+xkb_keymap {
+    xkb_keycodes { include "evdev+aliases(qwerty)" };
+    xkb_types    { include "complete" };
+    xkb_compat   { include "complete" };
+    xkb_symbols  {
+        include "pc+us+inet(evdev)"
+        // Keep Caps as a single-level Control key for terminal protocols.
+        // The Lock level makes Foot report Caps+B as a shifted alternate.
+        replace key <CAPS> {
+            [ Control_L ],
+            type[Group1] = "ONE_LEVEL"
+        };
+        modifier_map Control { <CAPS> };
+    };
+};

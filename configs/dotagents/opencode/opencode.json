@@ -1,0 +1,95 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "./dynamic-models/providers/mocin.ts"
+  ],
+  "model": "openai/gpt-5.6-luna-fast",
+  "small_model": "openai/gpt-5.4-mini-fast",
+  "provider": {
+    "mocin": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Mocin",
+      "options": {
+        "baseURL": "https://beta.masven.dev/v1"
+      },
+      "models": {}
+    }
+  },
+  "references": {
+    "github": {
+      "path": "~/github",
+      "description": "GitHub repos workspace (yes2games, others)"
+    },
+    "universe": {
+      "path": "~/universe",
+      "description": "NixOS flake - hosts, modules, parts, pkgs, scripts"
+    },
+    "vault": {
+      "path": "~/vault",
+      "description": "Secrets and age keys"
+    },
+    "dotagents": {
+      "path": "~/universe/configs/dotagents",
+      "description": "AI agent configs and AGENTS.md rules"
+    },
+    "dotfiles": {
+      "path": "~/universe/configs/dotfiles",
+      "description": "NixOS live-editable app config - foot, hypr, zed, cs2, herdr, rtk, cava"
+    }
+  },
+  "mcp": {
+    "codedb": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/etc/profiles/per-user/atqa/bin/codedb", "mcp"],
+      "environment": {
+        "CODEDB_NO_AUTO_UPDATE": "1",
+        "CODEDB_NO_CODEX_POLICY": "1"
+      }
+    },
+    "qmd": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/etc/profiles/per-user/atqa/bin/qmd", "mcp"],
+      "environment": {}
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "preserve_recent_tokens": 8000,
+    "reserved": 20000
+  },
+  "permission": {
+    "*": "allow",
+    "doom_loop": "ask",
+    "external_directory": {
+      "~/**": "allow"
+    },
+    "edit": {
+      "*": "allow",
+      "~/**": "ask"
+    },
+    "write": {
+      "*": "allow",
+      "~/**": "ask"
+    },
+    "bash": {
+      "*": "allow",
+      "rm -rf *": "deny",
+      "rm -fr *": "deny",
+      "git push --force*": "deny",
+      "git push -f *": "deny",
+      "git push --force-with-lease*": "deny",
+      ": (){ :|:& };:*": "deny",
+      "mkfs*": "deny",
+      "dd if=*of=/dev/*": "deny",
+      "chmod -R * / *": "deny",
+      "curl * | sh": "deny",
+      "curl * | bash": "deny",
+      "wget * | sh": "deny",
+      "wget * | bash": "deny",
+      "sudo *": "ask"
+    }
+  }
+}

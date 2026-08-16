@@ -9,7 +9,7 @@ The generated no-mistakes skill had no explicit refresh owner outside `no-mistak
 
 ## Decision
 
-`dotagents/no-mistakes/config.yaml` owns the live-editable global policy.
+`configs/dotagents/no-mistakes/config.yaml` owns the live-editable global policy.
 It selects Codex first and Claude second, and carries no-mistakes-only Codex model/reasoning and Claude model overrides.
 Interactive Claude settings, interactive Codex settings, and OpenCode configuration remain owned by their existing integrations.
 
@@ -57,17 +57,16 @@ An active validation run can leave the daemon stale across a rebuild until the b
 The marker makes that degraded state visible to `nix run .#doctor`.
 The timer is non-blocking during activation, but a genuine repair failure remains a failed systemd unit and triggers the existing notification path.
 
-## Deployment order
+## Deployment
 
-The companion dotagents change must land before Universe applies its declared live config owner:
+The no-mistakes policy and its Universe owner now land together in the same repository, so there is no cross-repository ordering guarantee to respect.
+The historical sequence that landed `no-mistakes/config.yaml` via `atqamz/dotagents#30` ahead of `atqamz/universe#43` predates the `configs/dotagents` consolidation and no longer applies.
+Verify a live change in order:
 
-1. Land `atqamz/dotagents#30`.
-2. Ensure the live `~/dotagents` checkout contains `no-mistakes/config.yaml`.
-3. Land and apply `atqamz/universe#43`.
-4. Perform the repository-approved NixOS rebuild.
-5. Run the full live Universe doctor.
-6. Run `no-mistakes doctor` and inspect its output.
-7. Run `no-mistakes-reconcile check`.
-8. Verify the CLI executable, daemon `/proc/<pid>/exe`, and systemd `ExecStart` agree.
-9. Verify both installed `SKILL.md` files equal the pinned package skill.
-10. Verify existing no-mistakes history and state remain intact.
+1. Apply the repository-approved NixOS rebuild.
+2. Run the full live Universe doctor.
+3. Run `no-mistakes doctor` and inspect its output.
+4. Run `no-mistakes-reconcile check`.
+5. Verify the CLI executable, daemon `/proc/<pid>/exe`, and systemd `ExecStart` agree.
+6. Verify both installed `SKILL.md` files equal the pinned package skill.
+7. Verify existing no-mistakes history and state remain intact.

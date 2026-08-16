@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "sonnet",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/home/atqa/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
+  },
+  "autoCompactWindow": 200000,
+  "skipDangerousModePermissionPrompt": true
+}

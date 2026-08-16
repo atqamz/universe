@@ -57,19 +57,6 @@ _: {
             git -C "$vault" pull --ff-only
           fi
           ( cd "$vault" && ./scripts/import.sh )
-
-          SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
-          export SSH_AUTH_SOCK
-          export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-          for repo in dotagents dotfiles; do
-            dest="$HOME/$repo"
-            if [ ! -d "$dest/.git" ]; then
-              echo "==> cloning $repo"
-              git clone "git@github.com:atqamz/$repo.git" "$dest"
-            else
-              echo "==> keeping existing $repo checkout"
-            fi
-          done
         '';
       };
 
@@ -93,6 +80,12 @@ _: {
           manifest="$HOME/.config/universe/doctor.json"
           pass=0
           fail=0
+          warn_count=0
+
+          warn() {
+            echo "WARN: $1"
+            warn_count=$((warn_count + 1))
+          }
 
           report() {
             local name="$1"
@@ -156,6 +149,7 @@ _: {
             local expected="$HOME/$target"
             local actual
             local expected_real
+            local stale
 
             if [ -L "$path" ] \
               && [ -e "$expected" ] \
@@ -163,8 +157,67 @@ _: {
               && expected_real="$(readlink -f -- "$expected" 2>/dev/null)" \
               && [ "$actual" = "$expected_real" ]; then
               report "$relative direct symlink" 0
+              return
+            fi
+
+            report "$relative direct symlink" 1
+            if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+              echo "  $relative: missing; not a symlink" >&2
+            elif [ -L "$path" ]; then
+              stale="$(readlink -- "$path" 2>/dev/null)"
+              case "$stale" in
+                "$HOME/dotfiles/"* | "$HOME/dotagents/"*)
+                  echo "  $relative: stale legacy target '$stale'; expected $target" >&2
+                  ;;
+                *)
+                  echo "  $relative: wrong canonical target '$stale'; expected $target" >&2
+                  ;;
+              esac
+            elif [ ! -e "$expected" ]; then
+              echo "  $relative: canonical source '$expected' missing" >&2
             else
-              report "$relative direct symlink" 1
+              echo "  $relative: not a symlink; expected $target" >&2
+            fi
+          }
+
+          diagnose_legacy_checkout() {
+            local name="$1"
+            local path="$HOME/$name"
+
+            if [ -L "$path" ] || [ ! -e "$path" ]; then
+              if [ -L "$path" ]; then
+                warn "legacy ~/$name is a symlink (type $([ -d "$path" ] && echo dir || echo file)); inspect it manually"
+              fi
+              return
+            fi
+
+            if [ ! -d "$path" ]; then
+              warn "legacy ~/$name exists but is not a directory; inspect manually before removal"
+              return
+            fi
+
+            if [ ! -d "$path/.git" ]; then
+              warn "legacy ~/$name exists but is not a Git repository; inspect manually before removal"
+              return
+            fi
+
+            if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
+              warn "legacy ~/$name checkout contains local changes; preserve/commit/export them before any manual cleanup"
+              return
+            fi
+
+            local ahead=0 behind=0 state
+            state="$(git -C "$path" rev-list --left-right --count "HEAD...@{u}" 2>/dev/null || true)"
+            if [ -n "$state" ]; then
+              IFS=$'\t' read -r ahead2 behind2 <<<"$state" || true
+              ahead="$ahead2"
+              behind="$behind2"
+            fi
+
+            if [ "$ahead" -gt 0 ] || [ "$behind" -gt 0 ]; then
+              warn "legacy ~/$name checkout remains and is ahead by $ahead / behind by $behind; compare/archive manually after rollout"
+            else
+              warn "legacy ~/$name checkout remains; runtime no longer uses it; compare/archive manually after rollout"
             fi
           }
 
@@ -201,6 +254,33 @@ _: {
             exit "$fail"
           fi
 
+          if [ "''${UNIVERSE_DOCTOR_LAYOUT_ONLY:-0}" = 1 ]; then
+            while IFS= read -r relative; do
+              [ -n "$relative" ] || continue
+              check "$relative present" test -e "$HOME/$relative"
+            done < <(jq -r '.paths[]' "$manifest")
+
+            while IFS=$'\t' read -r path target; do
+              [ -n "$path" ] || continue
+              check_link "$path" "$target"
+            done < <(jq -r '.symlinks | to_entries[] | [.key, .value] | @tsv' "$manifest")
+
+            diagnose_legacy_checkout dotfiles
+            diagnose_legacy_checkout dotagents
+
+            echo ""
+            echo "== summary =="
+            echo "PASS: $pass"
+            echo "FAIL: $fail"
+            echo "WARN: $warn_count"
+            if [ "$fail" -eq 0 ]; then
+              echo "universe layout healthy"
+              exit 0
+            fi
+            echo "universe layout has failures"
+            exit 1
+          fi
+
           check "user atqa exists" id -u atqa
           check "user atqa is in wheel" bash -c 'groups atqa | grep -q wheel'
           check "tailscale daemon running" systemctl is-active tailscaled
@@ -214,9 +294,9 @@ _: {
           check "password store present" test -d "$HOME/.password-store"
           check "ssh key present" test -f "$HOME/.ssh/id_ed25519.pub"
           check "gpg key present" gpg -K
-          check "dotagents cloned" test -d "$HOME/dotagents/.git"
-          check "dotfiles cloned" test -d "$HOME/dotfiles/.git"
           check "universe repo cloned" test -d "$HOME/universe/.git"
+          diagnose_legacy_checkout dotfiles
+          diagnose_legacy_checkout dotagents
           check "zen identity present" test -f "$HOME/.config/zen-profile/identity"
           check "greetd active" systemctl is-active greetd
           check "gw on PATH" command -v gw
@@ -390,6 +470,7 @@ _: {
           echo "== summary =="
           echo "PASS: $pass"
           echo "FAIL: $fail"
+          echo "WARN: $warn_count"
           if [ "$fail" -eq 0 ]; then
             echo "universe healthy"
             exit 0
@@ -409,7 +490,7 @@ _: {
         bootstrap = {
           type = "app";
           program = "${bootstrap}/bin/bootstrap";
-          meta.description = "Bootstrap universe companion repositories and secrets";
+          meta.description = "Bootstrap private vault recovery and secrets";
         };
         doctor = {
           type = "app";

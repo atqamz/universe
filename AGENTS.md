@@ -34,8 +34,10 @@ Do not preserve an abstraction merely because it already exists: every abstracti
 
 Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.md`, `docs/adr/0011-explicit-update-ownership.md`).
 
-- Universe owns declarative machine state, packages, services, timers, and health contracts.
-- `dotfiles` / `dotagents` own live-editable config; Universe links but does not push them.
+Repository boundaries follow trust and mutation semantics, not config category names.
+
+- Universe owns declarative machine state, packages, services, timers, health contracts, and the live-editable public config under `configs/dotfiles` and `configs/dotagents`.
+- `configs/dotfiles` / `configs/dotagents` own their live-editable content; Universe links but does not push them.
 - `vault` owns key material; `password-store` owns password entries.
 - `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
 - Nix-owned binaries do not self-update. Update them through their flake/package owner. `koma` is the one exception: it has no opt-out switch, so the containment is not running `koma update` (`docs/adr/0014-koma-comes-from-its-upstream-flake.md`).
@@ -75,9 +77,9 @@ Every mutable artifact has exactly one owner (`docs/adr/0002-cross-repo-layout.m
 
 ## Live dotfiles and agent configuration
 
-- Read-only live config uses `config.lib.file.mkOutOfStoreSymlink` to absolute paths under `config.home.homeDirectory` (`docs/adr/0003-live-editable-dotfiles.md`).
+- Read-only live config uses `config.lib.file.mkOutOfStoreSymlink` to absolute paths under `config.home.homeDirectory` and the Universe checkout (`~/universe/configs/dotfiles`, `~/universe/configs/dotagents`) (`docs/adr/0003-live-editable-dotfiles.md`).
 - Config that the application rewrites atomically cannot traverse Home Manager's store-hop symlink. Claude `settings.json` and OpenCode `opencode.json` are direct writable links generated from one `writableLinks` map in `modules/home/dotagents.nix`; the same map feeds activation, user tmpfiles, and doctor checks.
-- Application-owned files that are atomically rewritten need `force = true` when linked from a live configuration repository.
+- Application-owned files that are atomically rewritten need `force = true` when linked from a live configuration source.
 
 ## AI harness integration
 
@@ -104,7 +106,7 @@ Daemon reconciliation defers while a no-mistakes run is pending or running, reco
 - `modules/home/packages.nix` is passive inventory. Application behavior belongs in a named module: Zed in `zed.nix`, browsers in `browsers.nix`, AI tool wrappers/update policy in `ai-tools.nix`, Unity in `unity.nix`.
 - Zed is wrapped with its language servers on PATH. `nixd` is the single Nix LSP; keep `go` beside `gopls` because Zed's Go extension may invoke the Go toolchain.
 - The two GUI terminals are deliberately on different client-side graphics paths (`docs/adr/0017-foot-default-and-wezterm-backup.md`). Foot is the default and stays one independent native-Wayland process per launch: never enable Foot server mode or `footclient`. WezTerm stays installed as the isolated backup and keeps `enable_wayland = false` with `front_end = 'Software'`; do not converge them for performance.
-- Which terminal or presentation-shell action a keybind launches is owned by `dotfiles`; Universe owns only enablement and WezTerm's declarative config. A terminal role change lands in `dotfiles` first and is applied here only after that change merges.
+- Which terminal or presentation-shell action a keybind launches is owned by `configs/dotfiles`; Universe owns only enablement and WezTerm's declarative config. A terminal role change lands in `configs/dotfiles` first and is applied here only after that change merges.
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
 - Unity Hub, CLI, and Editor wrappers share `unityBase.fhsEnv`; `programs.nix-ld` remains for other foreign binaries and is not imported by minimal host variants (`docs/adr/0008-unity-uses-one-shared-fhs-runtime.md`).
 - OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).

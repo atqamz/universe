@@ -136,14 +136,13 @@ Missing file -> the injected host key is not the secret's recipient. Confirm its
 age (`ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`) matches the `age:` entry
 for this host in `.sops.yaml`.
 
-## 7. Bootstrap (vault + dotagents/dotfiles)
+## 7. Bootstrap (private vault recovery and secrets)
 
 ```bash
 nix run --extra-experimental-features 'nix-command flakes' github:atqamz/universe#bootstrap
 ```
 
-Clones `~/vault` and runs `import.sh` (age/GPG/SSH keys, git signing, gpg preset
-passphrase), then clones `~/dotagents` and `~/dotfiles` over ssh. Verify:
+Clones `~/vault` and runs `import.sh` (age/GPG/SSH keys, git signing, gpg preset passphrase). Verify:
 
 ```bash
 ssh-add -l
@@ -174,14 +173,15 @@ config. Only step 4 names a host, because the installer boots as `nixos`.
 
 ## 8a. Repos a working machine expects
 
-Six repos, four mechanisms. See `docs/adr/0002-cross-repo-layout.md` for why.
+## 8a. Repos a working machine expects
 
-| Repo | Purpose | Cloned by | Kept current by |
+Public human-authored machine config lives in the `~/universe` checkout, private provisioning stays in `~/vault`, and independently mutated state keeps its own owner.
+See `docs/adr/0002-cross-repo-layout.md` for the trust/mutation boundary.
+
+| Source | Purpose | Cloned by | Kept current by |
 | --- | --- | --- | --- |
-| `~/universe` | this flake | step 8, by hand | deliberate Git workflow; approved remote `main` is deployed by `system.autoUpgrade` |
+| `~/universe` | public authored machine config, incl. `configs/dotfiles`, `configs/dotagents` | step 8, by hand | deliberate Git workflow; approved remote `main` is deployed by `system.autoUpgrade` |
 | `~/vault` | private keys and secrets | `nix run .#bootstrap` | `vault-sync.timer` |
-| `~/dotagents` | agent config | `nix run .#bootstrap` | deliberate Git workflow |
-| `~/dotfiles` | app config | `nix run .#bootstrap` | deliberate Git workflow |
 | `~/.password-store` | pass store | `vault/scripts/import.sh` | `password-store-sync.timer` |
 | `~/.local/share/zen-profile` | encrypted Zen profile | `zen-profile-pull` on first run | `zen-profile-sync.timer` |
 

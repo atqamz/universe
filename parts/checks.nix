@@ -84,14 +84,16 @@
       '';
     in
     {
-      pre-commit.settings.hooks = {
-        actionlint.enable = true;
-        deadnix.enable = true;
-        shellcheck.enable = true;
-        statix.enable = true;
-        treefmt = {
-          enable = true;
-          packageOverrides.treefmt = config.treefmt.build.wrapper;
+      pre-commit.settings = {
+        hooks = {
+          actionlint.enable = true;
+          deadnix.enable = true;
+          shellcheck.enable = true;
+          statix.enable = true;
+          treefmt = {
+            enable = true;
+            packageOverrides.treefmt = config.treefmt.build.wrapper;
+          };
         };
       };
 
@@ -135,6 +137,52 @@
               }
               ''
                 bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
+                touch $out
+              '';
+          migration-doctor =
+            pkgs.runCommand "migration-doctor-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  git
+                  gnugrep
+                ];
+              }
+              ''
+                bash ${../tests/migration-doctor.bash} \
+                  ${lib.escapeShellArg self.apps.${system}.doctor.program}
+                touch $out
+              '';
+          migration-config-contract =
+            let
+              manifestText = sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
+              manifest = pkgs.writeText "universe-doctor-manifest.json" manifestText;
+            in
+            pkgs.runCommand "migration-config-contract"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  jq
+                ];
+              }
+              ''
+                expect_link() {
+                  jq -e --arg path "$1" --arg target "$2" '.symlinks[$path] == $target' ${manifest} >/dev/null
+                }
+
+                jq -e '.paths | index("universe/configs/dotfiles")' ${manifest} >/dev/null
+                jq -e '.paths | index("universe/configs/dotagents")' ${manifest} >/dev/null
+                expect_link .config/foot/foot.ini universe/configs/dotfiles/foot/foot.ini
+                expect_link .config/hypr universe/configs/dotfiles/hypr
+                expect_link .claude/CLAUDE.md universe/configs/dotagents/CLAUDE.md
+                expect_link .config/opencode/AGENTS.md universe/configs/dotagents/AGENTS.md
+                expect_link .codex/AGENTS.md universe/configs/dotagents/AGENTS.md
+                expect_link .config/opencode/dynamic-models universe/configs/dotagents/opencode/dynamic-models
+                expect_link .claude/settings.json universe/configs/dotagents/claude/settings.json
+                expect_link .config/opencode/opencode.json universe/configs/dotagents/opencode/opencode.json
+                expect_link .no-mistakes/config.yaml universe/configs/dotagents/no-mistakes/config.yaml
                 touch $out
               '';
           claude-skill-root-contract =

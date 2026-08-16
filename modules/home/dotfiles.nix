@@ -4,7 +4,7 @@
 }:
 let
   link = config.lib.file.mkOutOfStoreSymlink;
-  root = "${config.home.homeDirectory}/dotfiles";
+  root = "${config.home.homeDirectory}/universe/configs/dotfiles";
 in
 {
   home.file = {
@@ -23,7 +23,11 @@ in
     ".config/cava/config".source = link "${root}/cava/config";
   };
 
-  universe.doctor.symlinks = {
-    ".config/foot/foot.ini" = "dotfiles/foot/foot.ini";
+  universe.doctor = {
+    paths = [ "universe/configs/dotfiles" ];
+    symlinks = {
+      ".config/foot/foot.ini" = "universe/configs/dotfiles/foot/foot.ini";
+      ".config/hypr" = "universe/configs/dotfiles/hypr";
+    };
   };
 }

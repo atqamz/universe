@@ -1,15 +1,15 @@
 { config, lib, ... }:
 let
-  root = "${config.home.homeDirectory}/dotagents";
+  root = "${config.home.homeDirectory}/universe/configs/dotagents";
   claude = "${root}/claude";
   home = config.home.homeDirectory;
   link = config.lib.file.mkOutOfStoreSymlink;
   dynamicModelLinks = {
-    ".config/opencode/dynamic-models" = "dotagents/opencode/dynamic-models";
+    ".config/opencode/dynamic-models" = "universe/configs/dotagents/opencode/dynamic-models";
   };
   writableLinks = {
-    ".claude/settings.json" = "dotagents/claude/settings.json";
-    ".config/opencode/opencode.json" = "dotagents/opencode/opencode.json";
+    ".claude/settings.json" = "universe/configs/dotagents/claude/settings.json";
+    ".config/opencode/opencode.json" = "universe/configs/dotagents/opencode/opencode.json";
   };
 in
 {
@@ -43,6 +43,8 @@ in
   '';
 
   universe.doctor = {
+    paths = [ "universe/configs/dotagents" ];
+
     opencodeProviders.mocin = {
       npm = "@ai-sdk/openai-compatible";
       baseURL = "https://beta.masven.dev/v1";
@@ -53,7 +55,10 @@ in
       writableLinks
       // dynamicModelLinks
       // {
-        ".codex/AGENTS.md" = "dotagents/AGENTS.md";
+        ".claude/CLAUDE.md" = "universe/configs/dotagents/CLAUDE.md";
+        ".claude/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
+        ".config/opencode/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
+        ".codex/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
       };
   };
 }
