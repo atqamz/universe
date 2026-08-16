@@ -172,11 +172,21 @@
                 ];
               }
               ''
+                expect_link() {
+                  jq -e --arg path "$1" --arg target "$2" '.symlinks[$path] == $target' ${manifest} >/dev/null
+                }
+
                 jq -e '.paths | index("universe/configs/dotfiles")' ${manifest} >/dev/null
                 jq -e '.paths | index("universe/configs/dotagents")' ${manifest} >/dev/null
-                jq -e '.symlinks[".config/opencode/dynamic-models"] == "universe/configs/dotagents/opencode/dynamic-models"' ${manifest} >/dev/null
-                jq -e '.symlinks[".no-mistakes/config.yaml"] == "universe/configs/dotagents/no-mistakes/config.yaml"' ${manifest} >/dev/null
-                jq -e '.symlinks[".codex/AGENTS.md"] == "universe/configs/dotagents/AGENTS.md"' ${manifest} >/dev/null
+                expect_link .config/foot/foot.ini universe/configs/dotfiles/foot/foot.ini
+                expect_link .config/hypr universe/configs/dotfiles/hypr
+                expect_link .claude/CLAUDE.md universe/configs/dotagents/CLAUDE.md
+                expect_link .config/opencode/AGENTS.md universe/configs/dotagents/AGENTS.md
+                expect_link .codex/AGENTS.md universe/configs/dotagents/AGENTS.md
+                expect_link .config/opencode/dynamic-models universe/configs/dotagents/opencode/dynamic-models
+                expect_link .claude/settings.json universe/configs/dotagents/claude/settings.json
+                expect_link .config/opencode/opencode.json universe/configs/dotagents/opencode/opencode.json
+                expect_link .no-mistakes/config.yaml universe/configs/dotagents/no-mistakes/config.yaml
                 touch $out
               '';
           claude-skill-root-contract =

@@ -55,6 +55,9 @@ in
       writableLinks
       // dynamicModelLinks
       // {
+        ".claude/CLAUDE.md" = "universe/configs/dotagents/CLAUDE.md";
+        ".claude/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
+        ".config/opencode/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
         ".codex/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
       };
   };

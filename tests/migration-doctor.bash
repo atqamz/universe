@@ -29,22 +29,41 @@ make_home() {
   "absentPaths": [],
   "symlinks": {
     ".config/foot/foot.ini": "universe/configs/dotfiles/foot/foot.ini",
+    ".config/hypr": "universe/configs/dotfiles/hypr",
+    ".claude/CLAUDE.md": "universe/configs/dotagents/CLAUDE.md",
+    ".config/opencode/AGENTS.md": "universe/configs/dotagents/AGENTS.md",
+    ".codex/AGENTS.md": "universe/configs/dotagents/AGENTS.md",
     ".config/opencode/dynamic-models": "universe/configs/dotagents/opencode/dynamic-models",
-    ".config/opencode/opencode.json": "universe/configs/dotagents/opencode/opencode.json"
+    ".claude/settings.json": "universe/configs/dotagents/claude/settings.json",
+    ".config/opencode/opencode.json": "universe/configs/dotagents/opencode/opencode.json",
+    ".no-mistakes/config.yaml": "universe/configs/dotagents/no-mistakes/config.yaml"
   }
 }
 EOF
-  mkdir -p "$home/universe/configs/dotfiles/foot"
-  mkdir -p "$home/universe/configs/dotagents/opencode/dynamic-models"
+  mkdir -p \
+    "$home/universe/configs/dotfiles/foot" \
+    "$home/universe/configs/dotfiles/hypr" \
+    "$home/universe/configs/dotagents/claude" \
+    "$home/universe/configs/dotagents/no-mistakes" \
+    "$home/universe/configs/dotagents/opencode/dynamic-models"
   echo hi >"$home/universe/configs/dotfiles/foot/foot.ini"
+  echo hi >"$home/universe/configs/dotfiles/hypr/hyprland.lua"
+  echo hi >"$home/universe/configs/dotagents/CLAUDE.md"
+  echo hi >"$home/universe/configs/dotagents/AGENTS.md"
+  echo hi >"$home/universe/configs/dotagents/claude/settings.json"
+  echo hi >"$home/universe/configs/dotagents/no-mistakes/config.yaml"
   echo hi >"$home/universe/configs/dotagents/opencode/opencode.json"
   echo hi >"$home/universe/configs/dotagents/opencode/dynamic-models/engine.ts"
-  # canonical live topology: managed links resolve into the universe subtrees
-  mkdir -p "$home/.config/foot"
-  mkdir -p "$home/.config/opencode"
+  mkdir -p "$home/.claude" "$home/.codex" "$home/.config/foot" "$home/.config/opencode" "$home/.no-mistakes"
   ln -s "$home/universe/configs/dotfiles/foot/foot.ini" "$home/.config/foot/foot.ini"
+  ln -s "$home/universe/configs/dotfiles/hypr" "$home/.config/hypr"
+  ln -s "$home/universe/configs/dotagents/CLAUDE.md" "$home/.claude/CLAUDE.md"
+  ln -s "$home/universe/configs/dotagents/AGENTS.md" "$home/.config/opencode/AGENTS.md"
+  ln -s "$home/universe/configs/dotagents/AGENTS.md" "$home/.codex/AGENTS.md"
   ln -s "$home/universe/configs/dotagents/opencode/dynamic-models" "$home/.config/opencode/dynamic-models"
+  ln -s "$home/universe/configs/dotagents/claude/settings.json" "$home/.claude/settings.json"
   ln -s "$home/universe/configs/dotagents/opencode/opencode.json" "$home/.config/opencode/opencode.json"
+  ln -s "$home/universe/configs/dotagents/no-mistakes/config.yaml" "$home/.no-mistakes/config.yaml"
 }
 
 run_doctor() {
@@ -60,7 +79,7 @@ make_home
 run_doctor "$root/home"
 code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case A: expected exit 0, got $code"
-grep -q "PASS: universe/configs/dotfiles present" "$root/out" 2>/dev/null || true
+grep -q "PASS: universe/configs/dotfiles present" "$root/out" || fail "case A: missing canonical dotfiles pass"
 if grep -q "WARN: legacy ~/dotfiles" "$root/out"; then
   fail "case A: unexpected legacy dotfiles warning"
 fi
@@ -151,20 +170,29 @@ echo "case D ok"
 
 # Case E: a live symlink points at the old source. Explicit stale-target FAIL, nonzero, old dir unchanged.
 make_home
-git init -q "$root/home/dotfiles"
-git -C "$root/home/dotfiles" config user.email test@example.com
-git -C "$root/home/dotfiles" config user.name test
-echo old >"$root/home/dotfiles/foot.ini"
-git -C "$root/home/dotfiles" add foot.ini
-git -C "$root/home/dotfiles" commit -qm init
-head_before="$(git -C "$root/home/dotfiles" rev-parse HEAD)"
-ln -sfn "$root/home/dotfiles/foot.ini" "$root/home/.config/foot/foot.ini"
-run_doctor "$root/home"
-code="$(cat "$root/doctor-code")"
-[ "$code" -ne 0 ] || fail "case E: expected nonzero, got 0"
-grep -q "stale legacy target" "$root/out" || fail "case E: missing stale-target diagnostic"
-[ "$(git -C "$root/home/dotfiles" rev-parse HEAD)" = "$head_before" ] || fail "case E: old dir changed"
-[ "$(cat "$root/home/dotfiles/foot.ini")" = old ] || fail "case E: old file changed"
+for name in dotfiles dotagents; do
+  git init -q "$root/home/$name"
+  git -C "$root/home/$name" config user.email test@example.com
+  git -C "$root/home/$name" config user.name test
+  if [ "$name" = dotfiles ]; then
+    old_file=foot.ini
+    live_path="$root/home/.config/foot/foot.ini"
+  else
+    old_file=CLAUDE.md
+    live_path="$root/home/.claude/CLAUDE.md"
+  fi
+  echo old >"$root/home/$name/$old_file"
+  git -C "$root/home/$name" add "$old_file"
+  git -C "$root/home/$name" commit -qm init
+  head_before="$(git -C "$root/home/$name" rev-parse HEAD)"
+  ln -sfn "$root/home/$name/$old_file" "$live_path"
+  run_doctor "$root/home"
+  code="$(cat "$root/doctor-code")"
+  [ "$code" -ne 0 ] || fail "case E: $name expected nonzero, got 0"
+  grep -q "stale legacy target" "$root/out" || fail "case E: $name missing stale-target diagnostic"
+  [ "$(git -C "$root/home/$name" rev-parse HEAD)" = "$head_before" ] || fail "case E: $name old dir changed"
+  [ "$(cat "$root/home/$name/$old_file")" = old ] || fail "case E: $name old file changed"
+done
 echo "case E ok"
 
 echo "all migration doctor cases passed"

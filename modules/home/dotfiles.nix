@@ -27,6 +27,7 @@ in
     paths = [ "universe/configs/dotfiles" ];
     symlinks = {
       ".config/foot/foot.ini" = "universe/configs/dotfiles/foot/foot.ini";
+      ".config/hypr" = "universe/configs/dotfiles/hypr";
     };
   };
 }
