@@ -9,12 +9,14 @@ Symlinked live from my NixOS config ([universe](https://github.com/atqamz/univer
 
 - `AGENTS.md` - the canonical rules, including the always-on efficiency rules; `CLAUDE.md` is a symlink to it so every agent shares one source
 - `claude/` - Claude Code tooling: `settings.json`, hooks, statusline, usage script
-- `opencode/` - opencode config (`opencode.json`), including the MCP servers every harness shares
+- `opencode/` - opencode config (`opencode.json`) and plugins, including the MCP servers every harness shares
+
+The opencode integration keeps provider intent and curated metadata in `opencode/opencode.json`, with runtime-specific behavior isolated under `opencode/plugins/`.
 
 Skills are not listed here. Universe (`modules/home/skills-sync.nix`) owns the allowlist of source repositories and wanted skills, and runs `bunx skills` for every Agent Skills-compatible harness (Claude Code, Codex, opencode).
 The independently managed no-mistakes skill is the exception and is refreshed by `modules/home/no-mistakes.nix` from the pinned package.
 
-Plugin-free by design: no Claude-only plugins. Behavior rules live in `AGENTS.md` (Claude Code, Codex, and opencode all read it), on-demand tooling comes from skills. Nothing is tied to one agent.
+No Claude-only plugins. Behavior rules live in `AGENTS.md` (Claude Code, Codex, and opencode all read it), on-demand tooling comes from skills, and opencode-specific integrations stay under `opencode/`.
 
 ## Force-read convention
 
