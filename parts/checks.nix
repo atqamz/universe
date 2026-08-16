@@ -8,6 +8,7 @@
   perSystem =
     { config, pkgs, ... }:
     let
+      system = pkgs.stdenv.hostPlatform.system;
       sfx14 = self.nixosConfigurations.sfx14;
       gpuService = sfx14.config.systemd.services.gpu-undervolt;
       gpuExec = gpuService.serviceConfig.ExecStart;
@@ -72,6 +73,15 @@
         }
       );
       opencodeProviderMalformed = pkgs.writeText "opencode-provider-malformed.json" "{";
+      opencodeDoctorManifest = pkgs.writeText "opencode-doctor-manifest.json" (
+        self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text
+      );
+      opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
+        printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
+      '';
+      opencodeDoctorMissing = pkgs.writeShellScriptBin "opencode-doctor-missing" ''
+        printf '%s\n' '{"provider":{}}'
+      '';
     in
     {
       pre-commit.settings.hooks = {
@@ -147,10 +157,15 @@
               {
                 nativeBuildInputs = with pkgs; [
                   bash
+                  coreutils
                   jq
                 ];
               }
               ''
+                export HOME="$TMPDIR/home"
+                mkdir -p "$HOME/.config/universe"
+                cp ${opencodeDoctorManifest} "$HOME/.config/universe/doctor.json"
+
                 expect_success() {
                   if ! "$@" >/dev/null; then
                     echo "expected command to succeed: $*" >&2
@@ -174,6 +189,15 @@
                 expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderEmptyModels}
                 expect_failure jq -e --arg p mocin '${opencodeProviderContract.models}' ${opencodeProviderNonObjectModels}
                 expect_failure jq -e . ${opencodeProviderMalformed}
+
+                expect_success env \
+                  UNIVERSE_DOCTOR_OPENCODE=${opencodeDoctorHealthy}/bin/opencode-doctor-healthy \
+                  UNIVERSE_DOCTOR_PROVIDER_ONLY=1 \
+                  ${self.apps.${system}.doctor.program}
+                expect_failure env \
+                  UNIVERSE_DOCTOR_OPENCODE=${opencodeDoctorMissing}/bin/opencode-doctor-missing \
+                  UNIVERSE_DOCTOR_PROVIDER_ONLY=1 \
+                  ${self.apps.${system}.doctor.program}
                 touch "$out"
               '';
         };

@@ -131,6 +131,24 @@ _: {
             fi
           }
 
+          check_opencode_providers() {
+            while IFS=$'\t' read -r provider npm base_url require_models; do
+              [ -n "$provider" ] || continue
+              # shellcheck disable=SC2016
+              check "$provider provider resolves" jq -e \
+                --arg p "$provider" --arg n "$npm" --arg u "$base_url" \
+                '${opencodeProviderContract.provider}' \
+                "$probe/opencode-config.json"
+              if [ "$require_models" = true ]; then
+                # shellcheck disable=SC2016
+                check "$provider has runtime models" jq -e \
+                  --arg p "$provider" \
+                  '${opencodeProviderContract.models}' \
+                  "$probe/opencode-config.json"
+              fi
+            done < <(jq -r '.opencodeProviders | to_entries[] | [.key, .value.npm, .value.baseURL, (.value.requireModels | tostring)] | @tsv' "$manifest")
+          }
+
           check_link() {
             local relative="$1"
             local target="$2"
@@ -170,6 +188,18 @@ _: {
 
           host="$(jq -r '.host' "$manifest")"
           echo "host: $host"
+
+          if [ "''${UNIVERSE_DOCTOR_PROVIDER_ONLY:-0}" = 1 ]; then
+            probe="$(mktemp -d)"
+            trap 'rm -rf "$probe"' EXIT
+            opencode_command="''${UNIVERSE_DOCTOR_OPENCODE:-opencode}"
+            opencode_config_status=0
+            "$opencode_command" debug config >"$probe/opencode-config.json" 2>/dev/null || opencode_config_status=$?
+            check "opencode config command succeeds" test "$opencode_config_status" -eq 0
+            check "opencode config loads" jq -e . "$probe/opencode-config.json"
+            check_opencode_providers
+            exit "$fail"
+          fi
 
           check "user atqa exists" id -u atqa
           check "user atqa is in wheel" bash -c 'groups atqa | grep -q wheel'
@@ -243,9 +273,10 @@ _: {
           probe="$(mktemp -d)"
           trap 'rm -rf "$probe"' EXIT
 
+          opencode_command="''${UNIVERSE_DOCTOR_OPENCODE:-opencode}"
           opencode_config_status=0
-          opencode debug config >"$probe/opencode-config.json" 2>/dev/null || opencode_config_status=$?
-          opencode debug skill >"$probe/opencode-skills.txt" 2>/dev/null || true
+          "$opencode_command" debug config >"$probe/opencode-config.json" 2>/dev/null || opencode_config_status=$?
+          "$opencode_command" debug skill >"$probe/opencode-skills.txt" 2>/dev/null || true
           codex mcp list --json >"$probe/codex-mcp.json" 2>/dev/null || true
           herdr integration status >"$probe/herdr.txt" 2>/dev/null || true
           qmd status >"$probe/qmd.txt" 2>/dev/null || true
@@ -253,21 +284,7 @@ _: {
           check "opencode config command succeeds" test "$opencode_config_status" -eq 0
           check "opencode config loads" jq -e . "$probe/opencode-config.json"
 
-          while IFS=$'\t' read -r provider npm base_url require_models; do
-            [ -n "$provider" ] || continue
-            # shellcheck disable=SC2016
-            check "$provider provider resolves" jq -e \
-              --arg p "$provider" --arg n "$npm" --arg u "$base_url" \
-              '${opencodeProviderContract.provider}' \
-              "$probe/opencode-config.json"
-            if [ "$require_models" = true ]; then
-              # shellcheck disable=SC2016
-              check "$provider has runtime models" jq -e \
-                --arg p "$provider" \
-                '${opencodeProviderContract.models}' \
-                "$probe/opencode-config.json"
-            fi
-          done < <(jq -r '.opencodeProviders | to_entries[] | [.key, .value.npm, .value.baseURL, (.value.requireModels | tostring)] | @tsv' "$manifest")
+          check_opencode_providers
 
           while IFS= read -r server; do
             [ -n "$server" ] || continue
