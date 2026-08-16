@@ -4,6 +4,9 @@ let
   claude = "${root}/claude";
   home = config.home.homeDirectory;
   link = config.lib.file.mkOutOfStoreSymlink;
+  dynamicModelLinks = {
+    ".config/opencode/dynamic-models" = "dotagents/opencode/dynamic-models";
+  };
   liveLinks = {
     ".config/opencode/plugins/mocin-models.ts" = "dotagents/opencode/plugins/mocin-models.ts";
   };
@@ -23,6 +26,7 @@ in
 
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
   }
+  // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) dynamicModelLinks
   // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) liveLinks;
 
   systemd.user.tmpfiles.rules = [
