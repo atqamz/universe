@@ -22,7 +22,7 @@ hl.config({
         disable_autoreload = true,
     },
     input = {
-        kb_file = "/home/atqa/dotfiles/hypr/caps-ctrl.xkb",
+        kb_file = "/home/atqa/universe/configs/dotfiles/hypr/caps-ctrl.xkb",
         follow_mouse = 1,
         touchpad = { natural_scroll = true },
     },
