@@ -137,6 +137,42 @@
                 bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
                 touch $out
               '';
+          migration-doctor =
+            pkgs.runCommand "migration-doctor-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  git
+                  gnugrep
+                ];
+              }
+              ''
+                bash ${../tests/migration-doctor.bash} \
+                  ${lib.escapeShellArg self.apps.${system}.doctor.program}
+                touch $out
+              '';
+          migration-config-contract =
+            let
+              manifestText = sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
+              manifest = pkgs.writeText "universe-doctor-manifest.json" manifestText;
+            in
+            pkgs.runCommand "migration-config-contract"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  jq
+                ];
+              }
+              ''
+                jq -e '.paths | index("universe/configs/dotfiles")' ${manifest} >/dev/null
+                jq -e '.paths | index("universe/configs/dotagents")' ${manifest} >/dev/null
+                jq -e '.symlinks[".config/opencode/dynamic-models"] == "universe/configs/dotagents/opencode/dynamic-models"' ${manifest} >/dev/null
+                jq -e '.symlinks[".no-mistakes/config.yaml"] == "universe/configs/dotagents/no-mistakes/config.yaml"' ${manifest} >/dev/null
+                jq -e '.symlinks[".codex/AGENTS.md"] == "universe/configs/dotagents/AGENTS.md"' ${manifest} >/dev/null
+                touch $out
+              '';
           claude-skill-root-contract =
             pkgs.runCommand "claude-skill-root-contract"
               {
