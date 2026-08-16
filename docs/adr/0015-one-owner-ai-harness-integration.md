@@ -14,7 +14,7 @@ The net effect was that "the machine rebuilt successfully" said nothing about wh
 
 The obstacle is that the harnesses do not agree on writability.
 
-- OpenCode reads a plain tracked config file. Universe can express the whole `mcp` block declaratively in `dotagents/opencode/opencode.json`.
+- OpenCode reads a plain tracked config file. Universe can express the whole `mcp` block declaratively in `configs/dotagents/opencode/opencode.json`.
 - Codex owns `~/.codex/config.toml` and rewrites it for `codex mcp add` and for per-project trust entries. It cannot be a store symlink, and `codex --enable hooks` is per-invocation only, so `[features] hooks = true` has to be persisted in that same file.
 - Claude Code has no supported user-scope MCP config file at all. `~/.claude.json` is a 219 KB mutable state file holding startup counts and per-project history alongside `mcpServers`.
 

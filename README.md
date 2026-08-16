@@ -21,11 +21,13 @@ Each host builds a full variant and a genuinely stripped `-minimal` bootstrap va
 - `hosts/<name>/full.nix` - full-host features; supporting host-only modules live beside it
 - `modules/nixos/` - shared one-concern NixOS modules (`minimal.nix` is the bootstrap base, `default.nix` adds the full layer)
 - `modules/home/` - shared one-concern Home Manager modules (`minimal.nix` contains no background automation)
+- `configs/dotfiles/` - live-editable application config, symlinked out of the Nix store
+- `configs/dotagents/` - live-editable agent config, symlinked out of the Nix store
 - `pkgs/` - locally packaged tools exposed through the overlay and flake package set
 - `lib/mkHost.nix` - host factory and full/minimal composition boundary
 - `docs/adr/` - architecture decisions and invariants that are expensive to rediscover
 
-Config that must stay live-editable is owned by the sibling [dotfiles](https://github.com/atqamz/dotfiles) and [dotagents](https://github.com/atqamz/dotagents) repos and linked out of the Nix store.
+Config that must stay live-editable lives under `configs/dotfiles` and `configs/dotagents` and is linked out of the Nix store.
 
 ## Build
 

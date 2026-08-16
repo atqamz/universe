@@ -9,7 +9,7 @@ Its local model map key and generated model `id` therefore provide separate boun
 
 ## Decision
 
-`dotagents` owns provider intent, dynamic discovery declarations and adapters, callable model identity, and authored metadata.
+`configs/dotagents` owns provider intent, dynamic discovery declarations and adapters, callable model identity, and authored metadata.
 Universe owns one stable delivery link and generic runtime health checks.
 
 The shared dynamic discovery engine runs once at OpenCode startup for each configured provider.
@@ -42,7 +42,7 @@ The engine does not read OpenCode auth storage, persist credentials, or claim au
 
 Universe delivers the shared dynamic discovery directory through one stable live symlink and registers that directory in the generic doctor symlink contract.
 No provider-specific plugin delivery link exists in the final state.
-The rollout retained the old Mocin link temporarily so the two repositories could land safely, then removed it after the generic dotagents provider wrapper was live.
+The earlier rollout retained the old Mocin link temporarily across the sibling repositories until the generic `configs/dotagents` provider wrapper was live, then removed it.
 
 ## Consequences
 
@@ -51,4 +51,4 @@ Adding a non-standard provider requires only its declaration and narrow response
 
 A provider with no remote inventory and no compatible snapshot has no dynamic models, while unrelated providers remain usable.
 OpenCode restarts are the refresh boundary.
-Rollback is a normal revert of the two PRs, with the old Mocin state left untouched for diagnosis but never reinterpreted.
+Rollback is a normal revert, with the old Mocin state left untouched for diagnosis but never reinterpreted.

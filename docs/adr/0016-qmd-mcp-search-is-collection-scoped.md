@@ -22,7 +22,7 @@ The patch also corrects the instruction text to the plural parameter the schema 
 
 CLI qmd is unchanged. `qmd search` stays unscoped, because the human running it chose the scope by typing the command.
 
-`dotagents/AGENTS.md` carries the matching routing rule - scope to the current repository's profile, never mix profiles unless asked - so the agent knows which collection to name rather than merely being refused.
+`configs/dotagents/AGENTS.md` carries the matching routing rule - scope to the current repository's profile, never mix profiles unless asked - so the agent knows which collection to name rather than merely being refused.
 
 ## Consequence
 
