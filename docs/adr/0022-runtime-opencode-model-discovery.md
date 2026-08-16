@@ -40,9 +40,9 @@ Discovery is runtime-only.
 It never runs during Nix evaluation, builds, activation, or CI.
 The engine does not read OpenCode auth storage, persist credentials, or claim authenticated discovery when the pinned provider hook exposes no safe credential context.
 
-The first rollout keeps the old Universe-owned plugin link while the new dotagents configuration is unavailable.
-After the dotagents change is live, a small Universe cleanup removes that obsolete link and registers the stable directory link as a doctor symlink contract.
-This ordering avoids an intermediate broken OpenCode configuration while preserving one active discovery owner in the final state.
+Universe delivers the shared dynamic discovery directory through one stable live symlink and registers that directory in the generic doctor symlink contract.
+No provider-specific plugin delivery link exists in the final state.
+The rollout retained the old Mocin link temporarily so the two repositories could land safely, then removed it after the generic dotagents provider wrapper was live.
 
 ## Consequences
 
