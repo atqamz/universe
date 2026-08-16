@@ -17,6 +17,7 @@ fail() {
 
 make_home() {
   home="$root/home"
+  rm -rf -- "$home"
   mkdir -p "$home/.config/universe"
   cat >"$home/.config/universe/doctor.json" <<EOF
 {
