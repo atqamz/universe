@@ -7,6 +7,10 @@ _: {
         shellcheck.enable = true;
         shfmt.enable = true;
       };
+      settings.excludes = [
+        "configs/dotfiles/**"
+        "configs/dotagents/**"
+      ];
     };
   };
 }
