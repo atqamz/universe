@@ -48,18 +48,17 @@ EOF
 }
 
 run_doctor() {
-  home=$1
+  local target="$1"
   set +e
-  HOME="$home" UNIVERSE_DOCTOR_LAYOUT_ONLY=1 "$doctor_bin" >"$root/out" 2>&1
-  code=$?
+  HOME="$target" UNIVERSE_DOCTOR_LAYOUT_ONLY=1 "$doctor_bin" >"$root/out" 2>&1
+  printf '%s' "$?" >"$root/doctor-code"
   set -e
-  return $code
 }
 
 # Case A: neither legacy dir exists. Canonical checks pass, no legacy warning, no mutation.
 make_home
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case A: expected exit 0, got $code"
 grep -q "PASS: universe/configs/dotfiles present" "$root/out" 2>/dev/null || true
 if grep -q "WARN: legacy ~/dotfiles" "$root/out"; then
@@ -83,7 +82,7 @@ for name in dotfiles dotagents; do
   echo "$head_before" >"$root/home/$name-before"
 done
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case B: expected exit 0, got $code"
 grep -q "WARN: legacy ~/dotfiles checkout remains; runtime no longer uses it" "$root/out" || fail "case B: missing clean dotfiles warning"
 grep -q "WARN: legacy ~/dotagents checkout remains; runtime no longer uses it" "$root/out" || fail "case B: missing clean dotagents warning"
@@ -113,7 +112,7 @@ for name in dotfiles dotagents; do
   git -C "$root/home/$name" commit -qm two
 done
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case B2: expected exit 0, got $code"
 grep -q "ahead by 1" "$root/out" || fail "case B2: missing ahead warning"
 echo "case B2 ok"
@@ -131,7 +130,7 @@ done
 echo "dirty change" >"$root/home/dotfiles/README.md"
 echo "untracked file" >"$root/home/dotagents/new.txt"
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case C: expected exit 0, got $code"
 grep -q "legacy ~/dotfiles checkout contains local changes" "$root/out" || fail "case C: missing dirty dotfiles warning"
 grep -q "legacy ~/dotagents checkout contains local changes" "$root/out" || fail "case C: missing dirty dotagents warning"
@@ -143,7 +142,7 @@ make_home
 mkdir -p "$root/home/dotfiles" "$root/home/dotagents"
 echo "keep me" >"$root/home/dotfiles/precious"
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -eq 0 ] || fail "case D: expected exit 0, got $code"
 grep -q "legacy ~/dotfiles exists but is not a Git repository" "$root/out" || fail "case D: missing non-git dotfiles warning"
 grep -q "legacy ~/dotagents exists but is not a Git repository" "$root/out" || fail "case D: missing non-git dotagents warning"
@@ -161,7 +160,7 @@ git -C "$root/home/dotfiles" commit -qm init
 head_before="$(git -C "$root/home/dotfiles" rev-parse HEAD)"
 ln -sfn "$root/home/dotfiles/foot.ini" "$root/home/.config/foot/foot.ini"
 run_doctor "$root/home"
-code=$?
+code="$(cat "$root/doctor-code")"
 [ "$code" -ne 0 ] || fail "case E: expected nonzero, got 0"
 grep -q "stale legacy target" "$root/out" || fail "case E: missing stale-target diagnostic"
 [ "$(git -C "$root/home/dotfiles" rev-parse HEAD)" = "$head_before" ] || fail "case E: old dir changed"
