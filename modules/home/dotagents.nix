@@ -4,6 +4,9 @@ let
   claude = "${root}/claude";
   home = config.home.homeDirectory;
   link = config.lib.file.mkOutOfStoreSymlink;
+  liveLinks = {
+    ".config/opencode/plugins/mocin-models.ts" = "dotagents/opencode/plugins/mocin-models.ts";
+  };
   writableLinks = {
     ".claude/settings.json" = "dotagents/claude/settings.json";
     ".config/opencode/opencode.json" = "dotagents/opencode/opencode.json";
@@ -19,11 +22,13 @@ in
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
 
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
-  };
+  }
+  // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) liveLinks;
 
   systemd.user.tmpfiles.rules = [
     "d %h/.claude 0700 - - - -"
     "d %h/.config/opencode 0700 - - - -"
+    "d %h/.config/opencode/plugins 0700 - - - -"
     "d %h/.codex 0700 - - - -"
   ]
   ++ lib.mapAttrsToList (path: target: "L+ %h/${path} - - - - %h/${target}") writableLinks;
@@ -37,7 +42,18 @@ in
     )}
   '';
 
-  universe.doctor.symlinks = writableLinks // {
-    ".codex/AGENTS.md" = "dotagents/AGENTS.md";
+  universe.doctor = {
+    opencodeProviders.mocin = {
+      npm = "@ai-sdk/openai-compatible";
+      baseURL = "https://beta.masven.dev/v1";
+      requireModels = true;
+    };
+
+    symlinks =
+      writableLinks
+      // liveLinks
+      // {
+        ".codex/AGENTS.md" = "dotagents/AGENTS.md";
+      };
   };
 }

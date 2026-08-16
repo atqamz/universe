@@ -27,3 +27,4 @@ Short by design: context, decision, consequence.
 | [0019](0019-sfx14-boot-and-power-ownership.md) | SFX14 power policy and boot helpers have explicit owners |
 | [0020](0020-no-mistakes-integration.md) | no-mistakes policy, runtime, and skill ownership is explicit |
 | [0021](0021-omanixy-presentation-ownership.md) | Omanixy owns desktop presentation; Universe owns host capabilities and policy |
+| [0022](0022-runtime-opencode-model-discovery.md) | OpenCode provider availability is discovered at process startup |
