@@ -76,6 +76,7 @@
       opencodeDoctorManifest =
         pkgs.writeText "opencode-doctor-manifest.json"
           self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
+      noMistakesSkill = sfx14.config.home-manager.users.atqa.universe.doctor.noMistakes.skillSource;
       opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
         printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
       '';
@@ -133,11 +134,45 @@
                   gnugrep
                   gnused
                   jq
+                  util-linux
                 ];
               }
               ''
                 bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
                 touch $out
+              '';
+          opencode-no-mistakes =
+            pkgs.runCommand "opencode-no-mistakes-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gawk
+                  gnugrep
+                  gnused
+                  jq
+                  opencode
+                  util-linux
+                ];
+              }
+              ''
+                bash ${../tests/opencode-no-mistakes.bash} \
+                  ${../modules/home/no-mistakes-reconcile.sh} \
+                  ${pkgs.opencode}/bin/opencode \
+                  ${noMistakesSkill}
+                touch "$out"
+              '';
+          codedb-prune =
+            pkgs.runCommand "codedb-prune-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                ];
+              }
+              ''
+                bash ${../tests/codedb-prune.bash} ${../modules/home/codedb-prune.sh}
+                touch "$out"
               '';
           migration-doctor =
             pkgs.runCommand "migration-doctor-test"
