@@ -185,7 +185,7 @@ discover_opencode() {
   if [[ ! -f $agents_skill && ! -f $claude_skill ]]; then
     die "OpenCode skill discovery has no expected no-mistakes skill root"
   fi
-  if ! output=$(cd /tmp && timeout 10 opencode debug skill --pure 2>&1); then
+  if ! output=$(cd /tmp && OPENCODE_DB=:memory: timeout 10 opencode debug skill --pure 2>&1); then
     discovery_failure "$output" 'OpenCode skill discovery command failed: opencode debug skill --pure'
   fi
   if ! printf '%s\n' "$output" | awk \
@@ -330,12 +330,24 @@ check() {
 refresh_skill() {
   local source=$2
   [[ -f $source ]] || die "skill source does not exist: $source"
-  local base destination
-  for base in .agents/skills .claude/skills; do
-    destination=$HOME/$base/no-mistakes/SKILL.md
-    mkdir -p "$(dirname "$destination")"
-    install -m 0644 "$source" "$destination"
-  done
+  # shellcheck disable=SC2016
+  if ! NO_MISTAKES_SKILL_SOURCE=$source NO_MISTAKES_HOME=$HOME flock -w 30 "$HOME" bash -c '
+    for base in .agents/skills .claude/skills; do
+      destination=$NO_MISTAKES_HOME/$base/no-mistakes/SKILL.md
+      mkdir -p "$(dirname "$destination")"
+      temp=$(mktemp "$destination.tmp.XXXXXX") || exit 1
+      if ! install -m 0644 "$NO_MISTAKES_SKILL_SOURCE" "$temp"; then
+        rm -f -- "$temp"
+        exit 1
+      fi
+      if ! mv -f -- "$temp" "$destination"; then
+        rm -f -- "$temp"
+        exit 1
+      fi
+    done
+  '; then
+    die 'could not refresh the canonical skill files'
+  fi
 }
 
 case $action in

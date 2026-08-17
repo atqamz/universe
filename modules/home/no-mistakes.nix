@@ -10,6 +10,7 @@ let
   reconcile = pkgs.writeShellApplication {
     name = "no-mistakes-reconcile";
     runtimeInputs = [
+      pkgs.bash
       pkgs.coreutils
       pkgs.codex
       pkgs.gnugrep
@@ -19,6 +20,7 @@ let
       pkgs.no-mistakes
       pkgs.opencode
       pkgs.sqlite
+      pkgs.util-linux
     ];
     text = builtins.readFile ./no-mistakes-reconcile.sh;
   };

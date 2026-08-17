@@ -28,3 +28,5 @@ Short by design: context, decision, consequence.
 | [0020](0020-no-mistakes-integration.md) | no-mistakes policy, runtime, and skill ownership is explicit |
 | [0021](0021-omanixy-presentation-ownership.md) | Omanixy owns desktop presentation; Universe owns host capabilities and policy |
 | [0022](0022-runtime-opencode-model-discovery.md) | OpenCode runtime model discovery is generic and provider-scoped |
+| [0023](0023-codedb-generic-stale-index-gc.md) | CodeDB generic stale-index garbage collection owns arbitrary project cleanup |
+| [0024](0024-opencode-visibility-probe-isolated-database.md) | OpenCode visibility probes use disposable database state |
