@@ -185,7 +185,7 @@ discover_opencode() {
   if [[ ! -f $agents_skill && ! -f $claude_skill ]]; then
     die "OpenCode skill discovery has no expected no-mistakes skill root"
   fi
-  if ! output=$(cd /tmp && flock -w 30 "$HOME" timeout 10 opencode debug skill --pure 2>&1); then
+  if ! output=$(cd /tmp && OPENCODE_DB=:memory: timeout 10 opencode debug skill --pure 2>&1); then
     discovery_failure "$output" 'OpenCode skill discovery command failed: opencode debug skill --pure'
   fi
   if ! printf '%s\n' "$output" | awk \

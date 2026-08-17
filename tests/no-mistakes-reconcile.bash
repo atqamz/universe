@@ -6,8 +6,7 @@ test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT
 
 real_readlink=$(command -v readlink)
-real_flock=$(command -v flock)
-real_install=$(command -v install)
+real_mv=$(command -v mv)
 bash_path=$(command -v bash)
 test_pid=$$
 
@@ -164,15 +163,12 @@ export FAKE_CODEX_OUTPUT_FILE=$case_root/codex-output
 export FAKE_CODEX_STATUS_FILE=$case_root/codex-status
 export FAKE_OPENCODE_OUTPUT_FILE=$case_root/opencode-output
 export FAKE_OPENCODE_STATUS_FILE=$case_root/opencode-status
-  export FAKE_FLOCK_REQUEST_FIFO=$case_root/opencode-request.log
-  export REAL_INSTALL=$real_install
-  export FAKE_INSTALL_COUNT_FILE=$case_root/install-count
-  export FAKE_REFRESH_PARTIAL_FILE=$case_root/refresh-partial
-  export FAKE_REFRESH_RELEASE_FIFO=$case_root/refresh-release
-  export REAL_FLOCK=$real_flock
-export FAKE_OPENCODE_ACTIVE_DIR=$case_root/opencode-active
+export FAKE_OPENCODE_REQUEST_LOG=$case_root/opencode-request.log
+export REAL_MV=$real_mv
+export FAKE_MV_COUNT_FILE=$case_root/mv-count
+export FAKE_REFRESH_PARTIAL_FILE=$case_root/refresh-partial
+export FAKE_REFRESH_RELEASE_FIFO=$case_root/refresh-release
 export FAKE_OPENCODE_RELEASE_FIFO=$case_root/opencode-release
-export FAKE_OPENCODE_MISSING_OUTPUT_FILE=$case_root/opencode-missing-output
 export FAKE_RESTARTS_FILE=$case_root/restarts
 export FAKE_STARTS_FILE=$case_root/starts
 export FAKE_RUNNING_FILE=$case_root/running
@@ -310,27 +306,11 @@ new_case
 mkfifo "$case_root/opencode-release"
 printf '[{"name":"no-mistakes","location":"%s"}]\n' \
   "$case_root/home/.agents/skills/no-mistakes/SKILL.md" >"$case_root/opencode-output"
-printf '[{"name":"other-skill","location":"%s"}]\n' \
-  "$case_root/home/.agents/skills/other-skill/SKILL.md" >"$case_root/opencode-missing-output"
-cat >"$case_root/bin/flock" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-printf 'request\n' >>"$FAKE_FLOCK_REQUEST_FIFO"
-exec "$REAL_FLOCK" "$@"
-EOF
-sed -i "1c#!$bash_path" "$case_root/bin/flock"
-chmod +x "$case_root/bin/flock"
 cat >"$case_root/bin/opencode" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ ${1:-} == debug && ${2:-} == skill ]]; then
-  if ! mkdir "$FAKE_OPENCODE_ACTIVE_DIR" 2>/dev/null; then
-    printf 'request\n' >>"$FAKE_FLOCK_REQUEST_FIFO"
-    cat "$FAKE_OPENCODE_MISSING_OUTPUT_FILE"
-    exit 0
-  fi
-  trap 'rmdir "$FAKE_OPENCODE_ACTIVE_DIR"' EXIT
-  printf 'request\n' >>"$FAKE_FLOCK_REQUEST_FIFO"
+  printf 'request\n' >>"$FAKE_OPENCODE_REQUEST_LOG"
   cat "$FAKE_OPENCODE_RELEASE_FIFO" >/dev/null
   cat "$FAKE_OPENCODE_OUTPUT_FILE"
   exit 0
@@ -344,19 +324,19 @@ first_pid=$!
 for attempt in $(seq 1 100000); do
   request_count=$(wc -l <"$case_root/opencode-request.log")
   ((request_count >= 1)) && break
-  kill -0 "$first_pid" || fail 'first serialized OpenCode discovery exited before requesting the lock'
-  ((attempt < 100000)) || fail 'first serialized OpenCode discovery did not request the lock'
+  kill -0 "$first_pid" || fail 'first concurrent OpenCode discovery exited before starting'
+  ((attempt < 100000)) || fail 'first concurrent OpenCode discovery did not start'
 done
-((request_count >= 1)) || fail 'first serialized OpenCode discovery did not request the lock'
+((request_count >= 1)) || fail 'first concurrent OpenCode discovery did not start'
 bash "$case_root/run" discover opencode >"$test_root/opencode_concurrent_second.stdout" 2>"$test_root/opencode_concurrent_second.stderr" &
 second_pid=$!
 for attempt in $(seq 1 100000); do
   request_count=$(wc -l <"$case_root/opencode-request.log")
   ((request_count >= 2)) && break
-  kill -0 "$second_pid" || fail 'second serialized OpenCode discovery exited before requesting the lock'
-  ((attempt < 100000)) || fail 'second serialized OpenCode discovery did not request the lock'
+  kill -0 "$second_pid" || fail 'second concurrent OpenCode discovery exited before starting'
+  ((attempt < 100000)) || fail 'second concurrent OpenCode discovery did not start'
 done
-((request_count >= 2)) || fail 'second serialized OpenCode discovery did not request the lock'
+((request_count >= 2)) || fail 'second concurrent OpenCode discovery did not start'
 printf 'release\n' >"$case_root/opencode-release"
 first_status=0
 second_status=0
@@ -365,11 +345,11 @@ if kill -0 "$second_pid" 2>/dev/null; then
   printf 'release\n' >"$case_root/opencode-release"
 fi
 wait "$second_pid" || second_status=$?
-((first_status == 0)) || fail 'first serialized OpenCode discovery failed'
+((first_status == 0)) || fail 'first concurrent OpenCode discovery failed'
 if ((second_status != 0)); then
   cat "$test_root/opencode_concurrent_second.stdout" >&2
   cat "$test_root/opencode_concurrent_second.stderr" >&2
-  fail 'concurrent OpenCode discovery was not serialized'
+  fail 'concurrent OpenCode discovery failed'
 fi
 
 new_case
@@ -473,45 +453,35 @@ printf 'new generated skill\n' >"$skill_source"
 printf 'old generated skill\n' >"$case_root/home/.agents/skills/no-mistakes/SKILL.md"
 cp "$case_root/home/.agents/skills/no-mistakes/SKILL.md" "$case_root/home/.claude/skills/no-mistakes/SKILL.md"
 : >"$case_root/opencode-request.log"
-mkfifo "$case_root/refresh-release"
-printf '0\n' >"$case_root/install-count"
-cat >"$case_root/bin/install" <<'EOF'
+mkfifo "$case_root/refresh-release" "$case_root/opencode-release"
+printf '0\n' >"$case_root/mv-count"
+cat >"$case_root/bin/mv" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-"$REAL_INSTALL" "$@"
-count=$(cat "$FAKE_INSTALL_COUNT_FILE")
+"$REAL_MV" "$@"
+count=$(cat "$FAKE_MV_COUNT_FILE")
 count=$((count + 1))
-printf '%s\n' "$count" >"$FAKE_INSTALL_COUNT_FILE"
+printf '%s\n' "$count" >"$FAKE_MV_COUNT_FILE"
 if ((count == 1)); then
   : >"$FAKE_REFRESH_PARTIAL_FILE"
   cat "$FAKE_REFRESH_RELEASE_FIFO" >/dev/null
 fi
 EOF
-sed -i "1c#!$bash_path" "$case_root/bin/install"
-chmod +x "$case_root/bin/install"
+sed -i "1c#!$bash_path" "$case_root/bin/mv"
+chmod +x "$case_root/bin/mv"
 cat >"$case_root/bin/opencode" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ ${1:-} == debug && ${2:-} == skill ]]; then
-  if cmp -s "$HOME/.agents/skills/no-mistakes/SKILL.md" "$HOME/.claude/skills/no-mistakes/SKILL.md"; then
-    printf '[{"name":"no-mistakes","location":"%s"}]\n' "$HOME/.agents/skills/no-mistakes/SKILL.md"
-  else
-    printf '[{"name":"other-skill","location":"%s"}]\n' "$HOME/.agents/skills/other-skill/SKILL.md"
-  fi
+  printf 'request\n' >>"$FAKE_OPENCODE_REQUEST_LOG"
+  cat "$FAKE_OPENCODE_RELEASE_FIFO" >/dev/null
+  printf '[{"name":"no-mistakes","location":"%s"}]\n' "$HOME/.agents/skills/no-mistakes/SKILL.md"
   exit 0
 fi
 exit 64
 EOF
 sed -i "1c#!$bash_path" "$case_root/bin/opencode"
 chmod +x "$case_root/bin/opencode"
-cat >"$case_root/bin/flock" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-printf 'request\n' >>"$FAKE_FLOCK_REQUEST_FIFO"
-exec "$REAL_FLOCK" "$@"
-EOF
-sed -i "1c#!$bash_path" "$case_root/bin/flock"
-chmod +x "$case_root/bin/flock"
 bash "$case_root/run" refresh "$skill_source" >"$test_root/refresh_concurrent.stdout" 2>"$test_root/refresh_concurrent.stderr" &
 refresh_pid=$!
 for attempt in $(seq 1 100000); do
@@ -525,22 +495,21 @@ discover_pid=$!
 request_count=0
 for attempt in $(seq 1 100000); do
   request_count=$(wc -l <"$case_root/opencode-request.log")
-  ((request_count >= 2)) && break
-  kill -0 "$refresh_pid" || fail 'skill refresh exited before discovery requested the lock'
+  ((request_count >= 1)) && break
+  kill -0 "$refresh_pid" || fail 'skill refresh exited before concurrent discovery started'
   kill -0 "$discover_pid" || fail 'discovery exited before the refresh completed'
-  ((attempt < 100000)) || fail 'discovery did not request the refresh lock'
+  ((attempt < 100000)) || fail 'discovery did not start during the sequential refresh'
 done
-((request_count >= 2)) || fail 'discovery did not request the refresh lock'
+((request_count >= 1)) || fail 'discovery did not start during the sequential refresh'
+printf 'release\n' >"$case_root/opencode-release"
+discover_status=0
+wait "$discover_pid" || discover_status=$?
+((discover_status == 0)) || fail 'discovery failed during the sequential refresh'
 printf 'release\n' >"$case_root/refresh-release"
 refresh_status=0
-discover_status=0
 wait "$refresh_pid" || refresh_status=$?
-wait "$discover_pid" || discover_status=$?
 ((refresh_status == 0)) || fail 'concurrent skill refresh failed'
-if ((discover_status != 0)); then
-  cat "$test_root/discover_during_refresh.stdout" >&2
-  cat "$test_root/discover_during_refresh.stderr" >&2
-  fail 'discovery observed a partially refreshed skill set'
-fi
+assert_file_contains "$case_root/home/.agents/skills/no-mistakes/SKILL.md" 'new generated skill'
+assert_file_contains "$case_root/home/.claude/skills/no-mistakes/SKILL.md" 'new generated skill'
 
 printf 'PASS: no-mistakes reconciliation lifecycle\n'

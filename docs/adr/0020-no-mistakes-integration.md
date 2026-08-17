@@ -45,6 +45,8 @@ The check is intentionally limited to user scope: neutral `/tmp` excludes projec
 The installed `claude plugin init --help` wording remains a pinned-version `claude-skill-root-contract` regression check, not a runtime doctor predicate.
 Codex is checked through the read-only app-server `skills/list` method from `/tmp`, requiring an enabled user-scoped entry whose path is the `.agents` skill.
 OpenCode is checked through `opencode debug skill --pure` from `/tmp`, requiring a `no-mistakes` entry from either intended global root so its compatible duplicate visibility is valid.
+The reconciliation probe sets `OPENCODE_DB=:memory:` because the pinned command eagerly initializes its unrelated SQLite instance state before emitting skill JSON.
+The real home, configuration, and both canonical skill roots remain visible to that probe.
 No additional Codex or OpenCode skill copies are created.
 
 v1.51.1 has no machine-readable configuration validation command.

@@ -26,6 +26,12 @@ assert_output_contains() {
   grep -Fq "$expected" "$file" || fail "$file does not contain $expected"
 }
 
+assert_file_contains() {
+  local file=$1
+  local expected=$2
+  grep -Fqx "$expected" "$file" || fail "$file does not contain $expected"
+}
+
 new_case() {
   case_root=$(mktemp -d "$test_root/case.XXXXXX")
   export CODEDB_HOME="$case_root/codedb"
@@ -85,6 +91,18 @@ for index in no-marker empty-marker relative-marker unreadable-marker linked-mar
 done
 assert_exists "$CODEDB_HOME/projects/unrelated.txt"
 assert_exists "$case_root/external-index/project.txt"
+
+new_case
+external_marker="$case_root/external-marker"
+printf '%s\n' "$case_root/missing-marker-target" >"$external_marker"
+mkdir -p "$CODEDB_HOME/projects/regular-index"
+ln -s "$external_marker" "$CODEDB_HOME/projects/regular-index/project.txt"
+run_prune symlink_project_marker
+[[ -d $CODEDB_HOME/projects/regular-index ]] || fail 'regular index with a symlink marker was removed'
+[[ -L $CODEDB_HOME/projects/regular-index/project.txt ]] || fail 'symlink project marker was replaced'
+[[ $(readlink "$CODEDB_HOME/projects/regular-index/project.txt") == "$external_marker" ]] || fail 'symlink project marker target changed'
+assert_exists "$external_marker"
+assert_file_contains "$external_marker" "$case_root/missing-marker-target"
 
 new_case
 active_real="$case_root/active-real"
