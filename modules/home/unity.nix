@@ -12,6 +12,7 @@ let
         ffmpeg
         python3
         shared-mime-info
+        sqlite
       ];
   };
 
