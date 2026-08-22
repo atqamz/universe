@@ -31,11 +31,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "unity-cli";
-  version = "1.0.0-beta.5";
+  version = "1.0.0-beta.6";
 
   src = fetchurl {
     url = "https://public-cdn.cloud.unity3d.com/hub/prod/cli/${finalAttrs.version}/unity-linux-x64";
-    hash = "sha256-f7Dtvi5siJ04sJgsAwcThV7cqCw82gF1iwvVCj/9NWo=";
+    hash = "sha256-i1I/0C5R/STVgaiMT3SnVglOMIyOwNm5qMlfQj/Zw9w=";
   };
 
   nativeBuildInputs = [
