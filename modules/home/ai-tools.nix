@@ -25,21 +25,35 @@ let
         }
     '';
   };
+
+  claudeOx = pkgs.writeShellApplication {
+    name = "claude-ox";
+    runtimeInputs = [
+      claude
+      pkgs.pass
+    ];
+    text = builtins.readFile ./claude-ox.sh;
+  };
 in
 {
   home = {
     packages = with pkgs; [
       claude
+      claudeOx
       codex
       opencode
       inputs.treehouse.packages.${system}.default
       inputs.herdr.packages.${system}.default
       inputs.gw.packages.${system}.default
-      inputs.koma.packages.${system}.default
       rtk
       codedb
     ];
 
     sessionVariables.OPENCODE_DISABLE_AUTOUPDATE = "1";
+  };
+
+  universe.doctor = {
+    commands = [ "claude-ox" ];
+    paths = [ ".password-store/openrouter/api-key.gpg" ];
   };
 }

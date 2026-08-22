@@ -59,6 +59,12 @@ nix flake check
 
 The repo uses `nix-direnv`; Zed receives project tools such as `nixd` through the project environment as well as its declarative wrapper.
 
+## AI tools
+
+`claude` is the stock Claude Code CLI. `claude-ox` launches Claude Code through OpenRouter against `stealth/ox-alpha`; provision the key once with `pass insert openrouter/api-key`.
+The key is read at launch and stays out of the Nix store.
+A missing or unreadable entry fails `claude-ox`: it never falls back to Anthropic credentials, and the normal `claude` environment is never touched.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

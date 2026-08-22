@@ -174,6 +174,20 @@
                 bash ${../tests/codedb-prune.bash} ${../modules/home/codedb-prune.sh}
                 touch "$out"
               '';
+          claude-ox =
+            pkgs.runCommand "claude-ox-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  gnugrep
+                ];
+              }
+              ''
+                bash ${../tests/claude-ox.bash} ${../modules/home/claude-ox.sh}
+                touch "$out"
+              '';
           migration-doctor =
             pkgs.runCommand "migration-doctor-test"
               {
