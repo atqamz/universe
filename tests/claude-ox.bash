@@ -44,7 +44,8 @@ for arg in "$@"; do
 done
 for name in ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY \
   ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL \
-  ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL; do
+  ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL \
+  CLAUDE_CODE_MAX_CONTEXT_TOKENS; do
   printf '%s=%s\n' "$name" "${!name-}" >>"$CLAUDE_FAKE_ENV"
 done
 EOF
@@ -91,7 +92,8 @@ printf '%s\n' \
   "ANTHROPIC_DEFAULT_OPUS_MODEL=stealth/ox-alpha" \
   "ANTHROPIC_DEFAULT_SONNET_MODEL=stealth/ox-alpha" \
   "ANTHROPIC_DEFAULT_HAIKU_MODEL=stealth/ox-alpha" \
-  "CLAUDE_CODE_SUBAGENT_MODEL=stealth/ox-alpha" >"$test_root/expected.env"
+  "CLAUDE_CODE_SUBAGENT_MODEL=stealth/ox-alpha" \
+  "CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000" >"$test_root/expected.env"
 
 user_args=("some dir/" "-p" 'prompt with "quotes" and spaces' --dangerously-skip-permissions "")
 printf 'encrypted' >"$entry_file"

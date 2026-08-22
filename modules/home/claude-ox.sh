@@ -34,5 +34,6 @@ export ANTHROPIC_DEFAULT_OPUS_MODEL="stealth/ox-alpha"
 export ANTHROPIC_DEFAULT_SONNET_MODEL="stealth/ox-alpha"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="stealth/ox-alpha"
 export CLAUDE_CODE_SUBAGENT_MODEL="stealth/ox-alpha"
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
 
 exec claude --model "stealth/ox-alpha" "$@"
