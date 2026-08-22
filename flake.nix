@@ -58,11 +58,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    koma = {
-      url = "github:aula-id/koma";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     qmd = {
       url = "github:tobi/qmd/v2.5.3";
       inputs.nixpkgs.follows = "nixpkgs";

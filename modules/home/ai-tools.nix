@@ -45,7 +45,6 @@ in
       inputs.treehouse.packages.${system}.default
       inputs.herdr.packages.${system}.default
       inputs.gw.packages.${system}.default
-      inputs.koma.packages.${system}.default
       rtk
       codedb
     ];

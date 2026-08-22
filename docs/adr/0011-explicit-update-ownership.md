@@ -22,7 +22,6 @@ Compatibility shims are scoped to the program that requires them. They do not re
 OpenCode stays Nix-owned instead of bypassing the nixpkgs auto-update guard.
 The `skills` CLI invoked by `skills-sync` is version-pinned and runs only when that command is invoked deliberately.
 Claude's Bun-backed `node`/`npx` compatibility exists only in Claude's wrapper PATH.
-`koma` is the named exception to the disabled-self-update rule: it exposes no opt-out switch, so the rule is not to run `koma update` (`0014-koma-comes-from-its-upstream-flake.md`).
 `hand` at `~/.local/bin/hand` is a runtime-managed payload: Home Manager activation installs it only when absent, and `hand update` owns every subsequent overwrite and channel switch (`modules/home/hand.nix`).
 It is deliberately not a flake input, a `home.packages` entry, or a `nix profile install`, because those all make the path read-only, and `hand update` rewrites the binary in place both to update it and to select a release channel.
 The absent-only activation check is what keeps activation and `hand update` from fighting over the file on every switch; `universe.doctor.paths` is what reports the binary going missing.
