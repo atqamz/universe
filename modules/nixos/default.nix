@@ -8,6 +8,7 @@ _: {
     ./gaming.nix
     ./gpu.nix
     ./nix-ld.nix
+    ./omanixy.nix
     ./overlays.nix
     ./portal.nix
     ./power.nix

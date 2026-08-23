@@ -42,9 +42,6 @@ in
     udisks2.enable = true;
     gvfs.enable = true;
   };
-  security.polkit.enable = true;
-  security.pam.services.hyprlock = { };
-
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   environment.systemPackages = [ archiveManager ];

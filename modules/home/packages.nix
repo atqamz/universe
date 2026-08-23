@@ -8,6 +8,7 @@
       unzip
       p7zip
       unar
+      libnotify
       bun
       jq
       age

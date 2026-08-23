@@ -23,12 +23,10 @@ _: {
     ./hand.nix
     ./herdr.nix
     ./hypr.nix
-    ./lock.nix
     ./mise.nix
     ./nightlight.nix
     ./nix-access-token.nix
     ./notify-failure.nix
-    ./notifications.nix
     ./omanixy.nix
     ./packages.nix
     ./passmenu.nix

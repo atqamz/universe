@@ -15,6 +15,12 @@
       "screenshot"
       "weather"
     ];
+    security = {
+      lock.enable = true;
+      idle.enable = true;
+      polkit.agent.enable = true;
+      notifications.daemon.enable = true;
+    };
   };
 
   universe.doctor = {
