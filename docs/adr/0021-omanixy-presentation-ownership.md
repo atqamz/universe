@@ -18,3 +18,4 @@ Unsupported Quattro capability plugins remain disabled until Omanixy owns and va
 Replacing the presentation shell does not replace or duplicate Universe-owned host capability services.
 Shell state and global application styling remain separate: Universe and `dotfiles` use deterministic configuration rather than reading writable Omanixy runtime theme state.
 Native Quattro lock, notifications, polkit, idle, clipboard, media, brightness, and screenshot integrations remain upstream follow-up work where the pinned safety floor disables them.
+Upstream later made `omarchy.clipboard` feature-gated instead of statically disabled; Universe still excludes it by selecting the shell features without `clipboard`, because clipboard history ownership has not moved.

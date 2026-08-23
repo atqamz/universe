@@ -34,7 +34,7 @@
     };
 
     omanixy = {
-      url = "github:atqamz/omanixy/c756f85dc2ad546fa2cfbad1fdf3b51913bc6723";
+      url = "github:atqamz/omanixy/49cc7ad9e48d9e721f9ccfec6398c489c646bf0e";
     };
 
     zen-browser = {
