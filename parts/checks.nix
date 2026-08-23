@@ -229,6 +229,7 @@
                 expect_link .config/opencode/AGENTS.md universe/configs/dotagents/AGENTS.md
                 expect_link .codex/AGENTS.md universe/configs/dotagents/AGENTS.md
                 expect_link .config/opencode/dynamic-models universe/configs/dotagents/opencode/dynamic-models
+                expect_link .config/omarchy/shell.toml universe/configs/dotfiles/omarchy/shell.toml
                 expect_link .claude/settings.json universe/configs/dotagents/claude/settings.json
                 expect_link .config/opencode/opencode.json universe/configs/dotagents/opencode/opencode.json
                 expect_link .no-mistakes/config.yaml universe/configs/dotagents/no-mistakes/config.yaml

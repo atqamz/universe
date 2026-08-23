@@ -15,6 +15,10 @@ in
       source = link "${root}/herdr/config.toml";
       force = true;
     };
+    ".config/omarchy/shell.toml" = {
+      source = link "${root}/omarchy/shell.toml";
+      force = true;
+    };
     ".local/share/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/autoexec.cfg".source =
       link "${root}/cs2/autoexec.cfg";
     ".config/rtk/filters.toml".source = link "${root}/rtk/filters.toml";
@@ -28,6 +32,7 @@ in
     symlinks = {
       ".config/foot/foot.ini" = "universe/configs/dotfiles/foot/foot.ini";
       ".config/hypr" = "universe/configs/dotfiles/hypr";
+      ".config/omarchy/shell.toml" = "universe/configs/dotfiles/omarchy/shell.toml";
     };
   };
 }
