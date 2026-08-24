@@ -17,6 +17,7 @@
                   --replace-fail '#!/usr/bin/env bash' '#!${final.bash}/bin/bash'
                 substituteInPlace no_mistakes_gate_test.go \
                   --replace-fail '#!/usr/bin/env bash' '#!${final.bash}/bin/bash'
+                patch -p1 < ${../../modules/nixos/treehouse-ignore-zombies.patch}
               '';
             });
       }
