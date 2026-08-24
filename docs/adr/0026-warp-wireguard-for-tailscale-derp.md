@@ -1,4 +1,4 @@
-# 0026 — WARP uses WireGuard to preserve Tailscale DERP connectivity
+# 0026 - WARP uses WireGuard to preserve Tailscale DERP connectivity
 
 ## Context
 
