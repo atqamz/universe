@@ -33,8 +33,10 @@ in
       "multi-user.target"
       "cloudflare-warp.service"
     ];
-    startLimitIntervalSec = 60;
-    startLimitBurst = 6;
+    unitConfig = {
+      StartLimitIntervalSec = 60;
+      StartLimitBurst = 6;
+    };
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${warpWireGuard}/bin/warp-wireguard";
