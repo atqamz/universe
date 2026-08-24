@@ -9,6 +9,7 @@ let
   installed = units: lib.attrNames (lib.filterAttrs (_: unit: wantedBy unit != [ ]) units);
   manifest = {
     host = osConfig.networking.hostName;
+    warpCli = "${osConfig.services.cloudflare-warp.package}/bin/warp-cli";
     zenProfileWriter = osConfig.universe.roles.zenProfileWriter;
     timers = installed config.systemd.user.timers;
     services = installed config.systemd.user.services;

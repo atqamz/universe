@@ -124,6 +124,23 @@ _: {
             fi
           }
 
+          check_warp_wireguard() {
+            local warp_cli="$1"
+            local settings
+
+            if ! settings="$("$warp_cli" settings 2>&1)"; then
+              printf '%s\n' "$settings"
+              return 1
+            fi
+
+            if printf '%s\n' "$settings" | grep -qi 'protocol.*WireGuard'; then
+              return 0
+            fi
+
+            printf '%s\n' "$settings"
+            return 1
+          }
+
           check_opencode_providers() {
             while IFS=$'\t' read -r provider npm base_url require_models; do
               [ -n "$provider" ] || continue
@@ -281,10 +298,14 @@ _: {
             exit 1
           fi
 
+          warp_cli="$(jq -r '.warpCli' "$manifest")"
+
           check "user atqa exists" id -u atqa
           check "user atqa is in wheel" bash -c 'groups atqa | grep -q wheel'
           check "tailscale daemon running" systemctl is-active tailscaled
           check "tailscale up" tailscale status
+          check "WARP CLI owned by Nix exists" test -x "$warp_cli"
+          check_with_diagnostics "WARP tunnel protocol is WireGuard" check_warp_wireguard "$warp_cli"
           check "ssh daemon active" systemctl is-active sshd
           # shellcheck disable=SC2016
           check "github ssh auth" bash -c 'SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket) ssh -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
