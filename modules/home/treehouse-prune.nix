@@ -1,6 +1,5 @@
 {
   pkgs,
-  inputs,
   config,
   ...
 }:
@@ -8,7 +7,7 @@ let
   prune = pkgs.writeShellApplication {
     name = "treehouse-prune";
     runtimeInputs = [
-      inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.treehouse
       pkgs.git
     ];
     text = ''

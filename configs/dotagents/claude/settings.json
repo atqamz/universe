@@ -32,6 +32,6 @@
     "type": "command",
     "command": "bash \"/home/atqa/.claude/statusline-command.sh\""
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true
 }

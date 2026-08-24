@@ -42,7 +42,7 @@ in
       claudeOx
       codex
       opencode
-      inputs.treehouse.packages.${system}.default
+      treehouse
       inputs.herdr.packages.${system}.default
       inputs.gw.packages.${system}.default
       rtk
