@@ -30,3 +30,4 @@ Short by design: context, decision, consequence.
 | [0023](0023-codedb-generic-stale-index-gc.md) | CodeDB generic stale-index garbage collection owns arbitrary project cleanup |
 | [0024](0024-opencode-visibility-probe-isolated-database.md) | OpenCode visibility probes use disposable database state |
 | [0025](0025-treehouse-nix-test-compatibility.md) | Latest Treehouse tests remain compatible with the Nix sandbox |
+| [0026](0026-warp-wireguard-for-tailscale-derp.md) | WARP uses WireGuard to preserve Tailscale DERP connectivity |
