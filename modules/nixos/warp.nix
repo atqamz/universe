@@ -4,17 +4,17 @@ let
     name = "warp-wireguard";
     runtimeInputs = [
       config.services.cloudflare-warp.package
-      pkgs.gnugrep
+      pkgs.jq
     ];
     text = ''
-      settings="$(warp-cli settings)"
-      if printf '%s\n' "$settings" | grep -qi 'protocol.*WireGuard'; then
+      settings="$(warp-cli --json settings)"
+      if jq -e '.settings.warp_tunnel_protocol == "wireguard"' <<<"$settings" >/dev/null; then
         exit 0
       fi
 
       warp-cli tunnel protocol set WireGuard
-      settings="$(warp-cli settings)"
-      if ! printf '%s\n' "$settings" | grep -qi 'protocol.*WireGuard'; then
+      settings="$(warp-cli --json settings)"
+      if ! jq -e '.settings.warp_tunnel_protocol == "wireguard"' <<<"$settings" >/dev/null; then
         printf '%s\n' "$settings" >&2
         echo "WARP tunnel protocol is not WireGuard after reconciliation" >&2
         exit 1

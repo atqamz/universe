@@ -8,7 +8,7 @@ The failure reproduced against the Tailscale IP directly, excluding MagicDNS and
 
 ## Decision
 
-Universe pins the Cloudflare WARP tunnel protocol to WireGuard. `modules/nixos/warp.nix` owns an idempotent systemd reconciler that first observes the effective protocol, changes it only when necessary, verifies the result, runs immediately as part of normal system activation and whenever `cloudflare-warp.service` starts, and periodically rechecks the invariant.
+Universe pins the Cloudflare WARP tunnel protocol to WireGuard. `modules/nixos/warp.nix` owns an idempotent systemd reconciler that first observes the effective protocol through `warp-cli --json settings`, changes it only when necessary, verifies the result, runs immediately as part of normal system activation and whenever `cloudflare-warp.service` starts, and periodically rechecks the invariant.
 
 Transient daemon or IPC failures get a bounded fast retry budget from systemd: at most six starts inside sixty seconds with five seconds between restart attempts. The periodic five-minute timer remains the long-horizon retry owner after that burst, preventing an unavailable WARP daemon from causing an unbounded restart loop or journal churn.
 

@@ -124,16 +124,17 @@ _: {
             fi
           }
 
+          # shellcheck disable=SC2329
           check_warp_wireguard() {
             local warp_cli="$1"
             local settings
 
-            if ! settings="$("$warp_cli" settings 2>&1)"; then
+            if ! settings="$("$warp_cli" --json settings 2>&1)"; then
               printf '%s\n' "$settings"
               return 1
             fi
 
-            if printf '%s\n' "$settings" | grep -qi 'protocol.*WireGuard'; then
+            if jq -e '.settings.warp_tunnel_protocol == "wireguard"' <<<"$settings" >/dev/null; then
               return 0
             fi
 
