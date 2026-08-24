@@ -1,13 +1,8 @@
 diff --git a/internal/process/detect.go b/internal/process/detect.go
 --- a/internal/process/detect.go
 +++ b/internal/process/detect.go
-@@ -56,6 +56,10 @@ func FindProcessesInWorktree(worktreePath string) ([]ProcessInfo, error) {
- 	var result []ProcessInfo
- 
- 	for _, p := range procs {
-+		status, err := p.Status()
-+		if err == nil && len(status) > 0 && (status[0] == "Z" || strings.EqualFold(status[0], "zombie")) {
-+			continue
-+		}
- 		cwd, err := p.Cwd()
- 		if err != nil {
+@@ -58,0 +59,4 @@ func FindProcessesInWorktree(worktreePath string) ([]ProcessInfo, error) {
++	status, err := p.Status()
++	if err == nil && len(status) > 0 && (status[0] == "Z" || strings.EqualFold(status[0], "zombie")) {
++		continue
++	}
