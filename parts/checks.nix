@@ -83,6 +83,21 @@
       opencodeDoctorMissing = pkgs.writeShellScriptBin "opencode-doctor-missing" ''
         printf '%s\n' '{"provider":{}}'
       '';
+      fakeWarpCli = pkgs.writeShellScriptBin "warp-cli" (builtins.readFile ../tests/fake-warp-cli.bash);
+      warpTestSystem = inputs.nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = [
+          "${inputs.nixpkgs}/nixos/modules/services/networking/cloudflare-warp.nix"
+          ../modules/nixos/universe.nix
+          ../modules/nixos/warp.nix
+          {
+            nixpkgs.pkgs = pkgs;
+            services.cloudflare-warp.package = fakeWarpCli;
+          }
+        ];
+      };
+      warpTestExec =
+        warpTestSystem.config.systemd.services.cloudflare-warp-wireguard.serviceConfig.ExecStart;
     in
     {
       pre-commit.settings = {
@@ -100,6 +115,9 @@
 
       checks =
         assert lib.elem "gpu-undervolt" sfx14.config.universe.doctor.activeSystemServices;
+        assert
+          sfx14.config.systemd.services.cloudflare-warp-wireguard.unitConfig.StartLimitIntervalSec == 300;
+        assert sfx14.config.systemd.services.cloudflare-warp-wireguard.unitConfig.StartLimitBurst == 6;
         lib.mapAttrs' (
           name: host: lib.nameValuePair "toplevel-${name}" host.config.system.build.toplevel
         ) self.nixosConfigurations
@@ -140,6 +158,19 @@
               ''
                 bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
                 touch $out
+              '';
+          warp-wireguard =
+            pkgs.runCommand "warp-wireguard-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                ];
+              }
+              ''
+                bash ${../tests/warp-wireguard.bash} ${lib.escapeShellArg warpTestExec}
+                touch "$out"
               '';
           opencode-no-mistakes =
             pkgs.runCommand "opencode-no-mistakes-test"

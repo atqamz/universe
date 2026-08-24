@@ -18,7 +18,7 @@
       systemTimers = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
-        description = "System timers that must be enabled for the host to be healthy.";
+        description = "System timers that must be enabled and active for the host to be healthy.";
       };
     };
   };

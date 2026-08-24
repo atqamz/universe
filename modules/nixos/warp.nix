@@ -34,7 +34,7 @@ in
       "cloudflare-warp.service"
     ];
     unitConfig = {
-      StartLimitIntervalSec = 60;
+      StartLimitIntervalSec = 300;
       StartLimitBurst = 6;
     };
     serviceConfig = {

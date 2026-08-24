@@ -129,7 +129,7 @@ _: {
             local warp_cli="$1"
             local settings
 
-            if ! settings="$("$warp_cli" --json settings 2>&1)"; then
+            if ! settings="$("$warp_cli" --json settings)"; then
               printf '%s\n' "$settings"
               return 1
             fi
@@ -469,6 +469,7 @@ _: {
           while IFS= read -r unit; do
             [ -n "$unit" ] || continue
             check "$unit.timer enabled" systemctl is-enabled "$unit.timer"
+            check "$unit.timer active" systemctl is-active "$unit.timer"
           done < <(jq -r '.systemTimers[]' "$manifest")
 
           while IFS=$'\t' read -r path target; do
