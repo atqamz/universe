@@ -22,6 +22,10 @@ in
     ".config/opencode/AGENTS.md".source = link "${root}/AGENTS.md";
 
     ".codex/AGENTS.md".source = link "${root}/AGENTS.md";
+
+    ".agents/skills/gh-ops".source = link "${root}/skills/gh-ops";
+    ".claude/skills/gh-ops".source = link "${root}/skills/gh-ops";
+    ".codex/skills/gh-ops".source = link "${root}/skills/gh-ops";
   }
   // lib.mapAttrs (_path: target: { source = link "${home}/${target}"; }) dynamicModelLinks;
 
@@ -59,6 +63,9 @@ in
         ".claude/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
         ".config/opencode/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
         ".codex/AGENTS.md" = "universe/configs/dotagents/AGENTS.md";
+        ".agents/skills/gh-ops" = "universe/configs/dotagents/skills/gh-ops";
+        ".claude/skills/gh-ops" = "universe/configs/dotagents/skills/gh-ops";
+        ".codex/skills/gh-ops" = "universe/configs/dotagents/skills/gh-ops";
       };
   };
 }

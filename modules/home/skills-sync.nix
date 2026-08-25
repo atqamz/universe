@@ -16,6 +16,8 @@ let
   ];
 
   sources = {
+    "DietrichGebert/ponytail" = [ "ponytail" ];
+    "JuliusBrussee/caveman" = [ "caveman" ];
     "atqamz/gw" = [ "google-workspace" ];
     "obra/superpowers" = [
       "brainstorming"
