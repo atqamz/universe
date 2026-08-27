@@ -1,3 +1,6 @@
 _: {
-  imports = [ ./runner.nix ];
+  imports = [
+    ./ci-storage.nix
+    ./runner.nix
+  ];
 }
