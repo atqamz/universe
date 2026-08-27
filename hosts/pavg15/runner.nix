@@ -134,8 +134,10 @@ let
     '';
   };
 
-  tokenRefresh = pkgs.writeShellApplication {
-    name = "github-runner-token-refresh";
+  # Both the runner registration token and the mirror fetch credential start from
+  # the same App installation token, so the JWT signing lives in exactly one place.
+  appToken = pkgs.writeShellApplication {
+    name = "github-app-token";
     runtimeInputs = with pkgs; [
       coreutils
       curl
@@ -146,17 +148,12 @@ let
       PEM_PATH=''${1:?pem path}
       APP_ID=''${2:?app id}
       INSTALLATION_ID=''${3:?installation id}
-      ORG_NAME=''${4:?organization name}
-      OUT_FILE=''${5:?output env file}
 
-      [[ -r "$PEM_PATH" ]] || { echo "refresh: PEM not readable at $PEM_PATH" >&2; exit 1; }
+      [[ -r "$PEM_PATH" ]] || { echo "token: PEM not readable at $PEM_PATH" >&2; exit 1; }
 
       umask 077
-      out_dir=$(dirname "$OUT_FILE")
-      mkdir -p "$out_dir"
       resp=$(mktemp)
-      tmp_env=$(mktemp "''${out_dir}/.token.XXXXXX")
-      trap 'rm -f "$resp" "$tmp_env"' EXIT
+      trap 'rm -f "$resp"' EXIT
 
       b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
 
@@ -165,18 +162,42 @@ let
       claims=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' "$((now - 30))" "$((now + 540))" "$APP_ID" | b64url)
       signing_input="''${header}.''${claims}"
       sig=$(printf '%s' "$signing_input" | openssl dgst -sha256 -sign "$PEM_PATH" -binary | b64url)
-      jwt="''${signing_input}.''${sig}"
 
       http=$(curl -sS -o "$resp" -w '%{http_code}' -X POST \
         --retry 3 --retry-delay 5 --retry-connrefused --max-time 30 \
-        -H "Authorization: Bearer ''${jwt}" \
+        -H "Authorization: Bearer ''${signing_input}.''${sig}" \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         -H "User-Agent: universe-github-runner" \
         "https://api.github.com/app/installations/''${INSTALLATION_ID}/access_tokens")
-      jwt=""
-      [[ "$http" = 201 ]] || { echo "refresh: access token request returned HTTP $http" >&2; exit 1; }
-      access_token=$(jq -er '.token' "$resp")
+      [[ "$http" = 201 ]] || { echo "token: access token request returned HTTP $http" >&2; exit 1; }
+      jq -er '.token' "$resp"
+    '';
+  };
+
+  tokenRefresh = pkgs.writeShellApplication {
+    name = "github-runner-token-refresh";
+    runtimeInputs = with pkgs; [
+      appToken
+      coreutils
+      curl
+      jq
+    ];
+    text = ''
+      PEM_PATH=''${1:?pem path}
+      APP_ID=''${2:?app id}
+      INSTALLATION_ID=''${3:?installation id}
+      ORG_NAME=''${4:?organization name}
+      OUT_FILE=''${5:?output env file}
+
+      umask 077
+      out_dir=$(dirname "$OUT_FILE")
+      mkdir -p "$out_dir"
+      resp=$(mktemp)
+      tmp_env=$(mktemp "''${out_dir}/.token.XXXXXX")
+      trap 'rm -f "$resp" "$tmp_env"' EXIT
+
+      access_token=$(github-app-token "$PEM_PATH" "$APP_ID" "$INSTALLATION_ID")
 
       http=$(curl -sS -o "$resp" -w '%{http_code}' -X POST \
         --retry 3 --retry-delay 5 --retry-connrefused --max-time 30 \
