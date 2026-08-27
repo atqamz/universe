@@ -7,7 +7,18 @@
 let
   orgName = "yes2games";
   hostLabel = "pavg15";
-  image = "docker.io/myoung34/github-runner:2.335.1-ubuntu-noble@sha256:65e12ef91693ca37a71ecf2194260e4c9903b89cea3b2312d545469b62680fc8";
+  imageRepo = "docker.io/myoung34/github-runner";
+  imageTag = "2.335.1-ubuntu-noble";
+  imageDigest = "sha256:65e12ef91693ca37a71ecf2194260e4c9903b89cea3b2312d545469b62680fc8";
+
+  # Eight rootless users mean eight container stores, so pulling from the registry
+  # costs eight downloads of the same image over one home WiFi link. The image is
+  # fetched once into a local archive instead and loaded per runner from disk. The
+  # local tag carries the digest, so a bump invalidates it without a manual edit.
+  localImage = "localhost/github-runner:${imageTag}-${lib.substring 7 12 imageDigest}";
+  imageCacheDir = "${hotRoot}/image-cache";
+  imageArchive = "${imageCacheDir}/runner.tar";
+  imageStamp = "${imageCacheDir}/digest";
   appPemPath = "/var/lib/github-runner/app-key.pem";
   appId = "4084467";
   installationId = "141074387";
@@ -205,6 +216,36 @@ let
       ''
     ) runners;
   };
+
+  imageCache = pkgs.writeShellApplication {
+    name = "github-runner-image-cache";
+    runtimeInputs = with pkgs; [
+      coreutils
+      skopeo
+    ];
+    text = ''
+      if [ -f ${imageStamp} ] && [ -f ${imageArchive} ] \
+        && [ "$(cat ${imageStamp})" = "${imageDigest}" ]; then
+        exit 0
+      fi
+      install -d -m 0755 ${imageCacheDir}
+      skopeo copy --retry-times 5 \
+        docker://${imageRepo}@${imageDigest} docker-archive:${imageArchive}.new:${localImage}
+      chmod 0644 ${imageArchive}.new
+      mv -f ${imageArchive}.new ${imageArchive}
+      printf '%s' '${imageDigest}' > ${imageStamp}
+      chmod 0644 ${imageStamp}
+    '';
+  };
+
+  imageLoad = pkgs.writeShellApplication {
+    name = "github-runner-image-load";
+    runtimeInputs = [ pkgs.podman ];
+    text = ''
+      podman image exists ${localImage} || podman load -i ${imageArchive}
+    '';
+  };
+
   cleanupFor =
     r:
     pkgs.writeShellApplication {
@@ -226,8 +267,14 @@ let
 
   mkPodmanService = r: {
     description = "Rootless Podman API for ${userFor r}";
-    after = [ "github-runner-dirs.service" ];
-    requires = [ "github-runner-dirs.service" ];
+    after = [
+      "github-runner-dirs.service"
+      "github-runner-image-cache.service"
+    ];
+    requires = [
+      "github-runner-dirs.service"
+      "github-runner-image-cache.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     path = [ wrapperPath ];
     unitConfig.RequiresMountsFor = [ r.stateRoot ];
@@ -253,12 +300,14 @@ let
     after = [
       "network-online.target"
       "github-runner-dirs.service"
+      "github-runner-image-cache.service"
       "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
     wants = [ "network-online.target" ];
     requires = [
       "github-runner-dirs.service"
+      "github-runner-image-cache.service"
       "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
@@ -279,12 +328,16 @@ let
       RestartSec = "10s";
       CPUWeight = r.cpuWeight;
       Nice = r.nice;
-      ExecStartPre = "-${pkgs.podman}/bin/podman rm -f ${containerFor r}";
+      ExecStartPre = [
+        "-${pkgs.podman}/bin/podman rm -f ${containerFor r}"
+        "${imageLoad}/bin/github-runner-image-load"
+      ];
       ExecStart = lib.concatStringsSep " " (
         [
-          # The image is pinned by digest, so `missing` pulls exactly once per bump
-          # instead of re-downloading it on every ephemeral restart.
-          "${pkgs.podman}/bin/podman run --rm --replace --pull=missing --name ${containerFor r}"
+          # The image comes from the on-disk archive the cache oneshot wrote, never
+          # from the registry: `never` turns a missing local image into a fast
+          # failure instead of a silent eight-fold download.
+          "${pkgs.podman}/bin/podman run --rm --replace --pull=never --name ${containerFor r}"
           "--env-file ${tokenEnv}"
           "-e RUNNER_SCOPE=org"
           "-e ORG_NAME=${orgName}"
@@ -311,7 +364,7 @@ let
         ++ [
           "--memory=${r.memory}"
           "--cpus=${r.cpus}"
-          image
+          localImage
         ]
       );
     }
@@ -381,6 +434,19 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = "${runnerDirs}/bin/github-runner-dirs";
+        };
+      };
+
+      github-runner-image-cache = {
+        description = "Fetch the GitHub Actions runner image into a local archive";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        unitConfig.RequiresMountsFor = [ hotRoot ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${imageCache}/bin/github-runner-image-cache";
         };
       };
 
