@@ -122,6 +122,85 @@ let
     }
   );
 
+  # One bare mirror per repository, refreshed once for all eight runners instead of
+  # each runner fetching the same objects over the same home WiFi link. A job's
+  # workdir is seeded from it with `git clone --shared`, so actions/checkout finds a
+  # repository that already has the refs and borrows the objects, and fetches only
+  # the commits that landed since the last refresh.
+  mirrorRoot = "${hotRoot}/mirrors";
+  mirroredRepos = [ "nsr" ];
+  startedHookInContainer = "/opt/runner-hooks/job-started.sh";
+
+  mirrorRefresh = pkgs.writeShellApplication {
+    name = "github-runner-mirror-refresh";
+    runtimeInputs = with pkgs; [
+      appToken
+      coreutils
+      git
+    ];
+    text = ''
+      token=$(github-app-token ${appPemPath} ${appId} ${installationId})
+      # Passed through the environment rather than the remote URL or the command
+      # line: the URL would persist the credential into the mirror's config, and an
+      # argument would show up in every ps listing on the box.
+      GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$token" | base64 -w0)"
+      token=""
+      export GIT_CONFIG_COUNT=1
+      export GIT_CONFIG_KEY_0=http.extraheader
+      export GIT_CONFIG_VALUE_0
+
+      install -d -m 0755 ${mirrorRoot}
+      repos=(${lib.concatMapStringsSep " " lib.escapeShellArg mirroredRepos})
+      for repo in "''${repos[@]}"; do
+        dir=${mirrorRoot}/$repo.git
+        if [ -d "$dir" ]; then
+          git -C "$dir" remote update --prune
+        else
+          rm -rf "$dir.new"
+          git clone --mirror "https://github.com/${orgName}/$repo.git" "$dir.new"
+          # A borrowing clone references objects this repository owns, so it must
+          # never garbage-collect them out from under a running job.
+          git -C "$dir.new" config gc.auto 0
+          git -C "$dir.new" config gc.pruneExpire never
+          mv "$dir.new" "$dir"
+        fi
+        chmod -R a+rX "$dir"
+      done
+    '';
+  };
+
+  jobStartedHook = pkgs.writeTextFile {
+    name = "github-runner-job-started";
+    executable = true;
+    text = ''
+      #!/bin/sh
+      set -u
+      [ -n "''${GITHUB_REPOSITORY:-}" ] || exit 0
+      [ -n "''${RUNNER_WORKDIR:-}" ] || exit 0
+      name=''${GITHUB_REPOSITORY##*/}
+      mirror=${mirrorRoot}/$name.git
+      dir=$RUNNER_WORKDIR/$name/$name
+      [ -d "$mirror" ] || exit 0
+      # Anything already on disk belongs to actions/checkout, which knows how to
+      # reuse or replace it. Seeding only ever fills an empty slot.
+      [ -z "$(ls -A "$dir" 2>/dev/null)" ] || exit 0
+      mkdir -p "$dir" || exit 0
+      # The mirror is bind-mounted from a root-owned host directory, which maps to
+      # `nobody` inside the rootless user namespace, so git rejects it as dubious
+      # ownership. `safe.directory` is honoured only from global or system scope,
+      # never from `-c` or the environment, hence the throwaway global config.
+      cfg=$RUNNER_WORKDIR/.git-mirror-config
+      printf '[safe]\n\tdirectory = %s\n' "$mirror" > "$cfg" || exit 0
+      if ! GIT_CONFIG_GLOBAL=$cfg git clone --shared --no-checkout "$mirror" "$dir"; then
+        rm -f "$cfg"
+        rm -rf "$dir"
+        exit 0
+      fi
+      rm -f "$cfg"
+      git -C "$dir" remote set-url origin "https://github.com/$GITHUB_REPOSITORY"
+    '';
+  };
+
   jobCompletedHook = pkgs.writeTextFile {
     name = "github-runner-job-completed";
     executable = true;
@@ -225,7 +304,10 @@ let
   runnerDirs = pkgs.writeShellApplication {
     name = "github-runner-dirs";
     runtimeInputs = [ pkgs.coreutils ];
-    text = lib.concatMapStringsSep "\n" (
+    text = ''
+      install -d -m 0755 ${mirrorRoot}
+    ''
+    + lib.concatMapStringsSep "\n" (
       r:
       ''
         install -d -o ${userFor r} -g ${userFor r} -m 0750 ${baseFor r} ${homeFor r} ${workFor r}
@@ -371,6 +453,9 @@ let
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
+          "-e ACTIONS_RUNNER_HOOK_JOB_STARTED=${startedHookInContainer}"
+        ]
+        ++ [
           "-v ${socketFor r}:/var/run/docker.sock"
           # Container actions run `docker run -v` from inside the runner, so the
           # workdir must exist at the same path on the host.
@@ -380,6 +465,12 @@ let
         ++ lib.optional r.warm "-v ${containerRootFor r}:/root"
         ++ [
           "-v ${claudeTrust}:/root/.claude.json:ro"
+        ]
+        ++ [
+          # Seeding writes a `.git/objects/info/alternates` holding an absolute path,
+          # so the mirror has to answer to the same path inside the container too.
+          "-v ${mirrorRoot}:${mirrorRoot}:ro"
+          "-v ${jobStartedHook}:${startedHookInContainer}:ro"
         ]
         ++ lib.optional (!r.warm) "-v ${jobCompletedHook}:${hookInContainer}:ro"
         ++ [
@@ -471,6 +562,17 @@ in
         };
       };
 
+      github-runner-mirror-refresh = {
+        description = "Refresh bare mirrors of the mirrored repositories";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        unitConfig.RequiresMountsFor = [ hotRoot ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${mirrorRefresh}/bin/github-runner-mirror-refresh";
+        };
+      };
+
       github-runner-token-refresh = {
         description = "Mint short-lived registration tokens for ${hostLabel} runners";
         after = [ "network-online.target" ];
@@ -496,6 +598,19 @@ in
         value = mkRunnerService r;
       }) runners
     );
+
+    timers.github-runner-mirror-refresh = {
+      description = "Periodic refresh of the repository mirrors";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        # The first fetch is a full clone of a repository measured in gigabytes, so
+        # it waits for the boot to settle rather than racing the runners for the link.
+        OnBootSec = "10min";
+        OnUnitActiveSec = "30min";
+        RandomizedDelaySec = "2min";
+        Persistent = true;
+      };
+    };
 
     timers.github-runner-token-refresh = {
       description = "Refresh ${hostLabel} runner registration tokens";
