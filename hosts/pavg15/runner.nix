@@ -136,6 +136,7 @@ let
   homeFor = r: "${baseFor r}/home";
   containerRootFor = r: "${baseFor r}/root";
   workFor = r: "${baseFor r}/work";
+  toolCacheFor = r: "${toolCacheRoot}/${r.name}";
   runtimeFor = r: "${userFor r}-podman";
   socketFor = r: "/run/${runtimeFor r}/podman.sock";
   runnerNameFor = r: "${hostLabel}-${r.name}";
@@ -171,8 +172,32 @@ let
   # repository that already has the refs and borrows the objects, and fetches only
   # the commits that landed since the last refresh.
   mirrorRoot = "${hotRoot}/mirrors";
-  mirroredRepos = [ "nsr" ];
+  mirroredRepos = [
+    "nsr"
+    "butler"
+    "nsr-nakama"
+    "nsr-webtransport"
+    "rujak"
+  ];
   startedHookInContainer = "/opt/runner-hooks/job-started.sh";
+
+  # The Actions runner puts its tool cache at `<workdir>/_tool` unless
+  # `AGENT_TOOLSDIRECTORY` says otherwise, and the light class wipes everything under
+  # its workdir after every job - so every `setup-node`, `setup-go` and `setup-deno`
+  # downloaded its toolchain again on every single run. Measured at 55 s per job for
+  # `denoland/setup-deno` against near zero on a GitHub-hosted runner, which has the
+  # toolchains in its image. Pointing the variable at a host directory takes the cache
+  # out of the workdir, so it survives both the wipe and a container restart.
+  #
+  # One directory per runner rather than one shared by all eight. Sharing would save
+  # five of the six first downloads and cost a race: `@actions/tool-cache` copies into
+  # `<tool>/<version>` and only then writes the `.complete` marker beside it, so two
+  # jobs installing the same missing version concurrently - which is exactly what a
+  # matrix of five jobs does - can have one rewriting files the other has already
+  # published. Per-runner, a version is fetched at most eight times ever instead of
+  # once per job, and nothing can corrupt anyone else's copy.
+  toolCacheRoot = "${hotRoot}/toolcache";
+  toolCacheInContainer = "/opt/hostedtoolcache";
 
   # The runner image is the minimal `myoung34/github-runner`, not the GitHub-hosted
   # `ubuntu-latest` image with its several hundred preinstalled toolchains, so a
@@ -241,21 +266,35 @@ let
 
       install -d -m 0755 ${mirrorRoot}
       repos=(${lib.concatMapStringsSep " " lib.escapeShellArg mirroredRepos})
+      # Each repository is refreshed in a subshell so one that has been renamed, made
+      # private to another installation, or simply is unreachable this minute costs
+      # only its own mirror. The others were the whole point of doing this once for
+      # the fleet, and a job whose mirror is missing falls back to a plain clone.
+      failed=0
       for repo in "''${repos[@]}"; do
         dir=${mirrorRoot}/$repo.git
-        if [ -d "$dir" ]; then
-          git -C "$dir" remote update --prune
-        else
-          rm -rf "$dir.new"
-          git clone --mirror "https://github.com/${orgName}/$repo.git" "$dir.new"
-          # A borrowing clone references objects this repository owns, so it must
-          # never garbage-collect them out from under a running job.
-          git -C "$dir.new" config gc.auto 0
-          git -C "$dir.new" config gc.pruneExpire never
-          mv "$dir.new" "$dir"
+        if ! (
+          set -e
+          if [ -d "$dir" ]; then
+            git -C "$dir" remote update --prune
+          else
+            rm -rf "$dir.new"
+            git clone --mirror "https://github.com/${orgName}/$repo.git" "$dir.new"
+            # A borrowing clone references objects this repository owns, so it must
+            # never garbage-collect them out from under a running job.
+            git -C "$dir.new" config gc.auto 0
+            git -C "$dir.new" config gc.pruneExpire never
+            mv "$dir.new" "$dir"
+          fi
+          chmod -R a+rX "$dir"
+        ); then
+          echo "mirror refresh failed for $repo" >&2
+          failed=$((failed + 1))
         fi
-        chmod -R a+rX "$dir"
       done
+      # Non-zero only if every mirror failed, which is a credential or network fault
+      # rather than one repository's problem, and worth surfacing as a failed unit.
+      [ "$failed" -lt "''${#repos[@]}" ]
     '';
   };
 
@@ -395,12 +434,13 @@ let
     name = "github-runner-dirs";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      install -d -m 0755 ${mirrorRoot} ${editorRoot}
+      install -d -m 0755 ${mirrorRoot} ${editorRoot} ${toolCacheRoot}
     ''
     + lib.concatMapStringsSep "\n" (
       r:
       ''
         install -d -o ${userFor r} -g ${userFor r} -m 0750 ${baseFor r} ${homeFor r} ${workFor r}
+        install -d -o ${userFor r} -g ${userFor r} -m 0750 ${toolCacheFor r}
       ''
       + lib.optionalString r.warm ''
         install -d -o ${userFor r} -g ${userFor r} -m 0750 ${containerRootFor r}
@@ -647,6 +687,7 @@ let
           "-e DOTNET_ROOT=${ciToolsInContainer}"
           "-e DOTNET_CLI_TELEMETRY_OPTOUT=1"
           "-e DOTNET_NOLOGO=1"
+          "-e AGENT_TOOLSDIRECTORY=${toolCacheInContainer}"
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
@@ -672,6 +713,7 @@ let
           # Seeding writes a `.git/objects/info/alternates` holding an absolute path,
           # so the mirror has to answer to the same path inside the container too.
           "-v ${mirrorRoot}:${mirrorRoot}:ro"
+          "-v ${toolCacheFor r}:${toolCacheInContainer}"
           "-v ${ciTools}:${ciToolsInContainer}:ro"
           "-v /nix/store:/nix/store:ro"
           "-v ${jobStartedHook}:${startedHookInContainer}:ro"
