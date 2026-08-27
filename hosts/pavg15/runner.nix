@@ -131,6 +131,53 @@ let
   mirroredRepos = [ "nsr" ];
   startedHookInContainer = "/opt/runner-hooks/job-started.sh";
 
+  # The runner image is the minimal `myoung34/github-runner`, not the GitHub-hosted
+  # `ubuntu-latest` image with its several hundred preinstalled toolchains, so a
+  # workflow that calls a tool by bare name finds nothing. The gap is filled from
+  # the host's own store rather than by rebuilding the image: the tools stay
+  # declarative, a new one is one line here, and nothing has to be fetched over
+  # WiFi. /nix/store rides along read-only because every one of these binaries
+  # resolves its interpreter and libraries back into it.
+  ciTools = pkgs.buildEnv {
+    name = "pavg15-ci-tools";
+    paths = [
+      pkgs.shellcheck
+      # nsr compiles Unity's generated csproj without an Editor on the fast path.
+      # Both SDKs, because the GitHub-hosted image carries both and nothing in the
+      # repo pins which one the generated project asks for.
+      (pkgs.dotnetCorePackages.combinePackages [
+        pkgs.dotnetCorePackages.sdk_8_0
+        pkgs.dotnetCorePackages.sdk_9_0
+      ])
+    ];
+  };
+  ciToolsInContainer = "/opt/ci-tools";
+
+  # Unity's CLI is a driver, not an installer: `unity install` hands the work to the
+  # Unity Hub, an Electron AppImage this container cannot run - no /dev/fuse to mount
+  # it, no D-Bus, no display - so it gives up after a fixed 60 s having downloaded
+  # nothing at all. It reads an Editor that is simply present on disk, though:
+  # `unity editors --installed` scans the install path rather than any Hub state. So
+  # the Editor is fetched straight from Unity's CDN here, once for the whole fleet,
+  # and the Hub never enters the picture. Unpacking each module archive at the Editor
+  # root is also what lands it where the Editor looks, which is the defect nsr's own
+  # unity_cli_repair_modules.sh exists to undo after the beta installer nests it one
+  # tree too deep.
+  editorRoot = "${hotRoot}/editors";
+  editorInContainer = "/root/Unity/Hub/Editor";
+  unityEditors = [
+    {
+      version = "6000.3.16f1";
+      changeset = "a56f230f6470";
+      # The two nsr asks for: `webgl` for the client builds, `linux-server` for the
+      # dedicated server image. Named as the CDN spells them, not as the Hub does.
+      modules = [
+        "WebGL"
+        "Linux-Server"
+      ];
+    }
+  ];
+
   mirrorRefresh = pkgs.writeShellApplication {
     name = "github-runner-mirror-refresh";
     runtimeInputs = with pkgs; [
@@ -305,7 +352,7 @@ let
     name = "github-runner-dirs";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      install -d -m 0755 ${mirrorRoot}
+      install -d -m 0755 ${mirrorRoot} ${editorRoot}
     ''
     + lib.concatMapStringsSep "\n" (
       r:
@@ -318,6 +365,57 @@ let
           || install -o ${userFor r} -g ${userFor r} -m 0640 /dev/null ${containerRootFor r}/.claude.json
       ''
     ) runners;
+  };
+
+  editorCache = pkgs.writeShellApplication {
+    name = "github-runner-editor-cache";
+    runtimeInputs = with pkgs; [
+      coreutils
+      curl
+      gnutar
+      xz
+    ];
+    text = ''
+      base=https://download.unity3d.com/download_unity
+
+      seed() {
+        version=$1
+        changeset=$2
+        shift 2
+        want="$changeset $*"
+        if [ "$(cat ${editorRoot}/"$version"/.seeded 2>/dev/null)" = "$want" ]; then
+          echo "editor $version already seeded"
+          return 0
+        fi
+
+        staging=${editorRoot}/.staging-$version
+        rm -rf "$staging"
+        install -d -m 0755 "$staging"
+
+        echo "fetching editor $version ($changeset)"
+        curl -fsSL --retry 5 --retry-all-errors \
+          "$base/$changeset/LinuxEditorInstaller/Unity.tar.xz" | tar -xJ -C "$staging"
+        for module in "$@"; do
+          echo "fetching module $module"
+          curl -fsSL --retry 5 --retry-all-errors \
+            "$base/$changeset/LinuxEditorTargetInstaller/UnitySetup-$module-Support-for-Editor-$version.tar.xz" \
+            | tar -xJ -C "$staging"
+        done
+
+        # The whole point of the seed is that the CLI finds this exact path, so a
+        # layout change upstream should fail here rather than an hour into a build.
+        test -x "$staging/Editor/Unity"
+        printf '%s' "$want" > "$staging/.seeded"
+        chmod -R a+rX "$staging"
+        rm -rf ${editorRoot}/"$version"
+        mv "$staging" ${editorRoot}/"$version"
+        echo "editor $version seeded"
+      }
+
+    ''
+    + lib.concatMapStringsSep "\n" (
+      e: "seed ${e.version} ${e.changeset} ${lib.concatStringsSep " " e.modules}"
+    ) unityEditors;
   };
 
   imageCache = pkgs.writeShellApplication {
@@ -450,6 +548,12 @@ let
           "-e DISABLE_AUTO_UPDATE=true"
           "-e DISABLE_AUTOMATIC_DEREGISTRATION=true"
           "-e RUNNER_WORKDIR=${workFor r}"
+          # Prepended, not replaced: the suffix is the image's own PATH, and the
+          # runner's entrypoint needs it intact.
+          "-e PATH=${ciToolsInContainer}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          "-e DOTNET_ROOT=${ciToolsInContainer}"
+          "-e DOTNET_CLI_TELEMETRY_OPTOUT=1"
+          "-e DOTNET_NOLOGO=1"
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
@@ -465,11 +569,18 @@ let
         ++ lib.optional r.warm "-v ${containerRootFor r}:/root"
         ++ [
           "-v ${claudeTrust}:/root/.claude.json:ro"
+          # Overlaid rather than read-only: one seeded tree is shared by every runner,
+          # and `unity license activate` and the Editor itself both write inside it.
+          # Writes land in a per-container upper layer that dies with the container,
+          # so no runner can corrupt the copy the others read.
+          "-v ${editorRoot}:${editorInContainer}:O"
         ]
         ++ [
           # Seeding writes a `.git/objects/info/alternates` holding an absolute path,
           # so the mirror has to answer to the same path inside the container too.
           "-v ${mirrorRoot}:${mirrorRoot}:ro"
+          "-v ${ciTools}:${ciToolsInContainer}:ro"
+          "-v /nix/store:/nix/store:ro"
           "-v ${jobStartedHook}:${startedHookInContainer}:ro"
         ]
         ++ lib.optional (!r.warm) "-v ${jobCompletedHook}:${hookInContainer}:ro"
@@ -559,6 +670,28 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = "${imageCache}/bin/github-runner-image-cache";
+        };
+      };
+
+      github-runner-editor-cache = {
+        description = "Seed the Unity Editors the fleet builds against";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "network-online.target"
+          "github-runner-dirs.service"
+        ];
+        wants = [ "network-online.target" ];
+        requires = [ "github-runner-dirs.service" ];
+        unitConfig.RequiresMountsFor = [ hotRoot ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${editorCache}/bin/github-runner-editor-cache";
+          # Around 13 GB over a home WiFi link on a cold host. Deliberately not a
+          # dependency of the runner units: a runner that starts without an Editor
+          # fails one Unity job with a clear error, where blocking startup would
+          # hold the whole fleet - light runners included - for hours.
+          TimeoutStartSec = "6h";
         };
       };
 
