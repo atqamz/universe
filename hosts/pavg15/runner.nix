@@ -35,11 +35,13 @@ let
   # which re-appends /bin, so it takes the parent of security.wrapperDir.
   wrapperPath = dirOf config.security.wrapperDir;
 
-  # A warm runner keeps its container HOME between jobs, so `unity install` finds
-  # the Editor already there and `actions/checkout` fetches into an existing clone
-  # instead of downloading ~13 GB of Editor and re-cloning 20 GB of nsr every run.
-  # That state is cross-job, so warm runners are only safe on repositories that
-  # take no fork pull requests; the light class stays disposable for everything else.
+  # A warm runner keeps its container HOME and workdir between jobs, so
+  # `actions/checkout` fetches into an existing clone and `git lfs` finds most of its
+  # objects already there instead of re-cloning nsr and pulling 4.7 GB of LFS content
+  # every run. The Editor is seeded on the host and shared read-only with every class,
+  # so it costs a warm runner nothing. The carried state is cross-job, so warm runners
+  # are only safe on repositories that take no fork pull requests; the light class
+  # stays disposable for everything else.
   classes = {
     heavy = {
       count = 2;
