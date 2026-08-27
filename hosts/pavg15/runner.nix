@@ -19,6 +19,47 @@ let
   imageCacheDir = "${hotRoot}/image-cache";
   imageArchive = "${imageCacheDir}/runner.tar";
   imageStamp = "${imageCacheDir}/digest";
+
+  # The Unity Editor is a desktop binary even when every job runs it with
+  # `-batchmode -nographics`: GTK, cairo, pango and X11 sit in its DT_NEEDED list, so
+  # it does not load at all without them. A GitHub-hosted runner has them because its
+  # image carries a desktop's worth of libraries; this one has to be told. They come
+  # from Ubuntu rather than from nixpkgs because they are loaded into a process linked
+  # against Ubuntu's glibc, where a library built against a newer one fails its symbol
+  # lookups.
+  unityRuntimePackages = [
+    "libasound2t64"
+    "libatk1.0-0t64"
+    "libcairo-gobject2"
+    "libcairo2"
+    "libdbus-1-3"
+    "libdecor-0-0"
+    "libfontconfig1"
+    "libgbm1"
+    "libgdk-pixbuf-2.0-0"
+    "libgl1"
+    "libglu1-mesa"
+    "libgtk-3-0t64"
+    "libharfbuzz0b"
+    "libnss3"
+    "libpango-1.0-0"
+    "libpangocairo-1.0-0"
+    "libwayland-client0"
+    "libwayland-cursor0"
+    "libx11-6"
+    "libxcursor1"
+    "libxi6"
+    "libxrandr2"
+    "libxtst6"
+  ];
+  # Tagged with the package list as well as the base digest, so editing the list is
+  # enough to make every runner rebuild and reload rather than keep an image whose
+  # name no longer describes it.
+  unityImage = "localhost/github-runner-unity:${imageTag}-${lib.substring 7 12 imageDigest}-${
+    lib.substring 0 12 (builtins.hashString "sha256" (lib.concatStringsSep " " unityRuntimePackages))
+  }";
+  unityArchive = "${imageCacheDir}/runner-unity.tar";
+  unityStamp = "${imageCacheDir}/unity-image";
   appPemPath = "/var/lib/github-runner/app-key.pem";
   appId = "4084467";
   installationId = "141074387";
@@ -458,11 +499,44 @@ let
     '';
   };
 
+  unityContainerfile = pkgs.writeText "runner-unity.Containerfile" ''
+    FROM ${localImage}
+    RUN apt-get update \
+      && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ${lib.concatStringsSep " " unityRuntimePackages} \
+      && rm -rf /var/lib/apt/lists/*
+  '';
+
+  # Built once as root and handed to the eight rootless stores as an archive, for the
+  # same reason the base image is: one apt transaction over this link, not eight.
+  unityImageBuild = pkgs.writeShellApplication {
+    name = "github-runner-unity-image-build";
+    runtimeInputs = with pkgs; [
+      coreutils
+      podman
+    ];
+    text = ''
+      if [ -f ${unityStamp} ] && [ -f ${unityArchive} ] \
+        && [ "$(cat ${unityStamp})" = "${unityImage}" ]; then
+        exit 0
+      fi
+      install -d -m 0755 ${imageCacheDir}
+      podman image exists ${localImage} || podman load -i ${imageArchive}
+      podman build --pull=never -t ${unityImage} \
+        -f ${unityContainerfile} ${pkgs.emptyDirectory}
+      podman save -o ${unityArchive}.new ${unityImage}
+      chmod 0644 ${unityArchive}.new
+      mv -f ${unityArchive}.new ${unityArchive}
+      printf '%s' '${unityImage}' > ${unityStamp}
+      chmod 0644 ${unityStamp}
+    '';
+  };
+
   imageLoad = pkgs.writeShellApplication {
     name = "github-runner-image-load";
     runtimeInputs = [ pkgs.podman ];
     text = ''
-      podman image exists ${localImage} || podman load -i ${imageArchive}
+      podman image exists ${unityImage} || podman load -i ${unityArchive}
     '';
   };
 
@@ -489,11 +563,11 @@ let
     description = "Rootless Podman API for ${userFor r}";
     after = [
       "github-runner-dirs.service"
-      "github-runner-image-cache.service"
+      "github-runner-unity-image.service"
     ];
     requires = [
       "github-runner-dirs.service"
-      "github-runner-image-cache.service"
+      "github-runner-unity-image.service"
     ];
     wantedBy = [ "multi-user.target" ];
     path = [ wrapperPath ];
@@ -520,14 +594,14 @@ let
     after = [
       "network-online.target"
       "github-runner-dirs.service"
-      "github-runner-image-cache.service"
+      "github-runner-unity-image.service"
       "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
     wants = [ "network-online.target" ];
     requires = [
       "github-runner-dirs.service"
-      "github-runner-image-cache.service"
+      "github-runner-unity-image.service"
       "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
@@ -606,7 +680,7 @@ let
         ++ [
           "--memory=${r.memory}"
           "--cpus=${r.cpus}"
-          localImage
+          unityImage
         ]
       );
     }
@@ -689,6 +763,24 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = "${imageCache}/bin/github-runner-image-cache";
+        };
+      };
+
+      github-runner-unity-image = {
+        description = "Add the Unity Editor's runtime libraries to the runner image";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "network-online.target"
+          "github-runner-image-cache.service"
+        ];
+        wants = [ "network-online.target" ];
+        requires = [ "github-runner-image-cache.service" ];
+        unitConfig.RequiresMountsFor = [ hotRoot ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${unityImageBuild}/bin/github-runner-unity-image-build";
+          TimeoutStartSec = "1h";
         };
       };
 
