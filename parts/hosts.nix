@@ -2,8 +2,8 @@
 let
   mkHost = import ../lib/mkHost.nix { inherit inputs; };
 
-  hostVariants = name: {
-    "${name}" = mkHost { hostname = name; };
+  hostVariants = name: args: {
+    "${name}" = mkHost ({ hostname = name; } // args);
     "${name}-minimal" = mkHost {
       hostname = name;
       minimal = true;
@@ -11,5 +11,5 @@ let
   };
 in
 {
-  flake.nixosConfigurations = hostVariants "pavg15" // hostVariants "sfx14";
+  flake.nixosConfigurations = hostVariants "pavg15" { server = true; } // hostVariants "sfx14" { };
 }
