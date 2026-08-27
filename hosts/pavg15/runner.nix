@@ -137,6 +137,7 @@ let
   containerRootFor = r: "${baseFor r}/root";
   workFor = r: "${baseFor r}/work";
   toolCacheFor = r: "${toolCacheRoot}/${r.name}";
+  denoCacheFor = r: "${denoCacheRoot}/${r.name}";
   runtimeFor = r: "${userFor r}-podman";
   socketFor = r: "/run/${runtimeFor r}/podman.sock";
   runnerNameFor = r: "${hostLabel}-${r.name}";
@@ -198,6 +199,25 @@ let
   # once per job, and nothing can corrupt anyone else's copy.
   toolCacheRoot = "${hotRoot}/toolcache";
   toolCacheInContainer = "/opt/hostedtoolcache";
+
+  # Deno's own module cache, held on the host for the same reason the tool cache is.
+  # Removing `cache: true` from the routed `setup-deno` steps takes away the only
+  # thing that carried `deno.lock`'s dependency closure between jobs, so without a
+  # persistent `DENO_DIR` every job would fetch the closure again from the network.
+  #
+  # The GitHub Actions cache service is not merely a slow store from here, it is an
+  # availability risk. Measured twice on rujak's `qualify`: the two jobs that set
+  # `cache: true` both reported a cache hit, then failed the restore with "The
+  # operation cannot be completed in timeout" about two minutes in, then sat inside
+  # the same step until `timeout-minutes: 10` cancelled them. Every job in the same
+  # run without `cache: true` finished in 15 to 90 seconds. A self-hosted runner is
+  # closer to its own disk than to GitHub, so the disk is where the cache belongs.
+  #
+  # Per-runner rather than shared, matching `toolCacheRoot`: Deno takes a lock per
+  # module it writes, but eight ephemeral containers sharing one tree still serialise
+  # on it for no benefit once each runner has its own warm copy.
+  denoCacheRoot = "${hotRoot}/denocache";
+  denoCacheInContainer = "/opt/denocache";
 
   # The runner image is the minimal `myoung34/github-runner`, not the GitHub-hosted
   # `ubuntu-latest` image with its several hundred preinstalled toolchains, so a
@@ -434,13 +454,13 @@ let
     name = "github-runner-dirs";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      install -d -m 0755 ${mirrorRoot} ${editorRoot} ${toolCacheRoot}
+      install -d -m 0755 ${mirrorRoot} ${editorRoot} ${toolCacheRoot} ${denoCacheRoot}
     ''
     + lib.concatMapStringsSep "\n" (
       r:
       ''
         install -d -o ${userFor r} -g ${userFor r} -m 0750 ${baseFor r} ${homeFor r} ${workFor r}
-        install -d -o ${userFor r} -g ${userFor r} -m 0750 ${toolCacheFor r}
+        install -d -o ${userFor r} -g ${userFor r} -m 0750 ${toolCacheFor r} ${denoCacheFor r}
       ''
       + lib.optionalString r.warm ''
         install -d -o ${userFor r} -g ${userFor r} -m 0750 ${containerRootFor r}
@@ -688,6 +708,7 @@ let
           "-e DOTNET_CLI_TELEMETRY_OPTOUT=1"
           "-e DOTNET_NOLOGO=1"
           "-e AGENT_TOOLSDIRECTORY=${toolCacheInContainer}"
+          "-e DENO_DIR=${denoCacheInContainer}"
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
@@ -714,6 +735,7 @@ let
           # so the mirror has to answer to the same path inside the container too.
           "-v ${mirrorRoot}:${mirrorRoot}:ro"
           "-v ${toolCacheFor r}:${toolCacheInContainer}"
+          "-v ${denoCacheFor r}:${denoCacheInContainer}"
           "-v ${ciTools}:${ciToolsInContainer}:ro"
           "-v /nix/store:/nix/store:ro"
           "-v ${jobStartedHook}:${startedHookInContainer}:ro"
