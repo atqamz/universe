@@ -378,6 +378,21 @@ let
     text = ''
       base=https://download.unity3d.com/download_unity
 
+      # Downloaded to a file rather than piped into tar. This runs over a 2 MB/s home
+      # WiFi link, where a 4 GB transfer that drops has to resume where it stopped; a
+      # retry on a pipe restarts the archive from byte zero with tar mid-stream.
+      fetch() {
+        url=$1
+        into=$2
+        file=$3/''${url##*/}
+        # A file already complete answers 416 to the resume request, which is success
+        # as far as this is concerned. `xz -t` is what decides whether the bytes on
+        # disk are a whole archive.
+        curl -fL --retry 10 --retry-all-errors --retry-delay 5 -C - -o "$file" "$url" || true
+        xz -t "$file"
+        tar -xJf "$file" -C "$into"
+      }
+
       seed() {
         version=$1
         changeset=$2
@@ -388,18 +403,18 @@ let
           return 0
         fi
 
+        cache=${editorRoot}/.cache-$version
         staging=${editorRoot}/.staging-$version
+        install -d -m 0755 "$cache"
         rm -rf "$staging"
         install -d -m 0755 "$staging"
 
         echo "fetching editor $version ($changeset)"
-        curl -fsSL --retry 5 --retry-all-errors \
-          "$base/$changeset/LinuxEditorInstaller/Unity.tar.xz" | tar -xJ -C "$staging"
+        fetch "$base/$changeset/LinuxEditorInstaller/Unity.tar.xz" "$staging" "$cache"
         for module in "$@"; do
           echo "fetching module $module"
-          curl -fsSL --retry 5 --retry-all-errors \
-            "$base/$changeset/LinuxEditorTargetInstaller/UnitySetup-$module-Support-for-Editor-$version.tar.xz" \
-            | tar -xJ -C "$staging"
+          fetch "$base/$changeset/LinuxEditorTargetInstaller/UnitySetup-$module-Support-for-Editor-$version.tar.xz" \
+            "$staging" "$cache"
         done
 
         # The whole point of the seed is that the CLI finds this exact path, so a
@@ -409,6 +424,8 @@ let
         chmod -R a+rX "$staging"
         rm -rf ${editorRoot}/"$version"
         mv "$staging" ${editorRoot}/"$version"
+        # The archives exist only to survive an interrupted download.
+        rm -rf "$cache"
         echo "editor $version seeded"
       }
 
@@ -675,7 +692,9 @@ in
 
       github-runner-editor-cache = {
         description = "Seed the Unity Editors the fleet builds against";
-        wantedBy = [ "multi-user.target" ];
+        # Started by its timer rather than multi-user.target, so a transfer that
+        # drops halfway is retried and resumed instead of leaving the fleet without
+        # an Editor until the next boot.
         after = [
           "network-online.target"
           "github-runner-dirs.service"
@@ -685,7 +704,6 @@ in
         unitConfig.RequiresMountsFor = [ hotRoot ];
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
           ExecStart = "${editorCache}/bin/github-runner-editor-cache";
           # Around 13 GB over a home WiFi link on a cold host. Deliberately not a
           # dependency of the runner units: a runner that starts without an Editor
@@ -732,27 +750,44 @@ in
       }) runners
     );
 
-    timers.github-runner-mirror-refresh = {
-      description = "Periodic refresh of the repository mirrors";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        # The first fetch is a full clone of a repository measured in gigabytes, so
-        # it waits for the boot to settle rather than racing the runners for the link.
-        OnBootSec = "10min";
-        OnUnitActiveSec = "30min";
-        RandomizedDelaySec = "2min";
-        Persistent = true;
+    timers = {
+      github-runner-editor-cache = {
+        description = "Seed or resume the Unity Editor download";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          # Same reasoning as the mirror: gigabytes over a link the runners also use,
+          # so it waits for the boot to settle. The half-hour beat is what turns a
+          # dropped transfer into a resumed one; the seed stamp makes every run after
+          # the first a no-op.
+          OnBootSec = "15min";
+          OnUnitActiveSec = "30min";
+          RandomizedDelaySec = "2min";
+          Persistent = true;
+        };
       };
-    };
 
-    timers.github-runner-token-refresh = {
-      description = "Refresh ${hostLabel} runner registration tokens";
-      wantedBy = [ "timers.target" ];
-      unitConfig.ConditionPathExists = appPemPath;
-      timerConfig = {
-        OnActiveSec = "1min";
-        OnUnitActiveSec = "20min";
-        AccuracySec = "1min";
+      github-runner-mirror-refresh = {
+        description = "Periodic refresh of the repository mirrors";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          # The first fetch is a full clone of a repository measured in gigabytes, so
+          # it waits for the boot to settle rather than racing the runners for the link.
+          OnBootSec = "10min";
+          OnUnitActiveSec = "30min";
+          RandomizedDelaySec = "2min";
+          Persistent = true;
+        };
+      };
+
+      github-runner-token-refresh = {
+        description = "Refresh ${hostLabel} runner registration tokens";
+        wantedBy = [ "timers.target" ];
+        unitConfig.ConditionPathExists = appPemPath;
+        timerConfig = {
+          OnActiveSec = "1min";
+          OnUnitActiveSec = "20min";
+          AccuracySec = "1min";
+        };
       };
     };
   };
