@@ -7,7 +7,7 @@ description: GitHub operations discipline for branches, commits, issues, pull re
 
 ## 分支
 
-Trunk-based。自default分支`<issue#>-<slug>`，枝命短促，工畢即併。clone自upstream者從其舊俗。
+Trunk-based。自default分支，枝命短促，工畢即併。issue所生者冠其號為`<issue#>-<slug>`，餘則徑以`<slug>`，勿為命枝而創issue。clone自upstream者從其舊俗。
 
 ## 提交
 
