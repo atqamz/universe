@@ -37,4 +37,8 @@ Trunk-based。自default分支`<issue#>-<slug>`，枝命短促，工畢即併。
 
 `gh pr merge --merge`或`--squash`擇一，中間commit雜者squash；`--rebase`永不用。
 
+stack者`gh pr merge`不受，改用`gh stack merge <PR> --yes --squash`：自下而上諸PR一舉俱入，成敗與共，base retarget歸GitHub，毋逐級rebase再候check。`gh pr create --base <枝>`即成stack，GitHub別予編號，故PR/issue之號有闕；他session所建者，`gh stack checkout <PR>`取之。
+
+base既移而rebase，一作一revert相消之commit對必skip，勿解其衝突：解則revert重演，new base於彼諸檔之改盡沒。畢以`git diff --stat <base>..HEAD`驗淨差。
+
 Post-merge每合必行：`gh issue view N --repo owner/repo --json state -q .state`驗之，仍開則`gh issue close N -c "landed in #PR"`；遠近branch俱刪。auto-close不可恃，驗以防漏。
