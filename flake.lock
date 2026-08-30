@@ -218,17 +218,17 @@
         "quickshell": "quickshell"
       },
       "locked": {
-        "lastModified": 1788003527,
-        "narHash": "sha256-ziYT24izR3i3SGuYYlwnpLv8rxeSea8b7ypMXwYEKLY=",
+        "lastModified": 1788026659,
+        "narHash": "sha256-Cq+2JDgU2AR92Z/Hw5d/RXf4j9I3cSbTUasGTfnt3Cs=",
         "owner": "atqamz",
         "repo": "omanixy",
-        "rev": "918113d8d6ca0f7c7ae70d587459188b1697ba79",
+        "rev": "c8f87110ec1d4a05fde28d6e8061f315f60b3db4",
         "type": "github"
       },
       "original": {
         "owner": "atqamz",
         "repo": "omanixy",
-        "rev": "918113d8d6ca0f7c7ae70d587459188b1697ba79",
+        "rev": "c8f87110ec1d4a05fde28d6e8061f315f60b3db4",
         "type": "github"
       }
     },
