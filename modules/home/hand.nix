@@ -8,7 +8,7 @@
 let
   enabled = osConfig.universe.capabilities.handFleet;
 
-  channel = "edge";
+  channel = "stable";
 
   asset = "hand-linux-amd64.tar.gz";
 
@@ -92,6 +92,10 @@ lib.mkIf enabled {
   home.activation.handInstall = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${install}/bin/hand-install "${target}"
   '';
+
+  # hand lives outside the Nix store because `hand update` owns the file, so nothing
+  # else puts its directory on PATH.
+  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   universe.doctor.paths = [ ".local/bin/hand" ];
 }
