@@ -122,8 +122,14 @@ appears only after the full config is applied in step 8.
 ## 6. First login
 
 The injected host key lets `sops-nix` decrypt `atqa-password` on first boot. At
-the text console, log in as `atqa` with the initial password (`1234`); change it
-after.
+the text console, log in as `atqa` with the initial password, then change it
+immediately with `passwd`.
+
+The initial password is deliberately not written here: this repo is public, and a
+literal in a public runbook stays readable long after the password is changed.
+It is whatever `modules/nixos/secrets/atqa-password.sops.yaml` currently hashes.
+If you do not have it, do not guess - use the recovery below, which does not need
+it.
 
 If login fails, from a TTY:
 
