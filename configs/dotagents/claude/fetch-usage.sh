@@ -18,6 +18,10 @@ USAGE_API_TIMEOUT=5
 
 ensure_cache_dir() {
   mkdir -p "$CACHE_DIR" 2>/dev/null || true
+  # The token cache below holds a live OAuth access token, so the directory is
+  # owner-only. chmod as well as mkdir: a directory created by an older version
+  # of this script is already 755.
+  chmod 700 "$CACHE_DIR" 2>/dev/null || true
 }
 
 now() { date +%s; }
@@ -45,8 +49,13 @@ get_usage_token() {
   [[ -n $token && $token != "null" ]] || return 1
 
   ensure_cache_dir
-  echo "$token" >"$TOKEN_CACHE_FILE" 2>/dev/null
-  echo "$token"
+  # umask for the create, chmod for a file an older version already left at 644.
+  (
+    umask 077
+    printf '%s\n' "$token" >"$TOKEN_CACHE_FILE"
+  ) 2>/dev/null
+  chmod 600 "$TOKEN_CACHE_FILE" 2>/dev/null || true
+  printf '%s\n' "$token"
 }
 
 read_active_lock() {
