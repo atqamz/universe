@@ -14,7 +14,7 @@ Short by design: context, decision, consequence.
 | [0006](0006-minimal-host-variants.md) | Every host gets a genuinely minimal variant |
 | [0007](0007-no-comments-in-nix.md) | Nix files carry no comments; rationale lives here |
 | [0008](0008-unity-uses-one-shared-fhs-runtime.md) | Unity uses one shared FHS runtime for every entry point |
-| [0009](0009-gpu-benchmarks-fetch-unversioned-urls.md) | GPU benchmarks are quarantined in their own module |
+| [0009](0009-gpu-benchmarks-fetch-unversioned-urls.md) | OCCT is quarantined in its own module |
 | [0010](0010-host-capabilities-not-hostname-flags.md) | Shared modules consume capabilities, not hostname flags |
 | [0011](0011-explicit-update-ownership.md) | Every mutable artifact has one update owner |
 | [0012](0012-automation-failures-are-observable.md) | Automation distinguishes skips from failures |

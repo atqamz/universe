@@ -109,7 +109,7 @@ Daemon reconciliation defers while a no-mistakes run is pending or running, reco
 - Which terminal or presentation-shell action a keybind launches is owned by `configs/dotfiles`; Universe owns only enablement and WezTerm's declarative config. A terminal role change lands in `configs/dotfiles` first and is applied here only after that change merges.
 - Direnv is owned by Home Manager with `nix-direnv`; do not hand-write `direnv.toml` or separately install `direnv` in the generic package list.
 - Unity Hub, CLI, and Editor wrappers share `unityBase.fhsEnv`; `programs.nix-ld` remains for other foreign binaries and is not imported by minimal host variants (`docs/adr/0008-unity-uses-one-shared-fhs-runtime.md`).
-- OCCT/FurMark stay quarantined in `modules/home/benchmarks.nix` because their vendor URLs are unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
+- OCCT stays quarantined in `modules/home/benchmarks.nix` because its vendor URL is unversioned (`docs/adr/0009-gpu-benchmarks-fetch-unversioned-urls.md`).
 
 ### qmd
 

@@ -33,7 +33,7 @@
       libreoffice
       tmux
       neovim
-      handy
+      hyprwhspr
       starship
       zoxide
       eza
