@@ -79,6 +79,7 @@
         pkgs.writeText "opencode-doctor-manifest.json"
           self.nixosConfigurations.sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
       noMistakesSkill = sfx14.config.home-manager.users.atqa.universe.doctor.noMistakes.skillSource;
+      noMistakesReconcile = sfx14.config.home-manager.users.atqa.universe.doctor.noMistakes.reconcile;
       opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
         printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
       '';
@@ -160,6 +161,16 @@
               ''
                 bash ${../tests/no-mistakes-reconcile.bash} ${../modules/home/no-mistakes-reconcile.sh}
                 touch $out
+              '';
+          no-mistakes-runtime-inputs =
+            pkgs.runCommand "no-mistakes-runtime-inputs-test"
+              {
+                nativeBuildInputs = [ pkgs.gnugrep ];
+              }
+              ''
+                grep -Fq '${pkgs.systemd}/bin' ${noMistakesReconcile}
+                grep -Fq '${pkgs.procps}/bin' ${noMistakesReconcile}
+                touch "$out"
               '';
           warp-wireguard =
             pkgs.runCommand "warp-wireguard-test"

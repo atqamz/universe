@@ -19,7 +19,9 @@ let
       pkgs.jq
       pkgs.no-mistakes
       pkgs.opencode
+      pkgs.procps
       pkgs.sqlite
+      pkgs.systemd
       pkgs.util-linux
     ];
     text = builtins.readFile ./no-mistakes-reconcile.sh;
