@@ -147,6 +147,7 @@ let
 
   claudeTrustedRepos = [
     "nsr"
+    "nsr-nakama"
     "yes2infra"
     "yes2dashboard"
     "yes2sdk-mcp"
