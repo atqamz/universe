@@ -344,6 +344,7 @@ in
         Unit = {
           Description = "Push Zen profile on logout";
           After = [ "gpg-agent.service" ];
+          X-SwitchMethod = "keep-old";
         };
         Service = {
           Type = "oneshot";

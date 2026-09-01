@@ -16,6 +16,8 @@
       gpuUnit =
         pkgs.writeText "sfx14-gpu-undervolt.service"
           sfx14.config.systemd.units."gpu-undervolt.service".text;
+      zenLogoutUnit =
+        sfx14.config.home-manager.users.atqa.xdg.configFile."systemd/user/zen-profile-logout-push.service".source;
       targetModule = "${sfx14.config.hardware.nvidia.package.open}/lib/modules/${sfx14.config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz";
       targetSmi = "${sfx14.config.hardware.nvidia.package.bin}/bin/nvidia-smi";
       claude =
@@ -179,6 +181,15 @@
               }
               ''
                 lua ${../tests/workspace-grid.lua} ${../configs/dotfiles/hypr}
+                touch "$out"
+              '';
+          zen-profile-logout-policy =
+            pkgs.runCommand "zen-profile-logout-policy-test"
+              {
+                nativeBuildInputs = [ pkgs.gnugrep ];
+              }
+              ''
+                grep -Fxq 'X-SwitchMethod=keep-old' ${zenLogoutUnit}
                 touch "$out"
               '';
           opencode-no-mistakes =
