@@ -172,6 +172,15 @@
                 bash ${../tests/warp-wireguard.bash} ${lib.escapeShellArg warpTestExec}
                 touch "$out"
               '';
+          workspace-grid =
+            pkgs.runCommand "workspace-grid-test"
+              {
+                nativeBuildInputs = [ pkgs.lua ];
+              }
+              ''
+                lua ${../tests/workspace-grid.lua} ${../configs/dotfiles/hypr}
+                touch "$out"
+              '';
           opencode-no-mistakes =
             pkgs.runCommand "opencode-no-mistakes-test"
               {

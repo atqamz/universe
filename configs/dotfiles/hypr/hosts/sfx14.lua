@@ -3,6 +3,11 @@ local mod = "SUPER"
 hl.monitor({ output = "eDP-1", mode = "2160x1350@120", position = "0x0", scale = 1 })
 hl.monitor({ output = "DP-1", mode = "2160x1350@60", position = "-2160x0", scale = 1 })
 
+require("workspace_grid").setup({
+    { monitor = "eDP-1", first = 1 },
+    { monitor = "DP-1", first = 101 },
+})
+
 hl.config({ input = { touchdevice = { output = "DP-1" }, tablet = { output = "DP-1" } } })
 
 hl.device({ name = "ilitek-ilitek-tp", output = "DP-1" })

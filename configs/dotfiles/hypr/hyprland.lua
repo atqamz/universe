@@ -32,8 +32,6 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 6, bezier = "default
 
 hl.window_rule({ match = { float = true, xwayland = false }, center = true })
 
-hl.gesture({ fingers = 3, direction = "vertical", action = "workspace" })
-
 local mod = "SUPER"
 local terminal = "foot"
 local fileExplorer = "thunar"
@@ -78,17 +76,6 @@ hl.bind(mod .. " + down", hl.dsp.focus({ direction = "down" }))
 hl.bind("CTRL + ALT + Tab", hl.dsp.focus({ monitor = "+1" }))
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
-
-hl.bind(mod .. " + 1", hl.dsp.focus({ workspace = "1" }))
-hl.bind(mod .. " + 2", hl.dsp.focus({ workspace = "2" }))
-hl.bind(mod .. " + 3", hl.dsp.focus({ workspace = "3" }))
-hl.bind(mod .. " + 4", hl.dsp.focus({ workspace = "4" }))
-hl.bind(mod .. " + 5", hl.dsp.focus({ workspace = "5" }))
-hl.bind(mod .. " + SHIFT + 1", hl.dsp.window.move({ workspace = "1" }))
-hl.bind(mod .. " + SHIFT + 2", hl.dsp.window.move({ workspace = "2" }))
-hl.bind(mod .. " + SHIFT + 3", hl.dsp.window.move({ workspace = "3" }))
-hl.bind(mod .. " + SHIFT + 4", hl.dsp.window.move({ workspace = "4" }))
-hl.bind(mod .. " + SHIFT + 5", hl.dsp.window.move({ workspace = "5" }))
 
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("media-next"))
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("media-previous"))
