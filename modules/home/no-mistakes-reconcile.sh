@@ -276,7 +276,7 @@ verify_reconciled() {
 
 reconcile() {
   observe
-  if ((!stale)); then
+  if ((! stale)); then
     clear_marker
     if ((daemon_running)); then
       printf 'no-mistakes daemon is current\n'
@@ -314,7 +314,7 @@ reconcile() {
 
 check() {
   observe
-  if ((!stale)); then
+  if ((! stale)); then
     [[ ! -e $marker_file ]] || die 'deferred reconciliation marker remains after the daemon became current'
     printf 'no-mistakes daemon identity is current or not installed\n'
     return
