@@ -7,13 +7,15 @@
   stdenvNoCC,
 }:
 let
-  python = pkgs.python3.withPackages (
+  pythonBase = pkgs.python313;
+  python = pythonBase.withPackages (
     pythonPackages: with pythonPackages; [
       evdev
       numpy
       pulsectl
       pyperclip
       pyudev
+      requests
       rich
       sounddevice
       soundfile
@@ -36,6 +38,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   dontBuild = true;
 
+  doInstallCheck = true;
+
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/lib/hyprwhspr" "$out/bin"
@@ -43,6 +47,14 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     substituteInPlace "$out/lib/hyprwhspr/bin/hyprwhspr" \
       --replace-fail 'SYSTEM_PYTHON_CANDIDATES=(' 'SYSTEM_PYTHON_CANDIDATES=(
         ${python}/bin/python3'
+    substituteInPlace "$out/lib/hyprwhspr/lib/src/backend_installer.py" \
+      --replace-fail 'SYSTEM_PYTHON_CANDIDATES = (' 'SYSTEM_PYTHON_CANDIDATES = (
+    "${pythonBase}/bin/python3",'
+    substituteInPlace "$out/lib/hyprwhspr/lib/src/cli/_shared.py" \
+      --replace-fail 'version = "0.1.0"' 'version = "${pkgs.ydotool.version}"'
+    substituteInPlace "$out/lib/hyprwhspr/requirements.txt" \
+      --replace-fail 'rich>=14.0.0' 'rich>=14.0.0
+    requests'
     substituteInPlace "$out/lib/hyprwhspr/lib/cli.py" \
       --replace-fail "return 'unknown'" "return 'v${finalAttrs.version}'"
     substituteInPlace "$out/lib/hyprwhspr/config/systemd/hyprwhspr.service" \
@@ -55,6 +67,17 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     install -Dm644 README.md "$out/share/doc/hyprwhspr/README.md"
     install -Dm644 LICENSE "$out/share/licenses/hyprwhspr/LICENSE"
     makeWrapper "$out/lib/hyprwhspr/bin/hyprwhspr" "$out/bin/hyprwhspr" \
+      --prefix C_INCLUDE_PATH : ${pkgs.linuxHeaders}/include \
+      --prefix LD_LIBRARY_PATH : /run/opengl-driver/lib \
+      --prefix LD_LIBRARY_PATH : ${
+        lib.makeLibraryPath [
+          pkgs.stdenv.cc.cc.lib
+          pkgs.portaudio
+          pkgs.zlib
+          pkgs.libpulseaudio
+          pkgs.systemdLibs
+        ]
+      } \
       --prefix PATH : ${
         lib.makeBinPath [
           python
@@ -65,6 +88,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           pkgs.libnotify
           pkgs.pipewire
           pkgs.procps
+          pkgs.pulseaudio
           pkgs.systemd
           pkgs.wl-clipboard
           pkgs.wtype
@@ -75,6 +99,24 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         ]
       }
     runHook postInstall
+  '';
+
+  installCheckPhase = ''
+    runHook preInstallCheck
+    MISE_SHELL=bash \
+      PATH=${lib.makeBinPath [ pkgs.ydotool ]} \
+      PYTHONPATH="$out/lib/hyprwhspr/lib" \
+      ${python}/bin/python3 - <<'PY'
+    from src.backend_installer import _find_compatible_python
+    from src.cli._shared import _check_ydotool_version
+
+    python, _ = _find_compatible_python()
+    assert python == "${pkgs.python313}/bin/python3", python
+    compatible, version, _ = _check_ydotool_version()
+    assert compatible, version
+    PY
+    ${pkgs.gnugrep}/bin/grep -Fx requests "$out/lib/hyprwhspr/requirements.txt"
+    runHook postInstallCheck
   '';
 
   passthru.updateScript = nix-update-script { };

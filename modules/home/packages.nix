@@ -26,6 +26,7 @@
       pavucontrol
       obs-studio
       vlc
+      fastpotify
       filezilla
       btop
       nvitop
