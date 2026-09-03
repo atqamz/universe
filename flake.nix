@@ -59,7 +59,7 @@
     };
 
     qmd = {
-      url = "github:tobi/qmd/v2.5.3";
+      url = "github:tobi/qmd/v2.8.3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
