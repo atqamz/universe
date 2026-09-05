@@ -179,8 +179,6 @@ config. Only step 4 names a host, because the installer boots as `nixos`.
 
 ## 8a. Repos a working machine expects
 
-## 8a. Repos a working machine expects
-
 Public human-authored machine config lives in the `~/universe` checkout, private provisioning stays in `~/vault`, and independently mutated state keeps its own owner.
 See `docs/adr/0002-cross-repo-layout.md` for the trust/mutation boundary.
 
@@ -189,7 +187,6 @@ See `docs/adr/0002-cross-repo-layout.md` for the trust/mutation boundary.
 | `~/universe` | public authored machine config, incl. `configs/dotfiles`, `configs/dotagents` | step 8, by hand | deliberate Git workflow; approved remote `main` is deployed by `system.autoUpgrade` |
 | `~/vault` | private keys and secrets | `nix run .#bootstrap` | `vault-sync.timer` |
 | `~/.password-store` | pass store | `vault/scripts/import.sh` | `password-store-sync.timer` |
-| `~/.local/share/zen-profile` | encrypted Zen profile | `zen-profile-pull` on first run | `zen-profile-sync.timer` |
 
 ## 9. Verify e2e
 

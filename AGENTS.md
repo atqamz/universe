@@ -27,7 +27,7 @@ Do not preserve an abstraction merely because it already exists: every abstracti
 ## Host composition
 
 - A `-minimal` configuration may import only `hosts/<host>/default.nix` and `modules/nixos/minimal.nix` plus the flake integration modules; it must not import Home Manager. `modules/home/minimal.nix` is the base layer of the full Home Manager configuration only. Full-only host code belongs in `hosts/<host>/full.nix` or a module imported from it (`docs/adr/0006-minimal-host-variants.md`).
-- Shared modules consume `universe.capabilities.*` or `universe.roles.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/hypr/hosts/${hostname}.lua`.
+- Shared modules consume `universe.capabilities.*` through NixOS/Home Manager configuration. Do not use `hostname == ...` as a feature flag (`docs/adr/0010-host-capabilities-not-hostname-flags.md`). `hostname` is still correct where the identity itself selects data, such as `dotfiles/hypr/hosts/${hostname}.lua`.
 - Host-specific services belong with the host when there is only one real consumer. Do not build a generic option layer around one machine's job merely to make the file look reusable.
 
 ## State and update ownership
@@ -39,7 +39,6 @@ Repository boundaries follow trust and mutation semantics, not config category n
 - Universe owns declarative machine state, packages, services, timers, health contracts, and the live-editable public config under `configs/dotfiles` and `configs/dotagents`.
 - `configs/dotfiles` / `configs/dotagents` own their live-editable content; Universe links but does not push them.
 - `vault` owns key material; `password-store` owns password entries.
-- `zen-profile` is machine-generated state with exactly one writer, declared by `universe.roles.zenProfileWriter`.
 - Nix-owned binaries do not self-update. Update them through their flake/package owner.
 - Runtime-managed payloads are explicit exceptions. Their installer version and repair mechanism are still declared by Universe.
 - `hand` is a runtime-managed payload, not a package: never bind it to the store, and never let activation overwrite an existing `~/.local/bin/hand`. `hand update` rewrites that file in place to update and to switch release channels (`docs/adr/0011-explicit-update-ownership.md`).
@@ -140,15 +139,6 @@ Deletion re-reads the marker and re-tests the project root, so a worktree recrea
 - Upstream `undervolt-sleep.service` and `sleep-actions.service` both do their resume work in a stop hook off `sleep.target`. `undervolt-sleep` is ordered `after` `sleep-actions`, which reverses on stop, so the upstream fallback RAPL write lands first and `sfx14-power restore` writes the selected mode last. Any further RAPL writer on the resume path needs the same ordering.
 - SFX14-only i2c/backlight permissions live with the SFX14 power/display feature, not in shared power configuration.
 - `auto-brightness.nix` consumes `universe.capabilities.ambientLight`; it must not know which hostname owns the sensor.
-
-## Zen profile replication
-
-- All hosts may pull only while Zen is stopped. Exactly one host may push; the writer is a role, not a hardcoded hostname.
-- The managed file set is explicit. Pull is replace semantics for that set, so deletion on the writer propagates.
-- Snapshot comparison happens on deterministic plaintext tar data before `age`; randomized ciphertext is never used as a change detector.
-- Pull and push share one lock around the Git repo.
-- The close watcher only detects running -> stopped and starts `zen-profile-push.service`. The oneshot push owns failure, notification, and systemd retry.
-- Automated snapshot commits disable GPG signing and use the dedicated `zen-profile-sync` identity.
 
 ## Runner isolation
 

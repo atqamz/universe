@@ -42,8 +42,6 @@ _: {
     ./user-timers.nix
     ./wezterm.nix
     ./unity.nix
-    ./zen.nix
     ./zed.nix
-    ./zen-profile-sync.nix
   ];
 }

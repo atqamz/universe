@@ -319,7 +319,6 @@ _: {
           check "universe repo cloned" test -d "$HOME/universe/.git"
           diagnose_legacy_checkout dotfiles
           diagnose_legacy_checkout dotagents
-          check "zen identity present" test -f "$HOME/.config/zen-profile/identity"
           check "greetd active" systemctl is-active greetd
           check "gw on PATH" command -v gw
 
@@ -476,10 +475,6 @@ _: {
             [ -n "$path" ] || continue
             check_link "$path" "$target"
           done < <(jq -r '.symlinks | to_entries[] | [.key, .value] | @tsv' "$manifest")
-
-          if jq -e '.zenProfileWriter' "$manifest" >/dev/null; then
-            check "zen-profile-push service available" systemctl --user cat zen-profile-push.service
-          fi
 
           check "nixos-upgrade timer enabled" systemctl is-enabled nixos-upgrade.timer
           # shellcheck disable=SC2016

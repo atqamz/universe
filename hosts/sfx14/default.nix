@@ -12,7 +12,6 @@ _: {
       handFleet = true;
       knowledgeCorpus = true;
     };
-    roles.zenProfileWriter = true;
   };
 
   boot.loader = {

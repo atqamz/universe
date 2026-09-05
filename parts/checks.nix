@@ -16,8 +16,14 @@
       gpuUnit =
         pkgs.writeText "sfx14-gpu-undervolt.service"
           sfx14.config.systemd.units."gpu-undervolt.service".text;
-      zenLogoutUnit =
-        sfx14.config.home-manager.users.atqa.xdg.configFile."systemd/user/zen-profile-logout-push.service".source;
+      browserDefaults = sfx14.config.home-manager.users.atqa.xdg.mimeApps.defaultApplications;
+      firefoxMimeTypes = [
+        "text/html"
+        "x-scheme-handler/about"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+        "x-scheme-handler/unknown"
+      ];
       targetModule = "${sfx14.config.hardware.nvidia.package.open}/lib/modules/${sfx14.config.boot.kernelPackages.kernel.modDirVersion}/kernel/drivers/video/nvidia.ko.xz";
       targetSmi = "${sfx14.config.hardware.nvidia.package.bin}/bin/nvidia-smi";
       claude =
@@ -194,15 +200,11 @@
                 lua ${../tests/workspace-grid.lua} ${../configs/dotfiles/hypr}
                 touch "$out"
               '';
-          zen-profile-logout-policy =
-            pkgs.runCommand "zen-profile-logout-policy-test"
-              {
-                nativeBuildInputs = [ pkgs.gnugrep ];
-              }
-              ''
-                grep -Fxq 'X-SwitchMethod=keep-old' ${zenLogoutUnit}
-                touch "$out"
-              '';
+          firefox-default-browser-policy =
+            assert lib.all (mime: browserDefaults.${mime} == [ "firefox.desktop" ]) firefoxMimeTypes;
+            pkgs.runCommand "firefox-default-browser-policy-test" { } ''
+              touch "$out"
+            '';
           opencode-no-mistakes =
             pkgs.runCommand "opencode-no-mistakes-test"
               {

@@ -10,7 +10,6 @@ let
   manifest = {
     host = osConfig.networking.hostName;
     warpCli = "${osConfig.services.cloudflare-warp.package}/bin/warp-cli";
-    zenProfileWriter = osConfig.universe.roles.zenProfileWriter;
     timers = installed config.systemd.user.timers;
     services = installed config.systemd.user.services;
     activeSystemServices = osConfig.universe.doctor.activeSystemServices;

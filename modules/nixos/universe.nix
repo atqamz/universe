@@ -6,8 +6,6 @@
       handFleet = lib.mkEnableOption "the hand agent fleet orchestrator running on this host";
       knowledgeCorpus = lib.mkEnableOption "the local documentation corpus that qmd collections index";
     };
-    roles.zenProfileWriter = lib.mkEnableOption "the single Zen profile writer role";
-
     doctor = {
       activeSystemServices = lib.mkOption {
         type = lib.types.listOf lib.types.str;
