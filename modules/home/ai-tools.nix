@@ -34,12 +34,22 @@ let
     ];
     text = builtins.readFile ./claude-ox.sh;
   };
+  hyprwhsprToggle = pkgs.writeShellApplication {
+    name = "hyprwhspr-toggle";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.hyprwhspr
+      pkgs.libnotify
+    ];
+    text = builtins.readFile ./hyprwhspr-toggle.sh;
+  };
 in
 {
   home = {
     packages = with pkgs; [
       claude
       claudeOx
+      hyprwhsprToggle
       codex
       opencode
       treehouse
@@ -53,7 +63,11 @@ in
   };
 
   universe.doctor = {
-    commands = [ "claude-ox" ];
+    commands = [
+      "claude-ox"
+      "hyprwhspr"
+      "hyprwhspr-toggle"
+    ];
     paths = [ ".password-store/openrouter/api-key.gpg" ];
   };
 }

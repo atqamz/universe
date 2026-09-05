@@ -250,6 +250,30 @@
                 bash ${../tests/claude-ox.bash} ${../modules/home/claude-ox.sh}
                 touch "$out"
               '';
+          hyprwhspr-toggle =
+            pkgs.runCommand "hyprwhspr-toggle-test"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                ];
+              }
+              ''
+                bash ${../tests/hyprwhspr-toggle.bash} ${../modules/home/hyprwhspr-toggle.sh}
+                touch "$out"
+              '';
+          hyprwhspr-hyprctl =
+            pkgs.runCommand "hyprwhspr-hyprctl-test"
+              {
+                nativeBuildInputs = [ pkgs.bash ];
+              }
+              ''
+                bash ${../tests/hyprwhspr-hyprctl.bash} \
+                  ${self.packages.${system}.hyprwhspr.hyprctlShim}/bin/hyprctl \
+                  ${pkgs.stdenv.cc.cc.lib}/lib
+                touch "$out"
+              '';
           migration-doctor =
             pkgs.runCommand "migration-doctor-test"
               {

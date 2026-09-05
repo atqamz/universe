@@ -22,6 +22,9 @@ let
       soxr
     ]
   );
+  hyprctlShim = pkgs.writeShellScriptBin "hyprctl" ''
+    exec ${pkgs.coreutils}/bin/env -u LD_LIBRARY_PATH -u LD_PRELOAD ${pkgs.hyprland}/bin/hyprctl "$@"
+  '';
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "hyprwhspr";
@@ -84,6 +87,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           pkgs.bash
           pkgs.coreutils
           pkgs.git
+          hyprctlShim
           pkgs.hyprland
           pkgs.libnotify
           pkgs.pipewire
@@ -120,6 +124,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   passthru.updateScript = nix-update-script { };
+  passthru.hyprctlShim = hyprctlShim;
 
   meta = {
     description = "System-wide speech-to-text for Linux desktops";
