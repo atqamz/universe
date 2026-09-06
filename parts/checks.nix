@@ -17,6 +17,9 @@
         pkgs.writeText "sfx14-gpu-undervolt.service"
           sfx14.config.systemd.units."gpu-undervolt.service".text;
       browserDefaults = sfx14.config.home-manager.users.atqa.xdg.mimeApps.defaultApplications;
+      autoUpgradePreflight =
+        sfx14.config.systemd.services.nixos-upgrade.serviceConfig.ExecStartPre or null;
+      autoUpgradePreflightBin = lib.head (lib.splitString " " autoUpgradePreflight);
       firefoxMimeTypes = [
         "text/html"
         "x-scheme-handler/about"
@@ -391,6 +394,26 @@
                   ${self.apps.${system}.doctor.program}
                 touch "$out"
               '';
+          auto-upgrade-preflight =
+            assert autoUpgradePreflight != null;
+            pkgs.runCommand "auto-upgrade-preflight-contract" { nativeBuildInputs = [ pkgs.git ]; } ''
+              export HOME="$TMPDIR/home"
+              mkdir -p "$HOME"
+              git init --bare -b main "$TMPDIR/missing-main"
+              if ${autoUpgradePreflightBin} "$TMPDIR/missing-main"; then
+                echo "preflight accepted a repository without main" >&2
+                exit 1
+              fi
+              git init -b main "$TMPDIR/source"
+              git -C "$TMPDIR/source" config user.email test@example.invalid
+              git -C "$TMPDIR/source" config user.name Test
+              touch "$TMPDIR/source/tracked"
+              git -C "$TMPDIR/source" add tracked
+              git -C "$TMPDIR/source" commit -m initial
+              git clone --bare "$TMPDIR/source" "$TMPDIR/ready"
+              ${autoUpgradePreflightBin} "$TMPDIR/ready"
+              touch "$out"
+            '';
         };
     };
 }
