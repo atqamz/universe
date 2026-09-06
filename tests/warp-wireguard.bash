@@ -2,6 +2,7 @@
 set -euo pipefail
 
 reconciler="$1"
+ready="$2"
 test_root="$(mktemp -d)"
 trap 'rm -rf "$test_root"' EXIT
 
@@ -11,8 +12,13 @@ output="$test_root/output"
 export WARP_TEST_STATE="$state"
 export WARP_TEST_CALLS="$calls"
 
-: >"$calls"
 printf '%s' wireguard >"$state"
+export WARP_TEST_SETTINGS_FAILURES_FILE="$test_root/settings-failures"
+printf '%s' 1 >"$WARP_TEST_SETTINGS_FAILURES_FILE"
+"$ready"
+unset WARP_TEST_SETTINGS_FAILURES_FILE
+
+: >"$calls"
 "$reconciler"
 if [ -s "$calls" ]; then
   echo "already-correct WireGuard state invoked a protocol change" >&2

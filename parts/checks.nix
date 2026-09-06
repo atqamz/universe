@@ -107,6 +107,8 @@
       };
       warpTestExec =
         warpTestSystem.config.systemd.services.cloudflare-warp-wireguard.serviceConfig.ExecStart;
+      warpReadyExec =
+        warpTestSystem.config.systemd.services.cloudflare-warp.serviceConfig.ExecStartPost or null;
     in
     {
       pre-commit.settings = {
@@ -179,6 +181,7 @@
                 touch "$out"
               '';
           warp-wireguard =
+            assert warpReadyExec != null;
             pkgs.runCommand "warp-wireguard-test"
               {
                 nativeBuildInputs = with pkgs; [
@@ -188,7 +191,9 @@
                 ];
               }
               ''
-                bash ${../tests/warp-wireguard.bash} ${lib.escapeShellArg warpTestExec}
+                bash ${../tests/warp-wireguard.bash} \
+                  ${lib.escapeShellArg warpTestExec} \
+                  ${lib.escapeShellArg warpReadyExec}
                 touch "$out"
               '';
           workspace-grid =

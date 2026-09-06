@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   warpWireGuard = pkgs.writeShellApplication {
     name = "warp-wireguard";
@@ -21,37 +26,60 @@ let
       fi
     '';
   };
+  warpReady = pkgs.writeShellApplication {
+    name = "warp-ready";
+    runtimeInputs = [
+      config.services.cloudflare-warp.package
+      pkgs.coreutils
+    ];
+    text = ''
+      for attempt in {1..20}; do
+        if warp-cli --json settings >/dev/null; then
+          exit 0
+        fi
+        if [ "$attempt" -lt 20 ]; then
+          sleep 1
+        fi
+      done
+      echo "WARP daemon did not become ready within 20 seconds" >&2
+      exit 1
+    '';
+  };
 in
 {
   services.cloudflare-warp.enable = true;
 
-  systemd.services.cloudflare-warp-wireguard = {
-    description = "Pin Cloudflare WARP tunnel protocol to WireGuard";
-    requires = [ "cloudflare-warp.service" ];
-    after = [ "cloudflare-warp.service" ];
-    wantedBy = [
-      "multi-user.target"
-      "cloudflare-warp.service"
-    ];
-    unitConfig = {
-      StartLimitIntervalSec = 300;
-      StartLimitBurst = 6;
-    };
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${warpWireGuard}/bin/warp-wireguard";
-      Restart = "on-failure";
-      RestartSec = "5s";
-      TimeoutStartSec = "30s";
-    };
-  };
+  systemd = {
+    services.cloudflare-warp.serviceConfig.ExecStartPost = lib.getExe warpReady;
 
-  systemd.timers.cloudflare-warp-wireguard = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "1min";
-      OnUnitInactiveSec = "5min";
-      Unit = "cloudflare-warp-wireguard.service";
+    services.cloudflare-warp-wireguard = {
+      description = "Pin Cloudflare WARP tunnel protocol to WireGuard";
+      requires = [ "cloudflare-warp.service" ];
+      after = [ "cloudflare-warp.service" ];
+      wantedBy = [
+        "multi-user.target"
+        "cloudflare-warp.service"
+      ];
+      unitConfig = {
+        StartLimitIntervalSec = 300;
+        StartLimitBurst = 6;
+      };
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${warpWireGuard}/bin/warp-wireguard";
+        Restart = "on-failure";
+        RestartSec = "5s";
+        TimeoutStartSec = "30s";
+      };
+    };
+
+    timers.cloudflare-warp-wireguard = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "1min";
+        OnUnitInactiveSec = "5min";
+        Unit = "cloudflare-warp-wireguard.service";
+      };
     };
   };
 

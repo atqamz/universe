@@ -6,6 +6,13 @@ calls="${WARP_TEST_CALLS:?}"
 
 case "${*}" in
 "--json settings")
+  if [ -n "${WARP_TEST_SETTINGS_FAILURES_FILE:-}" ]; then
+    failures="$(<"$WARP_TEST_SETTINGS_FAILURES_FILE")"
+    if [ "$failures" -gt 0 ]; then
+      printf '%s' "$((failures - 1))" >"$WARP_TEST_SETTINGS_FAILURES_FILE"
+      exit 1
+    fi
+  fi
   protocol="$(<"$state")"
   printf '{"settings":{"warp_tunnel_protocol":"%s"}}\n' "$protocol"
   ;;

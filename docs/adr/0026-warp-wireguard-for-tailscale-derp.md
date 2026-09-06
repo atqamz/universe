@@ -13,8 +13,9 @@ Cloudflare defaults WARP to MASQUE, so a reinstall or client-state reset can sil
 
 Universe pins the Cloudflare WARP tunnel protocol to WireGuard.
 `modules/nixos/warp.nix` owns an idempotent systemd reconciler that first observes the effective protocol through `warp-cli --json settings`, changes it only when necessary, verifies the result, runs immediately as part of normal system activation and whenever `cloudflare-warp.service` starts, and periodically rechecks the invariant.
+A bounded `ExecStartPost` readiness probe keeps `cloudflare-warp.service` activating until its CLI socket responds, so ordered dependents do not mistake a started process for a ready daemon.
 
-Transient daemon or IPC failures get a bounded fast retry budget from systemd: at most six starts inside five minutes with five seconds between restart attempts.
+Transient reconciliation failures after daemon readiness get a bounded fast retry budget from systemd: at most six starts inside five minutes with five seconds between restart attempts.
 The five-minute window covers six attempts even when each attempt reaches the thirty-second start timeout.
 The periodic five-minute timer remains the long-horizon retry owner after that burst, preventing an unavailable WARP daemon from causing an unbounded restart loop or journal churn.
 
