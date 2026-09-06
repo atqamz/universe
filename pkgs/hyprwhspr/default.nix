@@ -41,6 +41,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   dontBuild = true;
 
+  postPatch = ''
+    substituteInPlace lib/src/cli/models.py \
+      --replace-fail "glob('models--Systran--faster-whisper-*')" "glob('models--*--faster-whisper-*')" \
+      --replace-fail "model_dir.name.replace('models--Systran--faster-whisper-', ''')" "model_dir.name.split('--faster-whisper-', 1)[1]"
+  '';
+
   doInstallCheck = true;
 
   installPhase = ''
@@ -113,11 +119,26 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       ${python}/bin/python3 - <<'PY'
     from src.backend_installer import _find_compatible_python
     from src.cli._shared import _check_ydotool_version
+    from src.cli.models import faster_whisper_model_status
+    import contextlib
+    import io
+    import os
+    import tempfile
+    from pathlib import Path
 
     python, _ = _find_compatible_python()
     assert python == "${pkgs.python313}/bin/python3", python
     compatible, version, _ = _check_ydotool_version()
     assert compatible, version
+    with tempfile.TemporaryDirectory() as home:
+        os.environ["HOME"] = home
+        model = Path(home) / ".cache/huggingface/hub/models--mobiuslabsgmbh--faster-whisper-large-v3-turbo"
+        model.mkdir(parents=True)
+        (model / "model.bin").write_bytes(b"model")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            faster_whisper_model_status()
+        assert "- large-v3-turbo" in output.getvalue(), output.getvalue()
     PY
     ${pkgs.gnugrep}/bin/grep -Fx requests "$out/lib/hyprwhspr/requirements.txt"
     runHook postInstallCheck
