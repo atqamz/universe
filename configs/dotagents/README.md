@@ -15,8 +15,6 @@ Symlinked live from Universe (`modules/home/dotagents.nix`) via `mkOutOfStoreSym
 The opencode integration keeps provider intent and curated metadata in `opencode/opencode.json`, with runtime model discovery under `opencode/dynamic-models/`.
 
 To add a standard OpenAI-compatible provider, add its provider configuration and a small declaration under `opencode/dynamic-models/providers/`, then restart opencode.
-
-A vendor-specific provider adds one narrow adapter and reuses the same engine.
 No Universe link or generated model list is needed.
 
 Skills are not listed here. Universe (`modules/home/skills-sync.nix`) owns the allowlist of source repositories and wanted skills, and runs `bunx skills` for every Agent Skills-compatible harness (Claude Code, Codex, opencode).

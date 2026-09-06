@@ -49,12 +49,6 @@ in
   universe.doctor = {
     paths = [ "universe/configs/dotagents" ];
 
-    opencodeProviders.mocin = {
-      npm = "@ai-sdk/openai-compatible";
-      baseURL = "https://beta.masven.dev/v1";
-      requireModels = true;
-    };
-
     symlinks =
       writableLinks
       // dynamicModelLinks

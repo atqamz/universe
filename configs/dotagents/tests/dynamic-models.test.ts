@@ -13,7 +13,6 @@ import {
   type OpenCodeConfig,
 } from "../opencode/dynamic-models/engine.ts";
 
-const MOCIN_ENDPOINT = "https://beta.masven.dev/webapi/models";
 const homes: string[] = [];
 
 afterEach(async () => {
@@ -31,14 +30,6 @@ function fetchOnce(body: unknown, status = 200, capture?: (input: RequestInfo | 
   return async (input, init) => {
     capture?.(input, init);
     return response(body, status);
-  };
-}
-
-function mocinSpec(): DynamicProviderSpec {
-  return {
-    id: "mocin",
-    discovery: { kind: "mocin", endpoint: MOCIN_ENDPOINT },
-    legacyStatePath: "opencode/mocin-models.json",
   };
 }
 
@@ -85,100 +76,6 @@ describe("selector identity", () => {
     expect(selectors.every((selector) => !selector.includes("/"))).toBe(true);
     expect(selectors.map(decodeSelectorId)).toEqual(callableIds);
     expect(encodeSelectorId("nr/foo/bar")).toBe(encodeSelectorId("nr/foo/bar"));
-  });
-});
-
-describe("Mocin adapter", () => {
-  test("preserves route identity and keeps the OpenCode provider separate", async () => {
-    const state = await stateHome();
-    const { config } = await run(
-      mocinSpec(),
-      {
-        options: { baseURL: "https://beta.masven.dev/v1" },
-        models: { "nr/foo": { id: "wrong-id", name: "Curated route" }, stale: { name: "Stale" } },
-      },
-      fetchOnce({
-        models: [
-          { provider: "cfr", model: "foo", active: true },
-          { provider: "nr", model: "foo", active: true },
-          { provider: "tr", model: "deepseek/foo", active: true },
-          { provider: "nr", model: "disabled", active: false },
-        ],
-      }),
-      { stateHome: state },
-    );
-
-    const models = config.provider?.mocin?.models as Record<string, Record<string, unknown>>;
-    expect(Object.keys(models)).toEqual([
-      encodeSelectorId("cfr/foo"),
-      encodeSelectorId("nr/foo"),
-      encodeSelectorId("tr/deepseek/foo"),
-    ]);
-    expect(models[encodeSelectorId("nr/foo")]).toEqual({ id: "nr/foo", name: "Curated route" });
-    expect(models[encodeSelectorId("tr/deepseek/foo")]).toEqual({ id: "tr/deepseek/foo", name: "tr/deepseek/foo" });
-    expect(config.provider?.unrelated?.models).toEqual({ untouched: { name: "Other" } });
-  });
-
-  test("uses provider and model only, ignoring unrelated DTO fields", async () => {
-    const result = await run(
-      mocinSpec(),
-      { models: {} },
-      fetchOnce({
-        total: "not a number",
-        models: [
-          { provider: "nr", model: "foo", active: true, upstream: null, multiplier: "bad" },
-          { provider: null, model: null, active: false, upstream: 3 },
-        ],
-      }),
-      { stateHome: await stateHome() },
-    );
-    expect(Object.keys(result.config.provider?.mocin?.models ?? {})).toEqual([encodeSelectorId("nr/foo")]);
-  });
-
-  test("detects conflicts by callable route, not display model", async () => {
-    const distinct = await run(
-      mocinSpec(),
-      { models: {} },
-      fetchOnce({ models: [
-        { provider: "cfr", model: "foo", active: true },
-        { provider: "nr", model: "foo", active: false },
-      ] }),
-      { stateHome: await stateHome() },
-    );
-    expect(Object.keys(distinct.config.provider?.mocin?.models ?? {})).toEqual([encodeSelectorId("cfr/foo")]);
-
-    const conflict = await run(
-      mocinSpec(),
-      { models: {} },
-      fetchOnce({ models: [
-        { provider: "nr", model: "foo", active: true },
-        { provider: "nr", model: "foo", active: false },
-      ] }),
-      { stateHome: await stateHome() },
-    );
-    expect(conflict.config.provider?.mocin?.models).toEqual({});
-    expect(conflict.warnings.some(({ extra }) => extra?.category === "payload")).toBe(true);
-  });
-
-  test("rejects invalid active entries without over-validating inactive or unrelated fields", async () => {
-    const invalidBodies: unknown[] = [
-      null,
-      {},
-      { models: "wrong" },
-      { models: [{ provider: "nr", model: "foo" }] },
-      { models: [{ provider: "nr", model: "foo", active: "yes" }] },
-      { models: [{ provider: "", model: "foo", active: true }] },
-      { models: [{ provider: "nr", model: "", active: true }] },
-      { models: [{ provider: "nr/child", model: "foo", active: true }] },
-      { models: [{ provider: " nr", model: "foo", active: true }] },
-      { models: [{ provider: "nr", model: " foo", active: true }] },
-      { models: [{ provider: "nr", model: "foo", active: false }] },
-    ];
-
-    for (const body of invalidBodies) {
-      const result = await run(mocinSpec(), { models: {} }, fetchOnce(body), { stateHome: await stateHome() });
-      expect(result.config.provider?.mocin?.models).toEqual({});
-    }
   });
 });
 
@@ -241,22 +138,6 @@ describe("generic lifecycle and LKG", () => {
     expect(fallback.config.provider?.["fixture-provider"]?.models).toEqual({
       [encodeSelectorId("nr/foo")]: { id: "nr/foo", name: "nr/foo" },
     });
-  });
-
-  test("rejects the lossy legacy Mocin snapshot instead of inventing a route", async () => {
-    const state = await stateHome();
-    const legacy = join(state, "opencode", "mocin-models.json");
-    await import("node:fs/promises").then(({ mkdir }) => mkdir(join(state, "opencode"), { recursive: true }));
-    await writeFile(legacy, JSON.stringify({ version: 1, provider: "mocin", endpoint: MOCIN_ENDPOINT, models: ["deepseek-v4-flash-0731"] }));
-
-    const result = await run(
-      mocinSpec(),
-      { models: {} },
-      async () => { throw new Error("offline"); },
-      { stateHome: state },
-    );
-    expect(result.config.provider?.mocin?.models).toEqual({});
-    expect(result.warnings.some(({ extra }) => extra?.category === "lkg-legacy")).toBe(true);
   });
 
   test("keeps the previous LKG when atomic replacement fails", async () => {

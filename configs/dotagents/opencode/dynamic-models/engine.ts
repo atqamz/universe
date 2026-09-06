@@ -3,7 +3,6 @@ import { chmod, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promi
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 
-import { parseMocinCallableIds } from "./adapters/mocin.ts";
 import { AdapterPayloadError, parseOpenAIModelIds } from "./adapters/openai.ts";
 
 export const DEFAULT_TIMEOUT_MS = 8_000;
@@ -26,11 +25,9 @@ export type OpenCodeConfig = {
 export type DynamicProviderSpec = {
   id: string;
   discovery: {
-    kind: "openai" | "mocin";
-    endpoint?: string;
+    kind: "openai";
     timeoutMs?: number;
   };
-  legacyStatePath?: string;
 };
 
 export type FileSystem = {
@@ -103,10 +100,6 @@ function providerStatePath(stateHome: string, providerId: string): string {
   return join(stateHome, "opencode", "dynamic-models", `${encodeURIComponent(providerId)}.json`);
 }
 
-function legacyStatePath(stateHome: string, spec: DynamicProviderSpec): string | undefined {
-  return spec.legacyStatePath ? join(stateHome, spec.legacyStatePath) : undefined;
-}
-
 export function encodeSelectorId(callableId: string): string {
   return encodeURIComponent(callableId);
 }
@@ -142,19 +135,9 @@ function resolveOpenAIEndpoint(provider: ProviderConfig): string {
   }
 }
 
-function resolveEndpoint(spec: DynamicProviderSpec, provider: ProviderConfig): string {
-  if (spec.discovery.kind === "mocin") {
-    if (typeof spec.discovery.endpoint !== "string" || spec.discovery.endpoint.length === 0) {
-      throw new DiscoveryError("payload");
-    }
-    return spec.discovery.endpoint;
-  }
-  return resolveOpenAIEndpoint(provider);
-}
-
-function parseCallableIds(spec: DynamicProviderSpec, value: unknown): string[] {
+function parseCallableIds(value: unknown): string[] {
   try {
-    return spec.discovery.kind === "mocin" ? parseMocinCallableIds(value) : parseOpenAIModelIds(value);
+    return parseOpenAIModelIds(value);
   } catch (error) {
     if (error instanceof AdapterPayloadError) throw new DiscoveryError("payload");
     throw error;
@@ -163,7 +146,6 @@ function parseCallableIds(spec: DynamicProviderSpec, value: unknown): string[] {
 
 async function discoverCallableIds(
   endpoint: string,
-  spec: DynamicProviderSpec,
   fetcher: typeof fetch,
   timeoutMs: number,
 ): Promise<string[]> {
@@ -181,7 +163,7 @@ async function discoverCallableIds(
     } catch {
       throw new DiscoveryError("payload");
     }
-    return parseCallableIds(spec, value);
+    return parseCallableIds(value);
   } catch (error) {
     if (error instanceof DiscoveryError) throw error;
     throw new DiscoveryError(controller.signal.aborted ? "timeout" : "request");
@@ -207,12 +189,11 @@ function validateLkg(value: unknown, spec: DynamicProviderSpec, endpoint: string
 
 type LkgResult =
   | { status: "valid"; callableIds: string[] }
-  | { status: "missing" | "invalid" | "unreadable" | "legacy" };
+  | { status: "missing" | "invalid" | "unreadable" };
 
 async function readProviderLkg(
   fileSystem: FileSystem,
   path: string,
-  oldPath: string | undefined,
   spec: DynamicProviderSpec,
   endpoint: string,
 ): Promise<LkgResult> {
@@ -221,14 +202,7 @@ async function readProviderLkg(
     contents = await fileSystem.readFile(path);
   } catch (error) {
     if (!isRecord(error) || error.code !== "ENOENT") return { status: "unreadable" };
-    if (!oldPath) return { status: "missing" };
-    try {
-      await fileSystem.readFile(oldPath);
-      return { status: "legacy" };
-    } catch (legacyError) {
-      if (isRecord(legacyError) && legacyError.code === "ENOENT") return { status: "missing" };
-      return { status: "unreadable" };
-    }
+    return { status: "missing" };
   }
 
   try {
@@ -281,7 +255,7 @@ async function configureDynamicProvider(
   const path = providerStatePath(options.stateHome, spec.id);
   let endpoint: string;
   try {
-    endpoint = resolveEndpoint(spec, provider);
+    endpoint = resolveOpenAIEndpoint(provider);
   } catch (error) {
     const category = error instanceof DiscoveryError ? error.category : "payload";
     provider.models = {};
@@ -290,7 +264,7 @@ async function configureDynamicProvider(
   }
 
   try {
-    const callableIds = await discoverCallableIds(endpoint, spec, options.fetch, options.timeoutMs);
+    const callableIds = await discoverCallableIds(endpoint, options.fetch, options.timeoutMs);
     provider.models = runtimeModels(callableIds, provider.models);
     try {
       await persistProviderLkg(options.fileSystem, path, spec, endpoint, callableIds);
@@ -300,7 +274,7 @@ async function configureDynamicProvider(
     return;
   } catch (error) {
     const category = error instanceof DiscoveryError ? error.category : "request";
-    const lkg = await readProviderLkg(options.fileSystem, path, legacyStatePath(options.stateHome, spec), spec, endpoint);
+    const lkg = await readProviderLkg(options.fileSystem, path, spec, endpoint);
     if (lkg.status === "valid") {
       provider.models = runtimeModels(lkg.callableIds, provider.models);
       await emit(options.logger, spec.id, category, "remote model discovery failed; using last-known-good inventory");
@@ -308,9 +282,7 @@ async function configureDynamicProvider(
     }
 
     provider.models = {};
-    if (lkg.status === "legacy") {
-      await emit(options.logger, spec.id, "lkg-legacy", "legacy model inventory is incompatible and was ignored");
-    } else if (lkg.status === "invalid") {
+    if (lkg.status === "invalid") {
       await emit(options.logger, spec.id, "lkg-invalid", "last-known-good inventory was invalid and was ignored");
     } else if (lkg.status === "unreadable") {
       await emit(options.logger, spec.id, "lkg-read", "last-known-good inventory could not be read");

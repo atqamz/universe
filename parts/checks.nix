@@ -90,7 +90,7 @@
       noMistakesSkill = sfx14.config.home-manager.users.atqa.universe.doctor.noMistakes.skillSource;
       noMistakesReconcile = sfx14.config.home-manager.users.atqa.universe.doctor.noMistakes.reconcile;
       opencodeDoctorHealthy = pkgs.writeShellScriptBin "opencode-doctor-healthy" ''
-        printf '%s\n' '{"provider":{"mocin":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://beta.masven.dev/v1"},"models":{"A":{}}}}}'
+        printf '%s\n' '{"provider":{"fixture-provider":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://fixture.invalid/v1"},"models":{"A":{}}}}}'
       '';
       opencodeDoctorMissing = pkgs.writeShellScriptBin "opencode-doctor-missing" ''
         printf '%s\n' '{"provider":{}}'
@@ -359,6 +359,9 @@
                 export HOME="$TMPDIR/home"
                 mkdir -p "$HOME/.config/universe"
                 cp ${opencodeDoctorManifest} "$HOME/.config/universe/doctor.json"
+                jq '.opencodeProviders = {"fixture-provider": {"npm": "@ai-sdk/openai-compatible", "baseURL": "https://fixture.invalid/v1", "requireModels": true}}' \
+                  "$HOME/.config/universe/doctor.json" > "$HOME/.config/universe/doctor.json.tmp"
+                mv "$HOME/.config/universe/doctor.json.tmp" "$HOME/.config/universe/doctor.json"
 
                 expect_success() {
                   if ! "$@" >/dev/null; then
