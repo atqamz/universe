@@ -22,6 +22,18 @@ let
       soxr
     ]
   );
+  visualizerPythonPath = lib.makeSearchPath pythonBase.sitePackages [
+    pythonBase.pkgs.pycairo
+    pythonBase.pkgs.pygobject3
+  ];
+  visualizerDependencies = lib.closePropagation [
+    pkgs.gobject-introspection
+    pkgs.gtk4
+    pkgs.gtk4-layer-shell
+  ];
+  visualizerTypelibPath = lib.makeSearchPath "lib/girepository-1.0" (
+    visualizerDependencies ++ map (dependency: dependency.out or dependency) visualizerDependencies
+  );
   hyprctlShim = pkgs.writeShellScriptBin "hyprctl" ''
     exec ${pkgs.coreutils}/bin/env -u LD_LIBRARY_PATH -u LD_PRELOAD ${pkgs.hyprland}/bin/hyprctl "$@"
   '';
@@ -45,6 +57,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     substituteInPlace lib/src/cli/models.py \
       --replace-fail "glob('models--Systran--faster-whisper-*')" "glob('models--*--faster-whisper-*')" \
       --replace-fail "model_dir.name.replace('models--Systran--faster-whisper-', ''')" "model_dir.name.split('--faster-whisper-', 1)[1]"
+    substituteInPlace lib/mic_osd/runner.py \
+      --replace-fail '        for pattern in [' '        for pattern in [
+            "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so.0",'
   '';
 
   doInstallCheck = true;
@@ -77,9 +92,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     install -Dm644 LICENSE "$out/share/licenses/hyprwhspr/LICENSE"
     makeWrapper "$out/lib/hyprwhspr/bin/hyprwhspr" "$out/bin/hyprwhspr" \
       --prefix C_INCLUDE_PATH : ${pkgs.linuxHeaders}/include \
+      --prefix GI_TYPELIB_PATH : ${visualizerTypelibPath} \
       --prefix LD_LIBRARY_PATH : /run/opengl-driver/lib \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
+          pkgs.gtk4
+          pkgs.gtk4-layer-shell
           pkgs.stdenv.cc.cc.lib
           pkgs.portaudio
           pkgs.zlib
@@ -87,6 +105,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           pkgs.systemdLibs
         ]
       } \
+      --prefix PYTHONPATH : ${visualizerPythonPath} \
       --prefix PATH : ${
         lib.makeBinPath [
           python
@@ -113,19 +132,37 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   installCheckPhase = ''
     runHook preInstallCheck
-    MISE_SHELL=bash \
+    GI_TYPELIB_PATH=${visualizerTypelibPath} \
+      LD_LIBRARY_PATH=${
+        lib.makeLibraryPath [
+          pkgs.gtk4
+          pkgs.gtk4-layer-shell
+        ]
+      } \
+      MISE_SHELL=bash \
       PATH=${lib.makeBinPath [ pkgs.ydotool ]} \
-      PYTHONPATH="$out/lib/hyprwhspr/lib" \
+      PYTHONPATH="$out/lib/hyprwhspr/lib:${visualizerPythonPath}" \
       ${python}/bin/python3 - <<'PY'
     from src.backend_installer import _find_compatible_python
     from src.cli._shared import _check_ydotool_version
     from src.cli.models import faster_whisper_model_status
+    from mic_osd.runner import MicOSDRunner
+    import cairo
     import contextlib
+    import gi
     import io
     import os
     import tempfile
     from pathlib import Path
 
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Gtk4LayerShell", "1.0")
+    from gi.repository import Gtk, Gtk4LayerShell
+
+    layer_shell = "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so.0"
+    preload = MicOSDRunner._layer_shell_ld_preload()
+    assert os.path.samefile(preload, layer_shell)
+    assert MicOSDRunner._layer_shell_environment()["LD_PRELOAD"].split()[0] == preload
     python, _ = _find_compatible_python()
     assert python == "${pkgs.python313}/bin/python3", python
     compatible, version, _ = _check_ydotool_version()

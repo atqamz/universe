@@ -64,12 +64,13 @@ run_case() {
     HYPRWHSPR_TEST_STATE="$test_root/state" \
     HYPRWHSPR_TEST_NOTIFICATIONS="$test_root/notifications" \
     bash "$wrapper_script"
-  grep -Fq "$expected" "$test_root/notifications" || fail "notification missing '$expected'"
+  [ "$(<"$test_root/state")" = "$expected" ] || fail "recording state did not become '$expected'"
+  [ ! -s "$test_root/notifications" ] || fail "successful toggle emitted a notification"
 }
 
 make_fake_hyprwhspr
 make_fake_notify
 mkdir -p "$test_root/home"
-run_case idle "Recording started"
-run_case recording "Transcribing..."
+run_case idle recording
+run_case recording idle
 printf '%s\n' 'hyprwhspr-toggle test: PASS'

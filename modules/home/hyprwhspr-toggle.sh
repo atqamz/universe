@@ -35,11 +35,6 @@ fi
 for ((attempt = 0; attempt < 20; attempt++)); do
   current="$(recording_state 2>/dev/null || true)"
   if [ "$current" = "$expected" ]; then
-    if [ "$current" = recording ]; then
-      notify 'Recording started'
-    else
-      notify 'Transcribing...'
-    fi
     exit 0
   fi
   sleep 0.05
