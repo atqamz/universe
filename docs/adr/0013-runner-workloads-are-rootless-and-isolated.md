@@ -35,7 +35,7 @@ Latency-sensitive mirrors, Editors, and warm runner state live on NVMe under `/v
 The existing HDD mounted at `/var/lib/ci/bulk` holds disposable light-runner state and other seek-tolerant data.
 The filesystem is mounted by UUID outside disko so its existing contents survive configuration changes.
 
-GitHub App credentials are passed through process environments and never persisted in repository URLs or command arguments.
+Mirror fetch credentials are passed through process environments and never persisted in repository URLs or command arguments.
 Registration and mirror credentials share one token-minting implementation.
 
 ## Consequence
