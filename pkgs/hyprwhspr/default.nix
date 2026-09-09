@@ -57,6 +57,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     substituteInPlace lib/src/cli/models.py \
       --replace-fail "glob('models--Systran--faster-whisper-*')" "glob('models--*--faster-whisper-*')" \
       --replace-fail "model_dir.name.replace('models--Systran--faster-whisper-', ''')" "model_dir.name.split('--faster-whisper-', 1)[1]"
+    substituteInPlace lib/src/backends/faster_whisper_backend.py \
+      --replace-fail 'WhisperModel(model_name, device=device, compute_type=compute_type)' 'WhisperModel(model_name, device=device, compute_type=compute_type, local_files_only=True)'
     substituteInPlace lib/mic_osd/runner.py \
       --replace-fail '        for pattern in [' '        for pattern in [
             "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so.0",'
@@ -152,8 +154,41 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     import gi
     import io
     import os
+    import sys
     import tempfile
+    import types
     from pathlib import Path
+
+    model_loads = []
+
+    class CachedWhisperModel:
+        def __init__(self, model_name, *, local_files_only, **kwargs):
+            assert local_files_only is True
+            model_loads.append((model_name, kwargs))
+
+    sys.modules["faster_whisper"] = types.SimpleNamespace(WhisperModel=CachedWhisperModel)
+    from src.backends.faster_whisper_backend import FasterWhisperBackend
+
+    class Config:
+        default_config = {}
+
+        def get_setting(self, key, default=None):
+            return {
+                "faster_whisper_model": "large-v3-turbo",
+                "faster_whisper_device": "cpu",
+                "faster_whisper_compute_type": "int8",
+            }.get(key, default)
+
+    manager = types.SimpleNamespace(
+        config=Config(),
+        ready=False,
+        current_model=None,
+        _last_use_time=0,
+    )
+    backend = FasterWhisperBackend(manager)
+    assert backend.initialize()
+    assert backend.reinitialize()
+    assert len(model_loads) == 2, model_loads
 
     gi.require_version("Gtk", "4.0")
     gi.require_version("Gtk4LayerShell", "1.0")
