@@ -112,7 +112,7 @@ Daemon reconciliation defers while a no-mistakes run is pending or running, reco
 
 ### qmd
 
-`qmd` comes from the pinned upstream v2.5.3 flake input.
+`qmd` comes from the pinned upstream v2.8.3 flake input.
 `modules/home/qmd.nix` owns its CPU-only wrapper and the downstream patch that makes the MCP `query` tool require a non-empty `collections` argument, because one index holds several profiles' corpora and upstream falls back to every default collection when the argument is omitted (`docs/adr/0016-qmd-mcp-search-is-collection-scoped.md`).
 The patch lives at `modules/home/qmd-mcp-require-explicit-collections.patch` and must be re-checked on every qmd bump.
 The isolation is the reason the package is patched, so never drop the patch to make a version bump build. CLI search stays unscoped on purpose.

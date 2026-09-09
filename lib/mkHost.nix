@@ -3,27 +3,24 @@
   hostname,
   minimal ? false,
   server ? false,
-  hostModule ? ../hosts/${hostname},
-  fullHostModule ? ../hosts/${hostname}/full.nix,
-  nixosModule ?
+}:
+let
+  lib = inputs.nixpkgs.lib;
+  headless = minimal || server;
+  nixosModule =
     if minimal then
       ../modules/nixos/minimal.nix
     else if server then
       ../modules/nixos/server.nix
     else
-      ../modules/nixos,
-  homeModule ? ../modules/home,
-}:
-let
-  lib = inputs.nixpkgs.lib;
-  headless = minimal || server;
+      ../modules/nixos;
 in
 lib.nixosSystem {
   specialArgs = { inherit inputs hostname minimal; };
   modules = [
-    hostModule
+    ../hosts/${hostname}
   ]
-  ++ lib.optional (!minimal) fullHostModule
+  ++ lib.optional (!minimal) ../hosts/${hostname}/full.nix
   ++ [
     nixosModule
     inputs.disko.nixosModules.disko
@@ -40,7 +37,7 @@ lib.nixosSystem {
         useUserPackages = true;
         backupFileExtension = "bak";
         extraSpecialArgs = { inherit inputs hostname; };
-        users.atqa = homeModule;
+        users.atqa = ../modules/home;
       };
     }
   ];

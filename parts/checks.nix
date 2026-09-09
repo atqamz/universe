@@ -284,27 +284,33 @@
                   ${pkgs.stdenv.cc.cc.lib}/lib
                 touch "$out"
               '';
-          migration-doctor =
-            pkgs.runCommand "migration-doctor-test"
+          claude-statusline =
+            pkgs.runCommand "claude-statusline-test"
               {
                 nativeBuildInputs = with pkgs; [
                   bash
                   coreutils
+                  findutils
+                  gawk
                   git
                   gnugrep
+                  gnused
+                  jq
+                  util-linux
                 ];
               }
               ''
-                bash ${../tests/migration-doctor.bash} \
-                  ${lib.escapeShellArg self.apps.${system}.doctor.program}
-                touch $out
+                bash ${../tests/claude-statusline.bash} \
+                  ${../configs/dotagents/claude/fetch-usage.sh} \
+                  ${../configs/dotagents/claude/statusline-command.sh}
+                touch "$out"
               '';
-          migration-config-contract =
+          dotfile-link-contract =
             let
               manifestText = sfx14.config.home-manager.users.atqa.xdg.configFile."universe/doctor.json".text;
               manifest = pkgs.writeText "universe-doctor-manifest.json" manifestText;
             in
-            pkgs.runCommand "migration-config-contract"
+            pkgs.runCommand "dotfile-link-contract"
               {
                 nativeBuildInputs = with pkgs; [
                   bash
@@ -321,11 +327,20 @@
                 jq -e '.paths | index("universe/configs/dotagents")' ${manifest} >/dev/null
                 expect_link .config/foot/foot.ini universe/configs/dotfiles/foot/foot.ini
                 expect_link .config/hypr universe/configs/dotfiles/hypr
+                expect_link .config/zed universe/configs/dotfiles/zed
+                expect_link .config/herdr/config.toml universe/configs/dotfiles/herdr/config.toml
                 expect_link .claude/CLAUDE.md universe/configs/dotagents/CLAUDE.md
+                expect_link .claude/fetch-usage.sh universe/configs/dotagents/claude/fetch-usage.sh
+                expect_link .claude/statusline-command.sh universe/configs/dotagents/claude/statusline-command.sh
                 expect_link .config/opencode/AGENTS.md universe/configs/dotagents/AGENTS.md
                 expect_link .codex/AGENTS.md universe/configs/dotagents/AGENTS.md
                 expect_link .config/opencode/dynamic-models universe/configs/dotagents/opencode/dynamic-models
                 expect_link .config/omarchy/shell.toml universe/configs/dotfiles/omarchy/shell.toml
+                expect_link '.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/autoexec.cfg' universe/configs/dotfiles/cs2/autoexec.cfg
+                expect_link .config/rtk/filters.toml universe/configs/dotfiles/rtk/filters.toml
+                expect_link .config/gtk-3.0/thunar.css universe/configs/dotfiles/gtk/thunar.css
+                expect_link .config/gtk-4.0/thunar.css universe/configs/dotfiles/gtk/thunar.css
+                expect_link .config/cava/config universe/configs/dotfiles/cava/config
                 expect_link .claude/settings.json universe/configs/dotagents/claude/settings.json
                 expect_link .config/opencode/opencode.json universe/configs/dotagents/opencode/opencode.json
                 expect_link .no-mistakes/config.yaml universe/configs/dotagents/no-mistakes/config.yaml
