@@ -31,8 +31,20 @@ cat >"$tmp/bin/curl" <<'EOF'
 set -euo pipefail
 response=""
 headers=""
+auth_header=""
+case "$*" in
+*test-token*)
+  exit 1
+  ;;
+esac
 while [ "$#" -gt 0 ]; do
   case "$1" in
+  -H)
+    if [ "$2" = "@-" ]; then
+      IFS= read -r auth_header || true
+    fi
+    shift 2
+    ;;
   -o)
     response="$2"
     shift 2
@@ -45,6 +57,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 printf '%s\n' "$$" >>"$CALL_LOG"
+printf '%s\n' "$auth_header" >"$HEADER_LOG"
 printf '%s\n' '{"five_hour":{"utilization":12.5,"resets_at":"2999-01-01T00:00:00Z"},"seven_day":{"utilization":34.5,"resets_at":"2999-01-07T00:00:00Z"},"extra_usage":{"is_enabled":true,"monthly_limit":100,"used_credits":20,"utilization":20}}' >"$response"
 : >"$headers"
 printf '200'
@@ -55,6 +68,7 @@ chmod +x "$tmp/bin/curl"
 export HOME="$tmp/home"
 export PATH="$tmp/bin:$PATH"
 export CALL_LOG="$tmp/calls"
+export HEADER_LOG="$tmp/header"
 
 printf '%s\n' '{"sessionUsage":1,"sessionResetAt":"2999-01-01T00:00:00Z","weeklyUsage":2}' >"$HOME/.cache/claude/statusline/usage.json"
 bash "$usage_script" >/dev/null
@@ -64,6 +78,7 @@ rm -f "$HOME/.cache/claude/statusline/usage.json"
 output="$(bash "$usage_script")"
 jq -e '. == {sessionUsage: 12.5, sessionResetAt: "2999-01-01T00:00:00Z", weeklyUsage: 34.5}' <<<"$output" >/dev/null ||
   fail "fetch-usage returned fields the statusline does not consume"
+[ "$(cat "$HEADER_LOG")" = "Authorization: Bearer test-token" ] || fail "fetch-usage did not send the OAuth token through stdin"
 [ ! -e "$HOME/.cache/claude/statusline/token.cache" ] || fail "fetch-usage persisted the OAuth token"
 
 rm -f "$HOME/.cache/claude/statusline/usage.json" "$HOME/.cache/claude/statusline/usage.lock" "$CALL_LOG"

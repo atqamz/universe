@@ -134,8 +134,8 @@ fetch_from_api() {
   response_file=$(mktemp)
   headers_file=$(mktemp)
 
-  http_code=$(curl -s -m "$USAGE_API_TIMEOUT" \
-    -H "Authorization: Bearer $token" \
+  http_code=$(printf 'Authorization: Bearer %s\n' "$token" | curl -s -m "$USAGE_API_TIMEOUT" \
+    -H @- \
     -H "anthropic-beta: oauth-2025-04-20" \
     -w "%{http_code}" \
     -o "$response_file" \
