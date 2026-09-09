@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   clipboardPicker = pkgs.writeShellApplication {
     name = "clipboard-picker";
@@ -107,6 +107,18 @@ let
       playerctl play-pause
     '';
   };
+  launchers = {
+    "clipboard-picker" = clipboardPicker;
+    "clipboard-wipe" = clipboardWipe;
+    "screenshot-clipboard" = screenshotClipboard;
+    "screenshot-region" = screenshotRegion;
+    "emoji-picker" = emojiPicker;
+    "brightness-up" = brightnessUp;
+    "brightness-down" = brightnessDown;
+    "media-next" = mediaNext;
+    "media-previous" = mediaPrevious;
+    "media-play-pause" = mediaPlayPause;
+  };
 in
 {
   programs.fuzzel = {
@@ -140,29 +152,6 @@ in
     };
   };
 
-  home.packages = [
-    clipboardPicker
-    clipboardWipe
-    screenshotClipboard
-    screenshotRegion
-    emojiPicker
-    brightnessUp
-    brightnessDown
-    mediaNext
-    mediaPrevious
-    mediaPlayPause
-  ];
-
-  universe.doctor.commands = [
-    "clipboard-picker"
-    "clipboard-wipe"
-    "screenshot-clipboard"
-    "screenshot-region"
-    "emoji-picker"
-    "brightness-up"
-    "brightness-down"
-    "media-next"
-    "media-previous"
-    "media-play-pause"
-  ];
+  home.packages = lib.attrValues launchers;
+  universe.doctor.commands = lib.attrNames launchers;
 }

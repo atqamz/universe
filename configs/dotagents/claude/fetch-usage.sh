@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
-# Fetch Claude API usage data with caching and rate-limit handling.
-# Sourced by statusline-command.sh.
-
 CACHE_DIR="${HOME}/.cache/claude/statusline"
 CACHE_FILE="${CACHE_DIR}/usage.json"
 LOCK_FILE="${CACHE_DIR}/usage.lock"
+REFRESH_LOCK="${CACHE_DIR}/refresh.flock"
 CACHE_MAX_AGE=600
 LOCK_MAX_AGE=30
 DEFAULT_RATE_LIMIT_BACKOFF=600
 BACKOFF_FILE="${CACHE_DIR}/usage.backoff"
-TOKEN_CACHE_FILE="${CACHE_DIR}/token.cache"
-TOKEN_CACHE_MAX_AGE=3600
 
 USAGE_API_HOST="api.anthropic.com"
 USAGE_API_PATH="/api/oauth/usage"
@@ -18,9 +14,6 @@ USAGE_API_TIMEOUT=5
 
 ensure_cache_dir() {
   mkdir -p "$CACHE_DIR" 2>/dev/null || true
-  # The token cache below holds a live OAuth access token, so the directory is
-  # owner-only. chmod as well as mkdir: a directory created by an older version
-  # of this script is already 755.
   chmod 700 "$CACHE_DIR" 2>/dev/null || true
 }
 
@@ -31,34 +24,24 @@ file_mtime() {
 }
 
 get_usage_token() {
-  local now_ts
-  now_ts=$(now)
-
-  if [[ -f $TOKEN_CACHE_FILE ]]; then
-    local cache_age=$((now_ts - $(file_mtime "$TOKEN_CACHE_FILE")))
-    if [[ $cache_age -lt $TOKEN_CACHE_MAX_AGE ]]; then
-      cat "$TOKEN_CACHE_FILE" 2>/dev/null && return 0
-    fi
-  fi
-
-  local token=""
   local cred_file="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
   [[ -f $cred_file ]] || return 1
-  token=$(jq -r '.claudeAiOauth.accessToken // empty' "$cred_file" 2>/dev/null)
-
-  [[ -n $token && $token != "null" ]] || return 1
-
-  ensure_cache_dir
-  # umask for the create, chmod for a file an older version already left at 644.
-  (
-    umask 077
-    printf '%s\n' "$token" >"$TOKEN_CACHE_FILE"
-  ) 2>/dev/null
-  chmod 600 "$TOKEN_CACHE_FILE" 2>/dev/null || true
-  printf '%s\n' "$token"
+  jq -er '.claudeAiOauth.accessToken | select(type == "string" and length > 0)' "$cred_file" 2>/dev/null
 }
 
-read_active_lock() {
+write_file() {
+  local path="$1"
+  local value="$2"
+  local staged
+  ensure_cache_dir
+  staged=$(mktemp "${path}.XXXXXX") || return 1
+  if ! printf '%s\n' "$value" >"$staged" || ! chmod 600 "$staged" || ! mv -f "$staged" "$path"; then
+    rm -f "$staged"
+    return 1
+  fi
+}
+
+read_active_block() {
   local now_ts
   now_ts=$(now)
   [[ -f $LOCK_FILE ]] || return 1
@@ -88,12 +71,25 @@ read_active_lock() {
   return 1
 }
 
-write_lock() {
+write_block() {
   local blocked_until="$1"
   local error="${2:-timeout}"
-  ensure_cache_dir
   local jitter=$((RANDOM % 30))
-  echo "{\"blockedUntil\":$((blocked_until + jitter)),\"error\":\"$error\"}" >"$LOCK_FILE" 2>/dev/null
+  write_file "$LOCK_FILE" "{\"blockedUntil\":$((blocked_until + jitter)),\"error\":\"$error\"}"
+}
+
+acquire_refresh_lock() {
+  ensure_cache_dir
+  exec {REFRESH_LOCK_FD}>"$REFRESH_LOCK" || return 1
+  if flock -n "$REFRESH_LOCK_FD"; then
+    return 0
+  fi
+  exec {REFRESH_LOCK_FD}>&-
+  return 1
+}
+
+release_refresh_lock() {
+  exec {REFRESH_LOCK_FD}>&-
 }
 
 read_backoff_count() {
@@ -107,8 +103,7 @@ read_backoff_count() {
 }
 
 write_backoff_count() {
-  ensure_cache_dir
-  echo "$1" >"$BACKOFF_FILE" 2>/dev/null
+  write_file "$BACKOFF_FILE" "$1"
 }
 
 calc_backoff_seconds() {
@@ -156,7 +151,6 @@ fetch_from_api() {
     local retry_after retry_seconds
     retry_after=$(grep -i "^retry-after:" "$headers_file" | sed 's/^retry-after: *//i' | tr -d '\r\n' 2>/dev/null)
     retry_seconds=$(parse_retry_after "$retry_after")
-    # 0 = no server hint; caller applies exponential backoff
     result="rate-limited:${retry_seconds:-0}"
   else
     result="error"
@@ -171,12 +165,7 @@ parse_api_response() {
   jq -n --argjson data "$body" '{
         sessionUsage: $data.five_hour.utilization,
         sessionResetAt: $data.five_hour.resets_at,
-        weeklyUsage: $data.seven_day.utilization,
-        weeklyResetAt: $data.seven_day.resets_at,
-        extraUsageEnabled: $data.extra_usage.is_enabled,
-        extraUsageLimit: $data.extra_usage.monthly_limit,
-        extraUsageUsed: $data.extra_usage.used_credits,
-        extraUsageUtilization: $data.extra_usage.utilization
+        weeklyUsage: $data.seven_day.utilization
     }' 2>/dev/null
 }
 
@@ -185,9 +174,6 @@ read_stale_cache() {
   cat "$CACHE_FILE" 2>/dev/null
 }
 
-# Return stale cache only when it has no error and its sessionResetAt is absent
-# or still in the future. Otherwise return 1 so callers fall through to an error
-# response rather than lying about post-reset usage numbers.
 stale_cache_if_valid() {
   local stale now_ts session_reset_at session_reset_epoch has_error
   stale=$(read_stale_cache) || return 1
@@ -209,13 +195,10 @@ create_error_response() {
   echo "{\"error\":\"$1\"}"
 }
 
-fetch_usage_data() {
-  local now_ts
-  now_ts=$(now)
-
-  # Cache check — also invalidate if sessionResetAt is in the past.
+fresh_cache_if_valid() {
   if [[ -f $CACHE_FILE ]]; then
-    local cache_age cached_data has_error session_reset_at session_reset_epoch session_pct
+    local now_ts cache_age cached_data has_error session_reset_at session_reset_epoch session_pct
+    now_ts=$(now)
     cache_age=$((now_ts - $(file_mtime "$CACHE_FILE")))
     cached_data=$(cat "$CACHE_FILE" 2>/dev/null)
     if [[ -n $cached_data ]]; then
@@ -224,12 +207,10 @@ fetch_usage_data() {
       session_reset_epoch=0
       [[ -n $session_reset_at ]] && session_reset_epoch=$(date -d "$session_reset_at" +%s 2>/dev/null || echo 0)
       if [[ -z $has_error && ($session_reset_epoch -eq 0 || $session_reset_epoch -gt $now_ts) ]]; then
-        # Normal TTL
         if [[ $cache_age -lt $CACHE_MAX_AGE ]]; then
           echo "$cached_data"
           return 0
         fi
-        # Extended TTL (3×) when usage <50% and session reset >30 min away
         session_pct=$(echo "$cached_data" | jq -r '(.sessionUsage // 100) | floor' 2>/dev/null)
         if [[ $cache_age -lt $((CACHE_MAX_AGE * 3)) &&
           ${session_pct:-100} -lt 50 &&
@@ -240,8 +221,19 @@ fetch_usage_data() {
       fi
     fi
   fi
+  return 1
+}
 
-  # Token
+fetch_usage_data() {
+  local now_ts cached_data
+  now_ts=$(now)
+  [[ ! -e $CACHE_DIR/token.cache ]] || rm -f "$CACHE_DIR/token.cache"
+
+  if cached_data=$(fresh_cache_if_valid); then
+    echo "$cached_data"
+    return 0
+  fi
+
   local token
   token=$(get_usage_token)
   if [[ -z $token ]]; then
@@ -252,9 +244,8 @@ fetch_usage_data() {
     return 0
   fi
 
-  # Lock
   local lock_info
-  if lock_info=$(read_active_lock); then
+  if lock_info=$(read_active_block); then
     local lock_error="${lock_info%%:*}"
     stale_cache_if_valid || {
       create_error_response "$lock_error"
@@ -263,7 +254,19 @@ fetch_usage_data() {
     return 0
   fi
 
-  write_lock $((now_ts + LOCK_MAX_AGE)) "timeout"
+  if ! acquire_refresh_lock; then
+    stale_cache_if_valid || {
+      create_error_response "busy"
+      return 1
+    }
+    return 0
+  fi
+
+  if cached_data=$(fresh_cache_if_valid); then
+    release_refresh_lock
+    echo "$cached_data"
+    return 0
+  fi
 
   local api_result
   api_result=$(fetch_from_api "$token")
@@ -275,6 +278,7 @@ fetch_usage_data() {
     local usage_data
     usage_data=$(parse_api_response "$result_value")
     if [[ -z $usage_data ]]; then
+      release_refresh_lock
       stale_cache_if_valid || {
         create_error_response "parse-error"
         return 1
@@ -285,32 +289,32 @@ fetch_usage_data() {
     has_session=$(echo "$usage_data" | jq -r '.sessionUsage // empty' 2>/dev/null)
     has_weekly=$(echo "$usage_data" | jq -r '.weeklyUsage // empty' 2>/dev/null)
     if [[ -z $has_session && -z $has_weekly ]]; then
+      release_refresh_lock
       stale_cache_if_valid || {
         create_error_response "parse-error"
         return 1
       }
       return 0
     fi
-    ensure_cache_dir
     write_backoff_count 0
-    echo "$usage_data" >"$CACHE_FILE" 2>/dev/null
+    write_file "$CACHE_FILE" "$usage_data"
+    release_refresh_lock
     echo "$usage_data"
     return 0
     ;;
   rate-limited)
     local backoff_secs
     if [[ $result_value -gt 0 ]] 2>/dev/null; then
-      # Server gave Retry-After; respect it and reset backoff counter
       backoff_secs="$result_value"
       write_backoff_count 0
     else
-      # No server hint; exponential backoff
       local count
       count=$(read_backoff_count)
       backoff_secs=$(calc_backoff_seconds "$count")
       write_backoff_count $((count + 1))
     fi
-    write_lock $((now_ts + backoff_secs)) "rate-limited"
+    write_block $((now_ts + backoff_secs)) "rate-limited"
+    release_refresh_lock
     stale_cache_if_valid || {
       create_error_response "rate-limited"
       return 1
@@ -318,6 +322,7 @@ fetch_usage_data() {
     return 0
     ;;
   *)
+    release_refresh_lock
     stale_cache_if_valid || {
       create_error_response "api-error"
       return 1

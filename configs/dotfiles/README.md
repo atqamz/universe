@@ -15,5 +15,5 @@ Per-tool config. Anything host-specific keys off the hostname passed in by unive
 
 ## License
 
-MIT, see the universe [LICENSE](../LICENSE).
-Pull requests are not accepted; see the universe [CONTRIBUTING.md](../CONTRIBUTING.md).
+MIT, see the universe [LICENSE](../../LICENSE).
+Pull requests are not accepted; see the universe [CONTRIBUTING.md](../../CONTRIBUTING.md).

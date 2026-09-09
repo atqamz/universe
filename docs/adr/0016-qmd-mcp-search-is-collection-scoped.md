@@ -5,7 +5,7 @@
 One qmd index holds every documentation corpus this workstation owns, and the collection names carry the profile: `atqamz-*`, `yes2games-*`, `hage-*`.
 `0015-one-owner-ai-harness-integration.md` registers that one index into all three harnesses.
 
-In qmd 2.5.3 a collection participates in unscoped search unless it is marked `includeByDefault = false`, and the MCP `query` tool treats its `collections` argument as optional: when the argument is absent it substitutes every default collection.
+In qmd 2.8.3 a collection participates in unscoped search unless it is marked `includeByDefault = false`, and the MCP `query` tool treats its `collections` argument as optional: when the argument is absent it substitutes every default collection.
 So the failure mode is silent and available by default.
 An agent working in a `yes2games` repository that calls `query` without naming a collection retrieves `atqamz` and `hage` documentation in the same result set, and nothing in the transcript says that happened.
 
@@ -16,7 +16,7 @@ Instructing the model to always pass `collections` does not fix it either: a pro
 ## Decision
 
 The boundary is enforced in the package, not in a prompt.
-`modules/home/qmd-mcp-require-explicit-collections.patch` is a downstream patch applied to the pinned upstream v2.5.3 flake package: `collections` becomes a required `z.array(z.string()).min(1)`, and the `collections ?? defaultCollectionNames` fallback is deleted, so an omitted or empty argument is an MCP validation error before any search runs.
+`modules/home/qmd-mcp-require-explicit-collections.patch` is a downstream patch applied to the pinned upstream v2.8.3 flake package: `collections` becomes a required `z.array(z.string()).min(1)`, and the `collections ?? defaultCollectionNames` fallback is deleted, so an omitted or empty argument is an MCP validation error before any search runs.
 The optional HTTP transport's REST search endpoint gets the same requirement, because it is the same bypass in the same binary.
 The patch also corrects the instruction text to the plural parameter the schema actually exposes.
 

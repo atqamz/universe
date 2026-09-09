@@ -25,7 +25,7 @@ AI編碼代理之通則。諸倉庫共遵；項目另有AGENTS.md者，其規優
 - 項目之慣例，勝於個人之好。
 - 未議不入新依賴。
 - 讀所需一段，勿覽全檔。非命勿重排結構。
-- 註解默認為零：惟code不能自明之「所以然」，或pragma（`# shellcheck disable`、`# type: ignore`、`# noqa`）。所觸檔中陳腐淺白之註除之，疏密從鄰。
+- 註解默認為零：惟code不能自明之「所以然」，或pragma（`# shellcheck disable`、`# type: ignore`、`# noqa`）。一事一行，毋逾二行；設計之由、不變式之列、取捨之辯，非註也，當入PR之body或docs。重述下行code者、釋測試所驗者、陳腐淺白者，皆刪；疏密從鄰。
 - 有suite則補測試，畢前必跑。遵lint與format。
 
 ## Git / GitHub

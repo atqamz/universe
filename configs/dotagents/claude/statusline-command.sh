@@ -1,25 +1,7 @@
 #!/usr/bin/env bash
-# Claude Code detailed statusline
-#
-# Line 1: model (context size) | dir (branch)
-# Line 2: 5hr% weekly% reset | tokens
-
-COLOR="blue"
-
 C_RESET='\033[0m'
 C_GRAY='\033[38;5;245m'
-case "$COLOR" in
-orange) C_ACCENT='\033[38;5;173m' ;;
-blue) C_ACCENT='\033[38;5;74m' ;;
-teal) C_ACCENT='\033[38;5;66m' ;;
-green) C_ACCENT='\033[38;5;71m' ;;
-lavender) C_ACCENT='\033[38;5;139m' ;;
-rose) C_ACCENT='\033[38;5;132m' ;;
-gold) C_ACCENT='\033[38;5;136m' ;;
-slate) C_ACCENT='\033[38;5;60m' ;;
-cyan) C_ACCENT='\033[38;5;37m' ;;
-*) C_ACCENT="$C_GRAY" ;;
-esac
+C_ACCENT='\033[38;5;74m'
 
 input=$(cat)
 
@@ -27,18 +9,13 @@ model=$(echo "$input" | jq -r '.model.display_name // .model.id // "?"' | sed 's
 MODEL_ID=$(echo "$input" | jq -r '.model.id')
 cwd=$(echo "$input" | jq -r '.cwd // empty')
 dir=$(basename "$cwd" 2>/dev/null || echo "?")
-session=$(echo "$input" | jq -r '.session_id // empty')
 
 branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-# -- Context window -----------------------------------------------------------
-
 CONTEXT_SIZE=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 USAGE=$(echo "$input" | jq '.context_window.current_usage')
-REMAINING_PCT=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 max_k=$((CONTEXT_SIZE / 1000))
 
-# Human-readable context size (e.g. "200K", "1M")
 if [ "$max_k" -ge 1000 ]; then
   ctx_label="$((max_k / 1000))M context"
 else
@@ -79,7 +56,6 @@ else
   pct_prefix="~"
 fi
 
-# Human-readable token count (e.g. "45.2K", "1.3M")
 if [ "$CURRENT_TOKENS" -ge 1000000 ]; then
   tokens_label=$(awk "BEGIN{printf \"%.1fM\", $CURRENT_TOKENS/1000000}")
 elif [ "$CURRENT_TOKENS" -ge 1000 ]; then
@@ -98,22 +74,9 @@ else
   C_CTX='\033[31m'
 fi
 
-# -- GSD context bridge (for context-monitor hook) ----------------------------
-
-if [ -n "$session" ]; then
-  printf '{"session_id":"%s","remaining_percentage":%s,"used_pct":%d,"tokens":%d,"timestamp":%d}' \
-    "$session" "${REMAINING_PCT:-0}" "$pct" "$CURRENT_TOKENS" "$(date +%s)" \
-    >"/tmp/claude-ctx-${session}.json" 2>/dev/null
-fi
-
-# -- Output -------------------------------------------------------------------
-
-# Line 1: model (context) | dir (branch)
 dir_part="${C_GRAY}${dir}"
 [ -n "$branch" ] && dir_part="${dir_part} (${branch})"
 line1="${C_ACCENT}${model}${C_GRAY} (${ctx_label})${C_RESET} ${C_GRAY}|${C_RESET} ${dir_part}${C_RESET}"
-
-# -- Usage limits (5hr + weekly + reset) --------------------------------------
 
 I_CLOCK=$''
 I_CAL=$''
@@ -150,8 +113,6 @@ if [ -f "$usage_script" ]; then
   fi
 fi
 
-# -- Effort / reasoning -------------------------------------------------------
-
 EFFORT=$(echo "$input" | jq -r '.effort.level // empty')
 THINKING=$(echo "$input" | jq -r '.thinking.enabled')
 FAST=$(echo "$input" | jq -r '.fast_mode')
@@ -170,8 +131,6 @@ if [ -n "$EFFORT" ]; then
   [ "$THINKING" = "false" ] && effort_seg="${effort_seg} ${C_GRAY}nothink${C_RESET}"
 fi
 
-# -- Output line 2 ------------------------------------------------------------
-# 5hr% weekly% reset | effort | brain tokens
 brain_seg="${C_GRAY}${I_BRAIN}${C_RESET} ${C_CTX}${pct_prefix}${tokens_label}${C_RESET}"
 
 line2=""
