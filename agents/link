@@ -39,3 +39,11 @@ for skill in "$root"/skills/*; do
   link_owned "$skill" "$HOME/.agents/skills/$name"
   link_owned "$skill" "$HOME/.claude/skills/$name"
 done
+
+link_owned "$root/update-skills" "$HOME/.local/bin/universe-update-agent-skills"
+link_owned "$root/systemd/universe-agent-skills-update.service" "$HOME/.config/systemd/user/universe-agent-skills-update.service"
+link_owned "$root/systemd/universe-agent-skills-update.timer" "$HOME/.config/systemd/user/universe-agent-skills-update.timer"
+
+bash "$root/update-skills"
+systemctl --user daemon-reload
+systemctl --user enable --now universe-agent-skills-update.timer
