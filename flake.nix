@@ -1,27 +1,8 @@
 {
-  description = "universe - NixOS configuration";
+  description = "universe - personal infrastructure";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
-
-    treefmt-nix = {
-      url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    git-hooks-nix = {
-      url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -32,45 +13,41 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    omanixy = {
-      url = "github:atqamz/omanixy/84e8d19088fb78e811839b07b93408a62e98522d";
-    };
-
-    treehouse = {
-      url = "github:kunchenguid/treehouse";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    herdr = {
-      url = "github:ogulcancelik/herdr";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    gw = {
-      url = "github:atqamz/gw";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    qmd = {
-      url = "github:tobi/qmd/v2.8.3";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" ];
-      imports = [
-        inputs.treefmt-nix.flakeModule
-        inputs.git-hooks-nix.flakeModule
-        ./parts/formatter.nix
-        ./parts/checks.nix
-        ./parts/devshells.nix
-        ./parts/hosts.nix
-        ./parts/apps.nix
-        ./parts/packages.nix
-      ];
+    {
+      self,
+      nixpkgs,
+      sops-nix,
+      disko,
+      ...
+    }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
+    in
+    {
+      nixosConfigurations.pavg15 = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./hosts/pavg15
+          ./modules/nixos/server.nix
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          { nixpkgs.hostPlatform = system; }
+        ];
+      };
+
+      checks.${system}.pavg15 = self.nixosConfigurations.pavg15.config.system.build.toplevel;
+
+      devShells.${system}.default = pkgs.mkShellNoCC {
+        packages = with pkgs; [
+          deadnix
+          nixfmt-rfc-style
+          statix
+        ];
+      };
+
+      formatter.${system} = pkgs.nixfmt-rfc-style;
     };
 }
