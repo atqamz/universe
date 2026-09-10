@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+link_owned() {
+  local source="$1"
+  local target="$2"
+  local source_real target_real
+
+  mkdir -p -- "$(dirname -- "$target")"
+
+  if [ -L "$target" ]; then
+    source_real="$(readlink -f -- "$source")"
+    target_real="$(readlink -f -- "$target" 2>/dev/null || true)"
+    if [ "$target_real" = "$source_real" ]; then
+      return
+    fi
+    echo "refusing to replace foreign symlink: $target" >&2
+    return 1
+  fi
+
+  if [ -e "$target" ]; then
+    echo "refusing to replace existing path: $target" >&2
+    return 1
+  fi
+
+  ln -s -- "$source" "$target"
+  echo "linked $target"
+}
+
+link_owned "$root/global.md" "$HOME/.claude/CLAUDE.md"
+link_owned "$root/global.md" "$HOME/.codex/AGENTS.md"
+link_owned "$root/global.md" "$HOME/.config/opencode/AGENTS.md"
+
+for skill in "$root"/skills/*; do
+  [ -d "$skill" ] || continue
+  name="${skill##*/}"
+  link_owned "$skill" "$HOME/.agents/skills/$name"
+  link_owned "$skill" "$HOME/.claude/skills/$name"
+done
+
+link_owned "$root/update-skills" "$HOME/.local/bin/universe-update-agent-skills"
+link_owned "$root/systemd/universe-agent-skills-update.service" "$HOME/.config/systemd/user/universe-agent-skills-update.service"
+link_owned "$root/systemd/universe-agent-skills-update.timer" "$HOME/.config/systemd/user/universe-agent-skills-update.timer"
+
+bash "$root/update-skills"
+systemctl --user daemon-reload
+systemctl --user enable --now universe-agent-skills-update.timer
