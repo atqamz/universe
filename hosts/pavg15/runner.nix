@@ -124,6 +124,7 @@ let
     "yes2dashboard"
     "yes2sdk-mcp"
     "rujak"
+    "butler"
   ];
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
