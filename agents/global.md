@@ -2,6 +2,7 @@
 
 ## Engineering
 
+- For software-engineering work, always load and follow both the `caveman` and `ponytail` skills before planning or implementation. If either skill is unavailable, state that explicitly before proceeding.
 - Prefer the smallest correct change. Delete before adding.
 - Follow repository conventions over personal preferences.
 - Do not add dependencies, abstractions, compatibility layers, or configuration without a concrete need.
