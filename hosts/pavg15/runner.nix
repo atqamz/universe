@@ -117,15 +117,18 @@ let
   podmanUnitFor = r: "github-runner-podman-${r.name}";
   runnerUnitFor = r: "github-runner-${r.name}";
 
-  claudeTrustedRepos = [
-    "nsr"
-    "nsr-nakama"
-    "yes2infra"
-    "yes2dashboard"
-    "yes2sdk-mcp"
-    "rujak"
-    "butler"
-  ];
+  # Every mirrored repo runs jobs here, so any of them can gain a Claude workflow.
+  # Deriving trust from the mirror list keeps the two from drifting apart: an
+  # untrusted workspace makes claude-code-action write to the read-only
+  # /root/.claude.json and die with a bare "[Errno 30] Read-only file system".
+  claudeTrustedRepos = lib.unique (
+    mirroredRepos
+    ++ [
+      "yes2infra"
+      "yes2dashboard"
+      "yes2sdk-mcp"
+    ]
+  );
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
     builtins.toJSON {
