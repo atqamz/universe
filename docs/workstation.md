@@ -19,8 +19,16 @@ Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migratio
 Universe owns only:
 
 - `agents/global.md`: personal defaults shared across Claude Code, Codex, and OpenCode.
-- `agents/skills/*`: personally authored reusable skills.
+- `agents/skills/*`: personally authored reusable skills such as `gh-ops`.
+- `agents/update-skills`: refreshes mandatory externally owned skills from their canonical skills.sh/GitHub sources.
 
-`agents/link` links files and individual skill directories. It never replaces an existing real file or a foreign symlink, and it never replaces whole harness directories such as `~/.claude`, `~/.codex`, `~/.config/opencode`, or `~/.agents/skills`.
+`agents/link` links files and individual personally owned skill directories. It never replaces an existing real file or a foreign symlink, and it never replaces whole harness directories such as `~/.claude`, `~/.codex`, `~/.config/opencode`, or `~/.agents/skills`.
+
+For software engineering work, `caveman` and `ponytail` are mandatory personal policy. They remain externally owned rather than vendored into Universe:
+
+- `caveman` comes from `JuliusBrussee/caveman`.
+- `ponytail` comes from `DietrichGebert/ponytail`.
+
+Running `agents/link` installs or refreshes both immediately and enables `universe-agent-skills-update.timer`. The user timer refreshes both once a week with `skills@1.5.25`; the skill contents still track their upstream sources. Run `~/.local/bin/universe-update-agent-skills` for an immediate manual refresh.
 
 Project-specific instructions belong in the project. Prefer `AGENTS.md` as the canonical project policy and a small `CLAUDE.md` that imports it when Claude compatibility is needed.
