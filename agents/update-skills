@@ -29,3 +29,4 @@ refresh() {
 
 refresh JuliusBrussee/caveman caveman
 refresh DietrichGebert/ponytail ponytail
+refresh obra/superpowers '*'

@@ -24,11 +24,12 @@ Universe owns only:
 
 `agents/link` links files and individual personally owned skill directories. It never replaces an existing real file or a foreign symlink, and it never replaces whole harness directories such as `~/.claude`, `~/.codex`, `~/.config/opencode`, or `~/.agents/skills`.
 
-For software engineering work, `caveman` and `ponytail` are mandatory personal policy. They remain externally owned rather than vendored into Universe:
+For software engineering work, `caveman` and `ponytail` are mandatory personal policy. Universe also installs the complete Superpowers suite. These skills remain externally owned rather than vendored into Universe:
 
 - `caveman` comes from `JuliusBrussee/caveman`.
 - `ponytail` comes from `DietrichGebert/ponytail`.
+- The complete Superpowers suite comes from `obra/superpowers`.
 
-Running `agents/link` installs or refreshes both immediately and enables `universe-agent-skills-update.timer`. The user timer refreshes both once a week with `skills@1.5.25`; the skill contents still track their upstream sources. Run `~/.local/bin/universe-update-agent-skills` for an immediate manual refresh.
+Running `agents/link` installs or refreshes all configured external skills immediately and enables `universe-agent-skills-update.timer`. The user timer refreshes them once a week with `skills@1.5.25`; the skill contents still track their upstream sources, and new Superpowers skills are included automatically. Run `~/.local/bin/universe-update-agent-skills` for an immediate manual refresh.
 
 Project-specific instructions belong in the project. Prefer `AGENTS.md` as the canonical project policy and a small `CLAUDE.md` that imports it when Claude compatibility is needed.
