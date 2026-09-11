@@ -5,7 +5,7 @@ Personal infrastructure for one NixOS server and a small amount of portable pers
 ## Ownership
 
 - `pavg15`: NixOS server managed by this flake.
-- `sfx14`: Omarchy workstation. Universe does not manage its desktop or baseline `~/.config`.
+- `sfx14`: Omarchy workstation. Universe does not manage its desktop or baseline `~/.config`. Universe owns only `hosts/sfx14`, the machine-specific CPU and GPU power caps.
 - `agents/`: global personal agent defaults and personally authored skills.
 - `vault`: private identity and secret bootstrap, in its own repository.
 - `password-store`: password entries, in its own repository.

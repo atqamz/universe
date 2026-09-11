@@ -1,0 +1,18 @@
+[Unit]
+Description=Cap SFX14 NVIDIA clocks (lock 1540MHz, +200MHz VF offset)
+Documentation=https://github.com/atqamz/universe/blob/main/docs/workstation.md
+ConditionPathExists=/dev/nvidiactl
+After=systemd-modules-load.service suspend.target hibernate.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/nvidia-smi -pm 1
+ExecStart=/usr/bin/nvidia-smi -lgc 210,1540
+# The +200MHz VF offset is what actually lowers voltage: the locked 1540MHz then
+# runs at the voltage point that 1340MHz would normally use. nvidia-smi only
+# exposes negative derate on GeForce, so go through NVML.
+ExecStart=/usr/bin/python3 -c "import pynvml; pynvml.nvmlInit(); pynvml.nvmlDeviceSetGpcClkVfOffset(pynvml.nvmlDeviceGetHandleByIndex(0), 200); pynvml.nvmlShutdown()"
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Cap SFX14 CPU package power (PL1 15W, PL2 15W)
+Documentation=https://github.com/atqamz/universe/blob/main/docs/workstation.md
+ConditionPathExists=/sys/class/powercap/intel-rapl:0
+After=suspend.target hibernate.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# The effective limit is the minimum of the MSR and MMIO RAPL domains, so writing
+# the MSR domain alone is enough to bring both constraints down.
+ExecStart=/usr/bin/sh -c 'echo 15000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw; echo 15000000 > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw'
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target

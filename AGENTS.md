@@ -5,6 +5,7 @@ Universe is personal infrastructure, not a workstation distribution.
 ## Ownership
 
 - `hosts/pavg15` and `modules/nixos` own the pavg15 NixOS server.
+- `hosts/sfx14` owns sfx14 hardware policy only, currently the CPU and GPU power caps. It is not a workstation configuration layer.
 - `agents/global.md` owns durable personal agent defaults.
 - `agents/skills` owns personally authored reusable skills.
 - Vault owns private identity and secret bootstrap material.
