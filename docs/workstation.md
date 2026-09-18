@@ -12,8 +12,32 @@ The workstation is expected to look like a fresh current Omarchy install plus id
 6. Run `~/universe/agents/link`.
 7. Install Nix only for repositories that use it: `omarchy-pkg-add nix`, then `sudo systemctl enable --now nix-daemon.service`.
 8. Install the sfx14 power caps: `omarchy-pkg-add python-nvidia-ml-py`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, then `sudo systemctl enable --now sfx14-power-cap.service sfx14-gpu-cap.service`.
+9. Join the tailnet and enable remote access: `omarchy-pkg-add tailscale`, `sudo systemctl enable --now tailscaled.service`, then register against the same OAuth client pavg15 uses:
+
+   ```sh
+   sudo tailscale up --ssh --operator=$USER --advertise-tags=tag:universe \
+     --auth-key "$(sops -d --extract '["tailscale-oauth"]' ~/universe/modules/nixos/secrets/tailscale-oauth.sops.yaml)?ephemeral=false"
+   ```
 
 Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migrations. Add a durable personal override only after it proves necessary, and keep its ownership separate from the Omarchy baseline.
+
+## Remote access
+
+sfx14 reaches pavg15, and is reached from the phone, over the tailnet only. Nothing is port-forwarded and no host firewall port is opened: when no direct path exists the traffic relays through DERP, which SSH tolerates. Both ends therefore have to be logged in and online on the tailnet.
+
+Inbound SSH is Tailscale SSH, served by `tailscaled`. `sshd` stays disabled, so the machine listens on no SSH port at all and the tailnet policy alone decides who may connect.
+
+sfx14 carries `tag:universe` and registers with the same OAuth client as pavg15, so a reinstall rejoins unattended and the node key never expires. The tag is what makes that possible: an auth key that does not expire has to come from an OAuth client, and an OAuth client can only issue keys for a tag.
+
+An OAuth client mints ephemeral keys by default, and an ephemeral node is deleted from the tailnet shortly after it goes offline. That suits pavg15, which never goes offline, but a laptop would disappear every night, so the workstation key carries `?ephemeral=false`.
+
+Tagging is only free on a fresh install. Re-authenticating an already registered user-owned node with `--advertise-tags` does not convert it: the coordination server creates a second machine, hands it a new tailnet IP, and names it `sfx14-1` while the stale entry keeps the name. Delete the old machine and rename the new one in the admin console afterwards.
+
+The tag is also what grants access. A tagged node is not owned by a user, so the tailnet's `autogroup:self` SSH rule no longer covers sfx14; the rule that targets `tag:universe` does. Confirm that rule exists before tagging the machine, otherwise inbound SSH stops at the moment of re-registration. The same rule currently lets the other tailnet member's device SSH into tagged nodes, which now includes this laptop. Narrow that rule if it stops being acceptable.
+
+Taildrop is the price: it only works between user-owned nodes, so tagging sfx14 ends file transfer with the phone. Use `scp` over the tailnet instead.
+
+Verify after registration with `tailscale debug netmap`: the `SSHPolicy` principals must include the phone's tailnet IP.
 
 ## sfx14 power
 
