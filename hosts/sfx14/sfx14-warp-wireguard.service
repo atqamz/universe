@@ -1,0 +1,15 @@
+[Unit]
+Description=Keep the SFX14 Cloudflare WARP tunnel on WireGuard
+Documentation=https://github.com/atqamz/universe/blob/main/docs/workstation.md
+ConditionPathExists=/usr/bin/warp-cli
+After=warp-svc.service
+Wants=warp-svc.service
+
+[Service]
+Type=oneshot
+# Three reconnect cycles at twenty seconds each, plus room to spare.
+TimeoutStartSec=180
+ExecStart=/usr/local/bin/sfx14-warp-wireguard
+
+[Install]
+WantedBy=warp-svc.service

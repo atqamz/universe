@@ -1,0 +1,61 @@
+#!/bin/sh
+# Cloudflare pushes MASQUE from the Zero Trust device profile, and under MASQUE
+# an inbound Tailscale SSH session authenticates and runs small commands but
+# never opens its interactive channel, which looks like a client stuck at
+# "connecting". WireGuard does not have the problem. A local override is the
+# only lever this host has, and a policy refresh can take it away at any time,
+# so restate it rather than set it once.
+set -eu
+
+want=WireGuard
+
+# Run as root from systemd there is no TTY, and every call is refused without
+# this flag. The refusal reads like any other failure, so an unrecognised
+# status has to be loud: treating it as "tunnel is down" would make this unit
+# report success while changing nothing.
+warp() {
+	warp-cli --accept-tos --no-ansi "$@"
+}
+
+live() {
+	warp tunnel stats 2>/dev/null |
+		sed -n 's/^Tunnel Protocol: *\([A-Za-z]*\).*/\1/p'
+}
+
+status=$(warp status 2>&1) || true
+case $status in
+*"Status update: Connected"*) ;;
+*"Status update: Disconnected"*) exit 0 ;; # no tunnel to correct
+*)
+	echo "cannot read WARP status: $status" >&2
+	exit 1
+	;;
+esac
+
+if [ "$(live)" = "$want" ]; then
+	exit 0
+fi
+
+warp tunnel protocol set "$want"
+
+# Setting the preference does not move a running tunnel, and one reconnect is
+# not enough either: the daemon brings the tunnel back up on the old protocol
+# first and only picks up the new one on a later cycle.
+attempt=0
+while [ "$(live)" != "$want" ]; do
+	attempt=$((attempt + 1))
+	if [ "$attempt" -gt 3 ]; then
+		echo "tunnel protocol is $(live), wanted $want" >&2
+		exit 1
+	fi
+
+	warp disconnect
+	sleep 2
+	warp connect
+
+	waited=0
+	while [ "$waited" -lt 20 ] && [ "$(live)" != "$want" ]; do
+		waited=$((waited + 1))
+		sleep 1
+	done
+done

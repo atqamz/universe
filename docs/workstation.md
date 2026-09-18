@@ -11,7 +11,7 @@ The workstation is expected to look like a fresh current Omarchy install plus id
 5. Clone Universe: `git clone git@github.com:atqamz/universe.git ~/universe`.
 6. Run `~/universe/agents/link`.
 7. Install Nix only for repositories that use it: `omarchy-pkg-add nix`, then `sudo systemctl enable --now nix-daemon.service`.
-8. Install the sfx14 power caps: `omarchy-pkg-add python-nvidia-ml-py`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, then `sudo systemctl enable --now sfx14-power-cap.service sfx14-gpu-cap.service`.
+8. Install the sfx14 units: `omarchy-pkg-add python-nvidia-ml-py`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, `sudo install -m755 ~/universe/hosts/sfx14/sfx14-warp-wireguard /usr/local/bin/`, then `sudo systemctl enable --now sfx14-power-cap.service sfx14-gpu-cap.service` and `sudo systemctl enable sfx14-warp-wireguard.service`.
 9. Join the tailnet and enable remote access: `omarchy-pkg-add tailscale`, `sudo systemctl enable --now tailscaled.service`, then register against the same OAuth client pavg15 uses:
 
    ```sh
@@ -34,6 +34,10 @@ An OAuth client mints ephemeral keys by default, and an ephemeral node is delete
 Tagging is only free on a fresh install. Re-authenticating an already registered user-owned node with `--advertise-tags` does not convert it: the coordination server creates a second machine, hands it a new tailnet IP, and names it `sfx14-1` while the stale entry keeps the name. Delete the old machine and rename the new one in the admin console afterwards.
 
 The tag is also what grants access. A tagged node is not owned by a user, so the tailnet's `autogroup:self` SSH rule no longer covers sfx14; the rule that targets `tag:universe` does. Confirm that rule exists before tagging the machine, otherwise inbound SSH stops at the moment of re-registration. The same rule currently lets the other tailnet member's device SSH into tagged nodes, which now includes this laptop. Narrow that rule if it stops being acceptable.
+
+Cloudflare WARP must not run MASQUE. Under MASQUE an inbound Tailscale SSH session authenticates and its small non-interactive probes complete, but the interactive channel never opens, so the client sits at "connecting" with no error and the symptom mimics a bad ACL or a stale host key. Read `journalctl -u tailscaled` and look for `starting pty command`: if probe sessions reach `Session complete` and no PTY session ever starts, the tunnel is on MASQUE.
+
+The Zero Trust device profile pushes MASQUE and `warp-cli tunnel protocol` is a consumer-only override, so `sfx14-warp-wireguard.service` restates WireGuard whenever `warp-svc` starts. It runs at WARP start rather than on a timer because repairing is expensive: setting the preference does not move a running tunnel, the daemon brings the tunnel back up on the old protocol first, and it takes two or three reconnect cycles and about fifty seconds with no connectivity at all. A periodic timer would turn a protocol that cannot be held into a network outage every few minutes. Under systemd there is no TTY, so every `warp-cli` call needs `--accept-tos`; without it the daemon refuses each call with a message that reads like any other failure, and a reconciler that mistakes it for a stopped tunnel reports success while changing nothing.
 
 Taildrop is the price: it only works between user-owned nodes, so tagging sfx14 ends file transfer with the phone. Use `scp` over the tailnet instead.
 
