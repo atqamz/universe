@@ -7,7 +7,6 @@ Wants=warp-svc.service
 
 [Service]
 Type=oneshot
-# Three reconnect cycles at twenty seconds each, plus room to spare.
 TimeoutStartSec=180
 ExecStart=/usr/local/bin/sfx14-warp-wireguard
 

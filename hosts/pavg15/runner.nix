@@ -117,10 +117,6 @@ let
   podmanUnitFor = r: "github-runner-podman-${r.name}";
   runnerUnitFor = r: "github-runner-${r.name}";
 
-  # Every mirrored repo runs jobs here, so any of them can gain a Claude workflow.
-  # Deriving trust from the mirror list keeps the two from drifting apart: an
-  # untrusted workspace makes claude-code-action write to the read-only
-  # /root/.claude.json and die with a bare "[Errno 30] Read-only file system".
   claudeTrustedRepos = lib.unique (
     mirroredRepos
     ++ [
@@ -194,7 +190,6 @@ let
     ];
     text = ''
       token=$(github-app-token ${appPemPath} ${appId} ${installationId})
-      # Environment avoids persisting the token in the remote URL or process list.
       GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$token" | base64 -w0)"
       token=""
       export GIT_CONFIG_COUNT=1
@@ -213,7 +208,6 @@ let
           else
             rm -rf "$dir.new"
             git clone --mirror "https://github.com/${orgName}/$repo.git" "$dir.new"
-            # Borrowing clones require the mirror to retain every referenced object.
             git -C "$dir.new" config gc.auto 0
             git -C "$dir.new" config gc.pruneExpire never
             mv "$dir.new" "$dir"
@@ -224,7 +218,6 @@ let
           failed=$((failed + 1))
         fi
       done
-      # One broken repository must not block refreshes for the rest of the fleet.
       [ "$failed" -lt "''${#repos[@]}" ]
     '';
   };
@@ -243,7 +236,6 @@ let
       [ -d "$mirror" ] || exit 0
       [ -z "$(ls -A "$dir" 2>/dev/null)" ] || exit 0
       mkdir -p "$dir" || exit 0
-      # Rootless ownership requires safe.directory from a temporary global config.
       cfg=$RUNNER_WORKDIR/.git-mirror-config
       printf '[safe]\n\tdirectory = %s\n' "$mirror" > "$cfg" || exit 0
       if ! GIT_CONFIG_GLOBAL=$cfg git clone --shared --no-checkout "$mirror" "$dir"; then
@@ -381,12 +373,10 @@ let
     text = ''
       base=https://download.unity3d.com/download_unity
 
-      # A file-backed transfer can resume after the home WiFi link drops.
       fetch() {
         url=$1
         into=$2
         file=$3/''${url##*/}
-        # xz validates a resumed file even when curl answers 416 for a complete archive.
         curl -fL --retry 10 --retry-all-errors --retry-delay 5 -C - -o "$file" "$url" || true
         xz -t "$file"
         tar -xJf "$file" -C "$into"

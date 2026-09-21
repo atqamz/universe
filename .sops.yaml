@@ -1,8 +1,3 @@
-# Universe holds only system secrets. The GPG primary key remains an interactive
-# edit/recovery recipient, and is what lets sfx14 read the Tailscale OAuth client
-# during workstation bootstrap; pavg15's persistent SSH host key is
-# converted with ssh-to-age so sops-nix can decrypt headlessly at activation.
-# Existing ciphertext can retain retired recipients until explicitly rekeyed.
 creation_rules:
   - path_regex: modules/nixos/secrets/.*\.sops\.yaml$
     pgp: F1F60517602888C8D5E486EB8AD7D4A302EE6771
