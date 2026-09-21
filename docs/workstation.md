@@ -51,6 +51,8 @@ The Acer Swift SFX14-72G cools badly. At a measured 15 W package draw the CPU st
 
 `sfx14-gpu-cap.service` reproduces what the retired NixOS configuration did to the RTX 4050: persistence mode on, graphics clocks locked to 210-1540 MHz, and a +200 MHz GPC VF offset so the locked clock runs at a lower voltage point. The offset needs `python-nvidia-ml-py`; `nvidia-smi` only exposes negative VF derate on GeForce. Persistence mode keeps the dGPU initialised, which costs a little idle power.
 
+That unit silently skipped itself at every boot until now. `/dev/nvidiactl` appears about seven seconds after the nvidia module loads, which is after systemd reaches the unit, so `ConditionPathExists` on that node was always false and the GPU ran uncapped. It now conditions on `nvidia-modprobe` and calls it from `ExecStartPre`, which is the vendor's own way to create the nodes. Confirm the offset landed by reading `nvmlDeviceGetGpcClkVfOffset`; the reported maximum graphics clock also moves from 3105 to 3300 MHz when it is applied. The 1540 MHz ceiling only shows under a graphics load, not under NVENC, which runs on a separate clock domain.
+
 Both units reapply on resume through `WantedBy=suspend.target` plus `After=suspend.target`, because firmware restores its own defaults across a suspend cycle.
 
 Voltage undervolting is not possible on this machine. The OC mailbox is locked: a write of MSR 0x150 returns no fault but the offset reads back as 0 mV, with Secure Boot disabled and kernel lockdown `[none]`. The retired NixOS configuration did not undervolt either, despite the name; its `services.undervolt` block only carried RAPL limits.
