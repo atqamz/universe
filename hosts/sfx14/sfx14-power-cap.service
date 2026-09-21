@@ -7,14 +7,6 @@ After=suspend.target hibernate.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# Write both RAPL domains. The effective limit is the minimum of the two, so the
-# MSR domain alone is enough to bring the limit down, but something restores MSR
-# PL1 to the MMIO value after boot and the sustained cap then disappears without
-# a trace. Writing both means whichever domain wins still carries the cap.
-#
-# PL2 has to stay above PL1. It governs the 2.44 ms burst window, so a PL2 below
-# PL1 clamps every burst harder than the sustained limit and pins the package at
-# idle clocks: the earlier 15 W PL2 held all 22 threads at 727 MHz.
 ExecStart=/usr/bin/sh -c 'echo 28000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw; echo 28000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_1_power_limit_uw'
 
 [Install]
