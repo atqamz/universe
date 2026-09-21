@@ -1,5 +1,5 @@
 [Unit]
-Description=Cap SFX14 CPU package power (PL1 15W, PL2 15W)
+Description=Cap SFX14 CPU package power (PL1 28W, PL2 45W)
 Documentation=https://github.com/atqamz/universe/blob/main/docs/workstation.md
 ConditionPathExists=/sys/class/powercap/intel-rapl:0
 After=suspend.target hibernate.target
@@ -7,9 +7,15 @@ After=suspend.target hibernate.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# The effective limit is the minimum of the MSR and MMIO RAPL domains, so writing
-# the MSR domain alone is enough to bring both constraints down.
-ExecStart=/usr/bin/sh -c 'echo 15000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw; echo 15000000 > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw'
+# Write both RAPL domains. The effective limit is the minimum of the two, so the
+# MSR domain alone is enough to bring the limit down, but something restores MSR
+# PL1 to the MMIO value after boot and the sustained cap then disappears without
+# a trace. Writing both means whichever domain wins still carries the cap.
+#
+# PL2 has to stay above PL1. It governs the 2.44 ms burst window, so a PL2 below
+# PL1 clamps every burst harder than the sustained limit and pins the package at
+# idle clocks: the earlier 15 W PL2 held all 22 threads at 727 MHz.
+ExecStart=/usr/bin/sh -c 'echo 28000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw; echo 28000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_1_power_limit_uw'
 
 [Install]
 WantedBy=multi-user.target suspend.target hibernate.target

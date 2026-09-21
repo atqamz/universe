@@ -45,9 +45,13 @@ Verify after registration with `tailscale debug netmap`: the `SSHPolicy` princip
 
 ## sfx14 power
 
-The Acer Swift SFX14-72G cools badly. At a measured 15 W package draw the CPU still sits at 83 C and the chassis sensors at 70-77 C, so the caps below limit the damage rather than fix it. The real fix is cleaning the heatsink and repasting. There is no software fan control: no `fan*_input` or `pwm*` in hwmon, `acer-wmi` exposes nothing, and there is no `platform_profile`. The fan curve belongs entirely to the Acer EC.
+The Acer Swift SFX14-72G cools badly, so the caps below limit the damage rather than fix it. The real fix is cleaning the heatsink and repasting. There is no software fan control: no `fan*_input` or `pwm*` in hwmon, `acer-wmi` exposes nothing, and there is no `platform_profile`. The fan curve belongs entirely to the Acer EC.
 
-`sfx14-power-cap.service` writes PL1 and PL2 to 15 W on `/sys/class/powercap/intel-rapl:0`, against a firmware default of 45 W and 80 W. The effective limit is the minimum of the MSR and MMIO RAPL domains, so writing the MSR domain alone is enough.
+`sfx14-power-cap.service` writes PL1 28 W and PL2 45 W, against a firmware default of 45 W and 80 W. The firmware's own `constraint_0_max_power_uw` hint is 28 W. Sustained all-core load then sits at 74-84 C and about 2500 MHz.
+
+PL2 has to stay above PL1. PL2 governs the 2.44 ms burst window, so a PL2 below PL1 clamps every burst harder than the sustained limit. The unit's earlier 15 W on both constraints ended up as PL1 45 W with PL2 15 W, which held all 22 threads at 727 MHz and 61 C with 50 C of thermal headroom unused, and cost a third of the frequency a 28 W cap delivers at 80 C. Video calls are a burst load and suffered most.
+
+The unit writes both the MSR and the MMIO domain, and the effective limit is the minimum of the two. The MSR domain is the one that holds: 28 W survived a full heat cycle there. The earlier 15 W did not, and PL1 was found back at 45 W while the PL2 write from the same `ExecStart` had stuck, so a PL1 set far below the firmware's 28 W hint has to be read back rather than assumed. `thermald` owns MMIO PL1 as a cooling device and was measured moving it between 20 W and 45 W as the package temperature changed, so the MMIO write only matters when `thermald` is not running. Re-check with `grep . /sys/class/powercap/intel-rapl{,-mmio}:0/constraint_[01]_power_limit_uw` after a hot run or a suspend cycle; MMIO values moving on their own is expected, MSR values moving is not.
 
 `sfx14-gpu-cap.service` reproduces what the retired NixOS configuration did to the RTX 4050: persistence mode on, graphics clocks locked to 210-1540 MHz, and a +200 MHz GPC VF offset so the locked clock runs at a lower voltage point. The offset needs `python-nvidia-ml-py`; `nvidia-smi` only exposes negative VF derate on GeForce. Persistence mode keeps the dGPU initialised, which costs a little idle power.
 
