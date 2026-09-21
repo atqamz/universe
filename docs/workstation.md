@@ -65,6 +65,12 @@ The units are copied into `/etc/systemd/system` rather than symlinked, because `
 
 Power profile selection stays with Omarchy and `power-profiles-daemon`. Universe does not set it.
 
+## sfx14 video acceleration
+
+Omarchy's `default/hypr/nvidia.lua` exports `LIBVA_DRIVER_NAME=nvidia` on every machine that has an NVIDIA GPU. On this hybrid laptop the browser renders on the Intel iGPU (`renderD129`, i915), and `nvidia-vaapi-driver` publishes no encode entrypoint on either render node, so that default leaves every video call encoding in software. `~/.config/hypr/hyprland.lua` overrides it to `iHD` after the Omarchy defaults load. The override stays in the Omarchy-owned config rather than being seeded from Universe.
+
+Measured under the 15 W cap, a 1080p30 encode cost 10.2 s of CPU in software against 0.4 s through iHD VAAPI, so for a video call the driver name was worth more than the power cap. Verify with `env | grep LIBVA_DRIVER_NAME` in a fresh session: the value only reaches applications through uwsm at session start, so a running session keeps the old one until the next login.
+
 ## Agents
 
 Universe owns only:
