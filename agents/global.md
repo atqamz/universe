@@ -23,6 +23,7 @@
 - Do not commit, push, open or close issues, open PRs, review, or merge unless explicitly authorized for that action.
 - Never bypass hooks, verification, or commit signing.
 - Never force-push a default branch.
+- Before adding a file, read `.gitignore`. When it is an allowlist (`*` followed by `!` entries), add the new path to it, then run `git status --short --ignored` and confirm no new file is ignored.
 - Use the `gh-ops` skill for Git and GitHub workflows.
 
 ## Security
