@@ -1,44 +1,48 @@
 ---
 name: gh-ops
-description: GitHub operations discipline for branches, commits, issues, pull requests, code review, and merges. Use whenever committing or pushing a branch, opening or closing an issue, opening, reviewing, or merging a pull request, or running any gh CLI operation.
+description: Use when creating or pushing branches and commits, opening or closing issues, opening or reviewing pull requests, merging, or running any gh CLI command.
 ---
 
 # gh-ops
 
-## 分支
+## Branches
 
-Trunk-based。自default分支，枝命短促，工畢即併。issue所生者冠其號為`<issue#>-<slug>`，餘則徑以`<slug>`，勿為命枝而創issue。clone自upstream者從其舊俗。
+Use trunk-based development. Branch from the default branch, keep branch names short, and merge promptly. Name issue branches `<issue-number>-<slug>` and other branches `<slug>`. Do not create an issue only to name a branch. Follow the upstream repository's convention when cloning an existing project.
 
-## 提交
+## Commits
 
-一commit一事，自足之改。祈使語、小寫起、句號免、忌謀劃套話（phase/step/milestone之屬），直言其變。
+Keep each commit to one self-contained change. Use an imperative subject with a lowercase first word and no trailing period. Avoid planning terms such as phase, step, or milestone; state the actual change.
 
-## 議題
+## Issues
 
-- 引用必全稱`owner/repo#N`，勿單書`#N`；`Related:`/`Depends on:`冠之如式。
-- 問之前遍閱該issue：正文、評論、所連PR；已決勿再問。
-- label取既有者，`--milestone`宜則加之；未問勿創label。issue與PR，assignee恆`atqamz`。
-- 多部之作：一tracking issue統之，諸部盡落方閉。
-- PR既開或工既落則留言於該issue，「始作」之聲勿發。閉必附果：`gh issue close N -c "done: ..."`。
+- Write references as `owner/repo#N`, never only `#N`. Prefix non-closing relationships with `Related:` or `Depends on:`.
+- Before asking questions, read the full issue body, comments, and linked pull requests. Do not repeat settled questions.
+- Reuse existing labels. Add `--milestone` when appropriate, but do not create labels unless requested. Assign issues and pull requests to `atqamz`.
+- Use one tracking issue for multi-part work. Close it only after every part lands.
+- Comment on the issue after opening a pull request or landing work. Do not post "starting work" comments. Close with an outcome, for example `gh issue close N -c "done: ..."`.
 
-## PR
+## Pull requests
 
-- Body三段：`## Summary`（一至三條）、獨行之closing keyword連`owner/repo#N`、`## Test plan`。
-- 一PR一自足之改：百行上下為善，千行嫌巨。測試隨改同PR；重構與功能析為二；相續之PR，各併之際build毋壞。
-- 關鍵字`Closes`/`Fixes`/`Resolves`緊貼引用，無關鍵字者連而不閉。keyword書於commit message者雖閉issue而PR不顯連結，故必書於body。併入default branch方生效；多issue則關鍵字逐一複之，逗號並列惟閉其一。跨repo書全稱，閉否由post-merge驗之定。
+- Before creating or editing a pull request body or linking an issue, read the default branch's pull request template, including `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE/`, or `docs/`, and read the existing body. Do not rewrite a body that already conforms. The repository template overrides this section; use the fallback below only when no template exists.
+- Fallback body: `## Summary` with one to three bullets, a standalone issue reference, then `## Test plan`. Use `Closes owner/repo#N` only when merging that pull request into the default branch completes the entire issue. For partial work, follow the repository template or use `Related: owner/repo#N` when the template has no partial-work instruction.
+- Treat "link this pull request to the issue" as ambiguous. `Related:` and `Depends on:` create timeline cross-references but never populate the pull request's Development box. The Development box requires a closing relationship through `Closes`, `Fixes`, `Resolves`, or GitHub's manual link, and merging into the default branch can then close the issue. If the user names or shows the Development box, create that closing relationship. Otherwise ask which relationship they mean before changing external state.
+- In a stack, link every pull request to the tracking issue as the template requires and record direct pull request dependencies with `Depends on:`. Add one issue comment listing the full stack. By default, put a closing relationship only on the pull request whose merge completes the issue. If the user explicitly requests every stacked pull request in the Development box, link every requested pull request and do not merge any layer into the default branch before the issue is ready to close.
+- After creating or editing a body, reread it with `gh pr view --json body,baseRefName,headRefName` and confirm the issue timeline contains the cross-reference. Command success alone is not verification.
+- Keep each pull request self-contained. About 100 changed lines is healthy; 1,000 is usually too large. Include tests with the change. Separate refactors from features. Every layer of a stack must build when merged.
+- Put `Closes`, `Fixes`, or `Resolves` directly before each issue reference. A plain reference links without closing. Closing keywords in commit messages can close issues without showing the pull request relationship, so put them in the body. They take effect only after merge into the default branch. Repeat the keyword for every issue; a comma-separated list closes only the first. Use full references across repositories. Verify closure after merge.
 
-## 審閱
+## Reviews
 
-- 合併前review盡決：P1/P2以code正之，勿僅答於thread；既決之評以`gh api`覆之而後resolve；push新碼則re-request review。
-- CI綠不足為safe，reviews未清不併。
-- 不明其求先問清；欲駁則陳理與tradeoff，謀共識，勿硬頂。
+- Resolve every review before merging. Fix P1 and P2 findings in code, not only with thread replies. Reply to addressed comments through `gh api`, then resolve them. Request review again after pushing new code.
+- Green CI is not enough. Do not merge with unresolved reviews.
+- Ask when a request is unclear. When disagreeing, explain the reasoning and tradeoff and seek agreement.
 
-## 合併
+## Merges
 
-`gh pr merge --merge`或`--squash`擇一，中間commit雜者squash；`--rebase`永不用。
+Use either `gh pr merge --merge` or `gh pr merge --squash`. Squash when intermediate commits are noisy. Never use `--rebase`.
 
-stack者`gh pr merge`不受，改用`gh stack merge <PR> --yes --squash`：自下而上諸PR一舉俱入，成敗與共，base retarget歸GitHub，毋逐級rebase再候check。`gh pr create --base <枝>`即成stack，GitHub別予編號，故PR/issue之號有闕；他session所建者，`gh stack checkout <PR>`取之。
+Do not merge stacked pull requests with `gh pr merge`. Use `gh stack merge <PR> --yes --squash` to merge the stack bottom-up as one operation. Let GitHub retarget bases; do not rebase each layer and wait for checks again. Create a stack with `gh pr create --base <branch>`. GitHub assigns separate numbers, so gaps between pull request and issue numbers are normal. Check out a stack created in another session with `gh stack checkout <PR>`.
 
-base既移而rebase，一作一revert相消之commit對必skip，勿解其衝突：解則revert重演，new base於彼諸檔之改盡沒。畢以`git diff --stat <base>..HEAD`驗淨差。
+When rebasing after a base changes, skip commit-and-revert pairs that cancel each other. Do not resolve their conflicts: replaying the revert can erase the new base's changes to those files. Verify the final delta with `git diff --stat <base>..HEAD`.
 
-Post-merge每合必行：`gh issue view N --repo owner/repo --json state -q .state`驗之，仍開則`gh issue close N -c "landed in #PR"`；遠近branch俱刪。auto-close不可恃，驗以防漏。
+After every merge, run `gh issue view N --repo owner/repo --json state -q .state`. If the issue remains open, close it with `gh issue close N -c "landed in #PR"`. Delete both local and remote branches. Never trust automatic closure without verification.
