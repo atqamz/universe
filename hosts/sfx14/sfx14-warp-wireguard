@@ -1,0 +1,48 @@
+#!/bin/sh
+set -eu
+
+want=WireGuard
+
+warp() {
+	warp-cli --accept-tos --no-ansi "$@"
+}
+
+live() {
+	warp tunnel stats 2>/dev/null |
+		sed -n 's/^Tunnel Protocol: *\([A-Za-z]*\).*/\1/p'
+}
+
+status=$(warp status 2>&1) || true
+case $status in
+*"Status update: Connected"*) ;;
+*"Status update: Disconnected"*) exit 0 ;; # no tunnel to correct
+*)
+	echo "cannot read WARP status: $status" >&2
+	exit 1
+	;;
+esac
+
+if [ "$(live)" = "$want" ]; then
+	exit 0
+fi
+
+warp tunnel protocol set "$want"
+
+attempt=0
+while [ "$(live)" != "$want" ]; do
+	attempt=$((attempt + 1))
+	if [ "$attempt" -gt 3 ]; then
+		echo "tunnel protocol is $(live), wanted $want" >&2
+		exit 1
+	fi
+
+	warp disconnect
+	sleep 2
+	warp connect
+
+	waited=0
+	while [ "$waited" -lt 20 ] && [ "$(live)" != "$want" ]; do
+		waited=$((waited + 1))
+		sleep 1
+	done
+done

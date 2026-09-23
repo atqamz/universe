@@ -1,32 +1,44 @@
-result
-result-*
-build.log
+*
 
-*.bak
+!/.envrc
+!/.gitignore
+!/.sops.yaml
+!/AGENTS.md
+!/CLAUDE.md
+!/CONTRIBUTING.md
+!/LICENSE
+!/README.md
+!/flake.lock
+!/flake.nix
 
-.pre-commit-config.yaml
+!/.github/
+!/.github/workflows/
+!/.github/workflows/*.yaml
 
-.direnv/
-.worktrees/
+!/agents/
+!/agents/global.md
+!/agents/link
+!/agents/update-skills
+!/agents/skills/
+!/agents/skills/*/
+!/agents/skills/*/SKILL.md
+!/agents/systemd/
+!/agents/systemd/*.service
+!/agents/systemd/*.timer
 
-.impeccable/
-.superpowers/
-docs/superpowers/
-docs/audits/
-treehouse.toml
+!/docs/
+!/docs/*.md
 
-codedb.snapshot
+!/hosts/
+!/hosts/*.nix
+!/hosts/pavg15/
+!/hosts/pavg15/*.nix
+!/hosts/sfx14/
+!/hosts/sfx14/*.service
+!/hosts/sfx14/sfx14-warp-wireguard
 
-.claude/settings.local.json
-**/.claude/scheduled_tasks.lock
-**/.claude/scheduled_tasks.json
-**/.claude/routines/.state/
-**/.claude/worktrees/
-**/.claude/checkpoints/
-**/.claude/mailbox/
-**/.claude/agent-registry.json
-**/.claude/agent-memory-local
-**/.claude/first-run
-**/.claude/assistant-daemon-state.json
-
-.opencode/plugins/fm-turn-end.js
+!/modules/
+!/modules/nixos/
+!/modules/nixos/*.nix
+!/modules/nixos/secrets/
+!/modules/nixos/secrets/*.sops.yaml
