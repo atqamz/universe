@@ -1,0 +1,13 @@
+[Unit]
+Description=Cap SFX14 CPU package power (PL1 28W, PL2 45W)
+Documentation=https://github.com/atqamz/universe/blob/main/docs/workstation.md
+ConditionPathExists=/sys/class/powercap/intel-rapl:0
+After=suspend.target hibernate.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/sh -c 'echo 28000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw; echo 28000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_0_power_limit_uw; echo 45000000 > /sys/class/powercap/intel-rapl-mmio:0/constraint_1_power_limit_uw'
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target

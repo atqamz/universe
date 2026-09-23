@@ -1,0 +1,6 @@
+[Unit]
+Description=Refresh external personal agent skills
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -lc 'bash %h/.local/bin/universe-update-agent-skills'
