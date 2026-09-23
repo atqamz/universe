@@ -14,7 +14,8 @@
 
 ## Scope
 
-- Do not modify unrelated findings unless they block the requested work. Report them separately when material.
+- Fold findings in the code you are already changing into the current work, and say so in the report. Never open a new issue for them.
+- Leave findings in someone else's work alone unless they block the requested work. Report them, do not fold them.
 - Do not edit generated files directly.
 - When asked to discuss, compare approaches and recommend one without mutating repositories or external state.
 - When given an explicit implementation request, execute it without unnecessary confirmation.
@@ -24,6 +25,7 @@
 - Do not commit, push, open or close issues, open PRs, review, or merge unless explicitly authorized for that action.
 - Never bypass hooks, verification, or commit signing.
 - Never force-push a default branch.
+- Before merging, read the latest review's verdict against the current head. Never go by the first review or the review count.
 - Before adding a file, read `.gitignore`. When it is an allowlist (`*` followed by `!` entries), add the new path to it, then run `git status --short --ignored` and confirm no new file is ignored.
 - Use the `gh-ops` skill for Git and GitHub workflows.
 
