@@ -38,7 +38,16 @@
         ];
       };
 
-      checks.${system}.pavg15 = self.nixosConfigurations.pavg15.config.system.build.toplevel;
+      checks.${system} = {
+        pavg15 = self.nixosConfigurations.pavg15.config.system.build.toplevel;
+        no-comments = pkgs.runCommand "no-comments" { } ''
+          if grep -rnE '^\s*#' --exclude='*.md' --exclude='*.lock' --exclude=LICENSE ${self} \
+            | grep -vE ':[0-9]+:\s*#(!|\s*shellcheck)'; then
+            exit 1
+          fi
+          touch $out
+        '';
+      };
 
       devShells.${system}.default = pkgs.mkShellNoCC {
         packages = with pkgs; [

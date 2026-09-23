@@ -8,7 +8,8 @@
 - Do not add dependencies, abstractions, compatibility layers, or configuration without a concrete need.
 - For bugs, reproduce the real failure before changing code when practical.
 - Read only the context needed to understand the full affected flow.
-- Comments explain non-obvious why, not what the next line already says.
+- Write no comments. Keep only lines a tool reads: shebangs and linter directives.
+- Names, types, assertions, and tests carry what code does. Docs and commit bodies carry only what code cannot: why, measurements, external constraints, failure modes, manual steps.
 - Run the relevant tests, formatter, and linter before declaring work complete.
 
 ## Scope
