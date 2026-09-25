@@ -19,7 +19,7 @@ in
   system.autoUpgrade = {
     enable = true;
     flake = "git+${remote}#${config.networking.hostName}";
-    dates = "00/12:00";
+    dates = "hourly";
     randomizedDelaySec = "60";
     flags = [
       "--refresh"
