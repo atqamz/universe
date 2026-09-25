@@ -561,6 +561,7 @@ let
       Group = userFor r;
       Restart = "always";
       RestartSec = "10s";
+      TimeoutStartSec = "30min";
       CPUWeight = r.cpuWeight;
       Nice = r.nice;
       ExecStartPre = [
