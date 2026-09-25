@@ -504,7 +504,7 @@ let
       fi
       trap 'systemctl start ${runnerUnits}' EXIT
       systemctl stop ${runnerUnits}
-      nixos-rebuild switch --store-path "$system"
+      nixos-rebuild switch --no-reexec --store-path "$system"
     '';
   };
 
