@@ -36,12 +36,6 @@ jobs:
             echo "runner image $current is current"
             exit 0
           fi
-          if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" != 0 ] \
-            && git fetch --depth=1 origin "$BRANCH" \
-            && git show FETCH_HEAD:"$RUNNER_NIX" | grep -qF "imageTag = \"$tag\";"; then
-            echo "open pull request already bumps to $tag"
-            exit 0
-          fi
           if ! index=$(skopeo inspect --raw "docker://$repo:$tag" 2>"$RUNNER_TEMP/skopeo.err"); then
             if grep -q 'manifest unknown' "$RUNNER_TEMP/skopeo.err"; then
               echo "::notice::$repo:$tag is not published yet"
@@ -87,7 +81,7 @@ jobs:
       - name: flake check
         if: steps.resolve.outputs.digest
         run: nix flake check --print-build-logs
-      - name: open or update pull request
+      - name: open or update and merge pull request
         if: steps.resolve.outputs.digest
         env:
           VERSION: ${{ steps.resolve.outputs.version }}
@@ -107,7 +101,7 @@ jobs:
           {
             printf 'Bumps `%s` from `%s` to `%s` for `actions/runner` v%s.\n\n' "$REPO" "$CURRENT" "$TAG" "$VERSION"
             printf '`imageDigest` is the `linux/amd64` manifest from the image index: `%s`.\n\n' "$DIGEST"
-            printf '[This run](%s) passed `nix fmt` and `nix flake check`. `ci.yaml` does not run on this pull request, because GitHub does not trigger workflows from events made with the workflow token.\n\n' "$RUN_URL"
+            printf '[This run](%s) passed `nix fmt` and `nix flake check` and merges this pull request. `ci.yaml` does not run on this pull request or its merge, because GitHub does not trigger workflows from events made with the workflow token.\n\n' "$RUN_URL"
             sed -n '/^## Runner image bumps$/,$p' docs/pavg15.md
           } >"$RUNNER_TEMP/body.md"
           if [ "$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null)" = OPEN ]; then
@@ -115,3 +109,8 @@ jobs:
           else
             gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
           fi
+          if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$GITHUB_SHA" ]; then
+            echo "::error::main moved past $GITHUB_SHA, so the checks did not cover the merge; the next run rebuilds the bump on the new main"
+            exit 1
+          fi
+          gh pr merge "$BRANCH" --repo "$GITHUB_REPOSITORY" --squash --delete-branch --match-head-commit "$(git rev-parse HEAD)"

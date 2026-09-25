@@ -24,22 +24,27 @@ Changing the rootless isolation or long-lived credential boundary requires an ex
 
 GitHub stops sending jobs to a runner version 30 days after the next `actions/runner` release. `hosts/pavg15/runner.nix` pins `myoung34/github-runner` by `imageTag` and `linux/amd64` `imageDigest` and runs it with `DISABLE_AUTO_UPDATE=true`. Self-update cannot replace the pin: the image runs `Runner.Listener run --startuptype service`, so an update exits the listener, `--rm` removes the container, and systemd restarts the old image in a loop.
 
-`.github/workflows/runner-image.yaml` checks daily for a new release and opens or updates one pull request from `bump/runner-image`. It validates the edit with `nix fmt` and `nix flake check` itself, because pull requests made with the workflow token do not trigger `ci.yaml`. It needs "Allow GitHub Actions to create and approve pull requests" enabled in the repository's Actions settings.
+`.github/workflows/runner-image.yaml` checks daily for a new release and opens or updates one pull request from `bump/runner-image`. It validates the edit with `nix fmt` and `nix flake check` itself, because pull requests made with the workflow token do not trigger `ci.yaml`. It then squash-merges the pull request and deletes the branch; the pull request stays as the audit trail. It fails without merging when `main` moved during the run, because the checks did not cover that merge; the next run rebuilds the bump on the new `main`. It needs "Allow GitHub Actions to create and approve pull requests" enabled in the repository's Actions settings.
 
-Merging does not reach the runners. Auto-upgrade uses `operation = "boot"`, so the new image applies only at the next reboot. To apply it now, wait until no pavg15 runner is busy, because a switch restarts every changed runner unit. Then, on pavg15:
+The merged image reaches the runners through the auto-upgrade below. The first start of each runner loads the new image, which `TimeoutStartSec = "30min"` covers.
 
-1. Switch in a detached unit, so the switch survives the SSH session dropping:
+## Auto-upgrade
 
-   ```sh
-   sudo systemd-run --unit=universe-switch --collect \
-     nixos-rebuild switch --flake git+https://github.com/atqamz/universe#pavg15 --refresh
-   journalctl -fu universe-switch
-   ```
+A CI host must never restart a running job to apply an update, and a Unity build runs for hours. `nixos-upgrade.service` therefore runs hourly with `operation = "boot"`: it builds `main` and makes it the default boot entry. Measured on pavg15, a run with no new commit costs 1.2 to 1.5 s CPU over 5 to 7 s wall time and at most 121 MB memory. A run after `main` moved re-evaluates the flake and costs about 8.7 s CPU over 12 to 14 s and 830 MB.
 
-2. After the switch finishes, re-apply the Tailscale settings. A switch does not re-apply `services.tailscale.extraSetFlags`, and `tailscale-bootstrap.timer` fires only at boot:
+On success it starts `nixos-live-apply.service`. When `/nix/var/nix/profiles/system` differs from `/run/current-system` and no `Runner.Worker` process exists, it stops every runner unit and runs `nixos-rebuild switch --store-path` on that profile. The switch, and an exit trap if the switch fails, start the runners again. While a runner has a job, it exits successfully without switching, and the next hourly run tries again. The check runs after the build, so the build time is not part of the race window.
 
-   ```sh
-   sudo systemctl start tailscale-bootstrap.service
-   ```
+`Runner.Worker` exists only while a job runs; an idle runner has only `Runner.Listener`. The check matches the process name with `pgrep -x`, because `pgrep -f` also matches any command line that mentions `Runner.Worker`, such as an SSH session running the check.
 
-The first start of each runner loads the new image, which `TimeoutStartSec = "30min"` covers.
+One race remains. A job that a listener accepts in the milliseconds between the `pgrep` check and `systemctl stop`, before it starts `Runner.Worker`, is cancelled.
+
+The switch restarts `tailscale-bootstrap.service` when the `tailscaled-autoconnect` or `tailscaled-set` unit changes, because a switch does not otherwise re-apply `services.tailscale.extraSetFlags`.
+
+A kernel, initrd, or kernel module change applies only at the next reboot. `readlink /run/booted-system/kernel /run/current-system/kernel` shows whether one is pending. Reboot only while no runner has a job.
+
+To apply `main` now, on pavg15:
+
+```sh
+sudo systemctl start --no-block nixos-upgrade.service
+journalctl -fu nixos-upgrade -u nixos-live-apply
+```

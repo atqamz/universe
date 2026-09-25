@@ -58,6 +58,10 @@ in
       tailscale-bootstrap = {
         description = "Retryable asynchronous Tailscale bootstrap";
         wantedBy = [ ];
+        restartTriggers = map (unit: config.systemd.units.${unit}.unit) [
+          "tailscaled-autoconnect.service"
+          "tailscaled-set.service"
+        ];
         serviceConfig = {
           Type = "oneshot";
           ExecStart = "${tailscaleBootstrap}/bin/tailscale-bootstrap";

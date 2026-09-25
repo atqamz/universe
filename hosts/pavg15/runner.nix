@@ -481,6 +481,33 @@ let
     '';
   };
 
+  runnerUnits = lib.escapeShellArgs (map (r: "${runnerUnitFor r}.service") runners);
+
+  liveApply = pkgs.writeShellApplication {
+    name = "nixos-live-apply";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.procps
+      config.systemd.package
+      config.nix.package
+      config.system.build.nixos-rebuild
+    ];
+    text = ''
+      system=$(readlink -f /nix/var/nix/profiles/system)
+      if [ "$system" = "$(readlink -f /run/current-system)" ]; then
+        echo "$system is live"
+        exit 0
+      fi
+      if pgrep -x Runner.Worker >/dev/null; then
+        echo "a runner has a job; $system waits for a later upgrade run"
+        exit 0
+      fi
+      trap 'systemctl start ${runnerUnits}' EXIT
+      systemctl stop ${runnerUnits}
+      nixos-rebuild switch --store-path "$system"
+    '';
+  };
+
   cleanupFor =
     r:
     pkgs.writeShellApplication {
@@ -669,6 +696,18 @@ in
     ];
 
     services = {
+      nixos-upgrade.onSuccess = [ "nixos-live-apply.service" ];
+
+      nixos-live-apply = {
+        description = "Switch to the upgraded system while no runner has a job";
+        restartIfChanged = false;
+        unitConfig.X-StopOnRemoval = false;
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = lib.getExe liveApply;
+        };
+      };
+
       github-runner-dirs = {
         description = "Create GitHub Actions runner state directories";
         wantedBy = [ "multi-user.target" ];
