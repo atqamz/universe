@@ -475,9 +475,19 @@ let
 
   imageLoad = pkgs.writeShellApplication {
     name = "github-runner-image-load";
-    runtimeInputs = [ pkgs.podman ];
+    runtimeInputs = with pkgs; [
+      coreutils
+      podman
+    ];
     text = ''
-      podman image exists ${unityImage} || podman load -i ${unityArchive}
+      staging="$HOME/.image-load"
+      rm -rf "$staging"
+      if podman image exists ${unityImage}; then
+        exit 0
+      fi
+      install -d -m 0700 "$staging"
+      TMPDIR="$staging" podman load -i ${unityArchive}
+      rm -rf "$staging"
     '';
   };
 
