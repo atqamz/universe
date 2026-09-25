@@ -19,3 +19,27 @@ Each runner has its own system user, subordinate IDs, rootless Podman service/so
 Heavy runners may retain trusted warm state. Light runners are disposable. Shared immutable payloads may be reused read-only, while writable tool/container state remains isolated per runner. NVMe under `/var/lib/ci` holds latency-sensitive state; the existing bulk disk holds seek-tolerant disposable state.
 
 Changing the rootless isolation or long-lived credential boundary requires an explicit architecture decision.
+
+## Runner image bumps
+
+GitHub stops sending jobs to a runner version 30 days after the next `actions/runner` release. `hosts/pavg15/runner.nix` pins `myoung34/github-runner` by `imageTag` and `linux/amd64` `imageDigest` and runs it with `DISABLE_AUTO_UPDATE=true`. Self-update cannot replace the pin: the image runs `Runner.Listener run --startuptype service`, so an update exits the listener, `--rm` removes the container, and systemd restarts the old image in a loop.
+
+`.github/workflows/runner-image.yaml` checks daily for a new release and opens or updates one pull request from `bump/runner-image`. It validates the edit with `nix fmt` and `nix flake check` itself, because pull requests made with the workflow token do not trigger `ci.yaml`. It needs "Allow GitHub Actions to create and approve pull requests" enabled in the repository's Actions settings.
+
+Merging does not reach the runners. Auto-upgrade uses `operation = "boot"`, so the new image applies only at the next reboot. To apply it now, wait until no pavg15 runner is busy, because a switch restarts every changed runner unit. Then, on pavg15:
+
+1. Switch in a detached unit, so the switch survives the SSH session dropping:
+
+   ```sh
+   sudo systemd-run --unit=universe-switch --collect \
+     nixos-rebuild switch --flake git+https://github.com/atqamz/universe#pavg15 --refresh
+   journalctl -fu universe-switch
+   ```
+
+2. After the switch finishes, re-apply the Tailscale settings. A switch does not re-apply `services.tailscale.extraSetFlags`, and `tailscale-bootstrap.timer` fires only at boot:
+
+   ```sh
+   sudo systemctl start tailscale-bootstrap.service
+   ```
+
+The first start of each runner loads the new image, which `TimeoutStartSec = "30min"` covers.

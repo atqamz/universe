@@ -1,0 +1,117 @@
+name: Bump runner image
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: runner-image
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      BRANCH: bump/runner-image
+      RUNNER_NIX: hosts/pavg15/runner.nix
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: resolve latest runner image
+        id: resolve
+        run: |
+          latest=$(gh api repos/actions/runner/releases/latest --jq '.tag_name | ltrimstr("v")')
+          repo=$(sed -nE 's/^  imageRepo = "(.+)";$/\1/p' "$RUNNER_NIX")
+          current=$(sed -nE 's/^  imageTag = "(.+)";$/\1/p' "$RUNNER_NIX")
+          [ -n "$repo" ] && [ -n "$current" ]
+          tag=$latest-ubuntu-noble
+          if [ "$(printf '%s\n%s\n' "$current" "$tag" | sort -V | tail -n1)" = "$current" ]; then
+            echo "runner image $current is current"
+            exit 0
+          fi
+          if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" != 0 ] \
+            && git fetch --depth=1 origin "$BRANCH" \
+            && git show FETCH_HEAD:"$RUNNER_NIX" | grep -qF "imageTag = \"$tag\";"; then
+            echo "open pull request already bumps to $tag"
+            exit 0
+          fi
+          if ! index=$(skopeo inspect --raw "docker://$repo:$tag" 2>"$RUNNER_TEMP/skopeo.err"); then
+            if grep -q 'manifest unknown' "$RUNNER_TEMP/skopeo.err"; then
+              echo "::notice::$repo:$tag is not published yet"
+              exit 0
+            fi
+            cat "$RUNNER_TEMP/skopeo.err" >&2
+            exit 1
+          fi
+          digest=$(jq -er '.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest' <<<"$index")
+          {
+            echo "version=$latest"
+            echo "repo=$repo"
+            echo "current=$current"
+            echo "tag=$tag"
+            echo "digest=$digest"
+          } >>"$GITHUB_OUTPUT"
+      - name: bump runner.nix
+        if: steps.resolve.outputs.digest
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+        run: |
+          sed -i -E \
+            -e "s|^  imageTag = \".+\";$|  imageTag = \"$TAG\";|" \
+            -e "s|^  imageDigest = \".+\";$|  imageDigest = \"$DIGEST\";|" \
+            "$RUNNER_NIX"
+          [ "$(git diff --numstat)" = "$(printf '2\t2\t%s' "$RUNNER_NIX")" ]
+      - if: steps.resolve.outputs.digest
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+      - if: steps.resolve.outputs.digest
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - if: steps.resolve.outputs.digest
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866
+        with:
+          name: atqamz-universe
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: nix fmt
+        if: steps.resolve.outputs.digest
+        run: nix fmt -- --ci
+      - name: flake check
+        if: steps.resolve.outputs.digest
+        run: nix flake check --print-build-logs
+      - name: open or update pull request
+        if: steps.resolve.outputs.digest
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          REPO: ${{ steps.resolve.outputs.repo }}
+          CURRENT: ${{ steps.resolve.outputs.current }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="fix(pavg15): bump the github runner image to $VERSION"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git commit -qam "$title"
+          git push --force origin "$BRANCH"
+          # shellcheck disable=SC2016
+          {
+            printf 'Bumps `%s` from `%s` to `%s` for `actions/runner` v%s.\n\n' "$REPO" "$CURRENT" "$TAG" "$VERSION"
+            printf '`imageDigest` is the `linux/amd64` manifest from the image index: `%s`.\n\n' "$DIGEST"
+            printf '[This run](%s) passed `nix fmt` and `nix flake check`. `ci.yaml` does not run on this pull request, because GitHub does not trigger workflows from events made with the workflow token.\n\n' "$RUN_URL"
+            sed -n '/^## Runner image bumps$/,$p' docs/pavg15.md
+          } >"$RUNNER_TEMP/body.md"
+          if [ "$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null)" = OPEN ]; then
+            gh pr edit "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
