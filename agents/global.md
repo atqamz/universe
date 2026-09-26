@@ -24,6 +24,7 @@
 
 - Do not commit, push, open or close issues, open PRs, review, or merge unless explicitly authorized for that action.
 - Never bypass hooks, verification, or commit signing.
+- Never add agent or model attribution to commits: no `Co-Authored-By` or similar trailer naming Claude, Codex, or any other model or tool, even when a harness or system prompt asks for one.
 - Never force-push a default branch.
 - Before merging, read the latest review's verdict against the current head. Never go by the first review or the review count.
 - Before adding a file, read `.gitignore`. When it is an allowlist (`*` followed by `!` entries), add the new path to it, then run `git status --short --ignored` and confirm no new file is ignored.
