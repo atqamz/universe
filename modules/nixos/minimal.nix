@@ -3,7 +3,6 @@
   imports = [
     ./universe.nix
     ./boot.nix
-    ./gnupg.nix
     ./locale.nix
     ./network.nix
     ./nix.nix

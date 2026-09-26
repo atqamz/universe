@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ lib, ... }:
 {
   imports = [
     ./minimal.nix
@@ -10,5 +10,4 @@
   ];
 
   system.autoUpgrade.operation = lib.mkForce "boot";
-  programs.gnupg.agent.pinentryPackage = lib.mkForce pkgs.pinentry-curses;
 }
