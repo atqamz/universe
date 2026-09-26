@@ -9,12 +9,6 @@ _: {
       };
 
       tailscale-oauth.sopsFile = ./secrets/tailscale-oauth.sops.yaml;
-
-      vault-deploy-key = {
-        sopsFile = ./secrets/vault-deploy-key.sops.yaml;
-        owner = "atqa";
-        mode = "0400";
-      };
     };
   };
 }
