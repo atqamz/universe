@@ -122,7 +122,6 @@ let
     ++ [
       "yes2infra"
       "yes2dashboard"
-      "yes2sdk-mcp"
     ]
   );
 
