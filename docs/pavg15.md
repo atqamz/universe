@@ -20,6 +20,12 @@ Heavy runners may retain trusted warm state. Light runners are disposable. Share
 
 Changing the rootless isolation or long-lived credential boundary requires an explicit architecture decision.
 
+## Metrics
+
+`hosts/pavg15/alloy.nix` runs Grafana Alloy. It ships host metrics, runner unit states, per-runner cgroup CPU and memory, and the `github-runner-*` journal to Grafana Cloud with `host="pavg15"`. yes2infra Pulumi owns the dashboard (<https://yes2games.grafana.net/d/pavg15-runners>) and its alert rules.
+
+`alloy-env` holds the Grafana Cloud write tokens that bakso and rendang also use, copied from `grafana_prom_token` and `grafana_loki_token` in yes2infra `ansible/inventory/group_vars/bakso.sops.yaml`. Rotating them there means re-encrypting `modules/nixos/secrets/alloy-env.sops.yaml` too.
+
 ## Runner image bumps
 
 GitHub stops sending jobs to a runner version 30 days after the next `actions/runner` release. `hosts/pavg15/runner.nix` pins `myoung34/github-runner` by `imageTag` and `linux/amd64` `imageDigest` and runs it with `DISABLE_AUTO_UPDATE=true`. Self-update cannot replace the pin: the image runs `Runner.Listener run --startuptype service`, so an update exits the listener, `--rm` removes the container, and systemd restarts the old image in a loop.

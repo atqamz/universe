@@ -1,0 +1,110 @@
+prometheus.remote_write "cloud" {
+	endpoint {
+		url = "https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push"
+
+		basic_auth {
+			username = "3187606"
+			password = sys.env("GRAFANA_PROM_TOKEN")
+		}
+
+		write_relabel_config {
+			source_labels = ["__name__"]
+			regex         = "node_scrape_collector_(success|duration_seconds)|scrape_(duration_seconds|samples_scraped|samples_post_metric_relabeling|series_added)"
+			action        = "drop"
+		}
+	}
+	external_labels = {host = "pavg15"}
+}
+
+loki.write "cloud" {
+	endpoint {
+		url = "https://logs-prod-020.grafana.net/loki/api/v1/push"
+
+		basic_auth {
+			username = "1589478"
+			password = sys.env("GRAFANA_LOKI_TOKEN")
+		}
+	}
+	external_labels = {host = "pavg15"}
+}
+
+prometheus.exporter.unix "node" {
+	set_collectors = ["cpu", "diskstats", "filesystem", "loadavg", "meminfo", "netdev", "pressure", "stat", "systemd"]
+
+	disk {
+		device_include = "^(nvme0n1|sda)$"
+	}
+
+	filesystem {
+		mount_points_exclude = "^/(dev|home|nix|proc|run|sys)($|/)"
+	}
+
+	netdev {
+		device_include = "^(eno1|wlo1|tailscale0)$"
+	}
+
+	systemd {
+		unit_include = "github-runner-(podman-)?(heavy|light)-[0-9]+\\.service"
+	}
+}
+
+prometheus.scrape "node" {
+	targets         = prometheus.exporter.unix.node.targets
+	scrape_interval = "15s"
+	forward_to      = [prometheus.remote_write.cloud.receiver]
+}
+
+prometheus.exporter.cadvisor "runners" {
+	docker_only                 = false
+	disable_root_cgroup_stats   = true
+	enabled_metrics             = ["cpu", "memory"]
+	raw_cgroup_prefix_allowlist = ["/system.slice/github-runner-"]
+}
+
+prometheus.scrape "runners" {
+	targets         = prometheus.exporter.cadvisor.runners.targets
+	scrape_interval = "15s"
+	forward_to      = [prometheus.relabel.runners.receiver]
+}
+
+prometheus.relabel "runners" {
+	rule {
+		source_labels = ["__name__", "id"]
+		regex         = "(container_cpu_usage_seconds_total|container_memory_working_set_bytes);/system\\.slice/github-runner-(podman-)?(heavy|light)-[0-9]+\\.service"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["id"]
+		regex         = "/system\\.slice/(.+)\\.service"
+		target_label  = "unit"
+	}
+
+	rule {
+		regex  = "id|image|name"
+		action = "labeldrop"
+	}
+	forward_to = [prometheus.remote_write.cloud.receiver]
+}
+
+loki.relabel "journal" {
+	forward_to = []
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		regex         = "github-runner-.+\\.service"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		target_label  = "unit"
+	}
+}
+
+loki.source.journal "runners" {
+	max_age       = "1h"
+	relabel_rules = loki.relabel.journal.rules
+	labels        = {job = "systemd-journal"}
+	forward_to    = [loki.write.cloud.receiver]
+}
