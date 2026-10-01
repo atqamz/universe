@@ -33,6 +33,7 @@
 !/hosts/*.nix
 !/hosts/pavg15/
 !/hosts/pavg15/*.nix
+!/hosts/pavg15/*.alloy
 !/hosts/sfx14/
 !/hosts/sfx14/*.service
 !/hosts/sfx14/sfx14-warp-wireguard

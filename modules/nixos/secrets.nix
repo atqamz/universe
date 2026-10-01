@@ -9,6 +9,11 @@ _: {
       };
 
       tailscale-oauth.sopsFile = ./secrets/tailscale-oauth.sops.yaml;
+
+      alloy-env = {
+        sopsFile = ./secrets/alloy-env.sops.yaml;
+        restartUnits = [ "alloy.service" ];
+      };
     };
   };
 }
