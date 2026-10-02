@@ -50,7 +50,7 @@ prometheus.exporter.unix "node" {
 
 prometheus.scrape "node" {
 	targets         = prometheus.exporter.unix.node.targets
-	scrape_interval = "15s"
+	scrape_interval = "60s"
 	forward_to      = [prometheus.remote_write.cloud.receiver]
 }
 
@@ -63,7 +63,7 @@ prometheus.exporter.cadvisor "runners" {
 
 prometheus.scrape "runners" {
 	targets         = prometheus.exporter.cadvisor.runners.targets
-	scrape_interval = "15s"
+	scrape_interval = "60s"
 	forward_to      = [prometheus.relabel.runners.receiver]
 }
 
