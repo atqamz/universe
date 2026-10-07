@@ -8,8 +8,8 @@ let
   orgName = "yes2games";
   hostLabel = "pavg15";
   imageRepo = "docker.io/myoung34/github-runner";
-  imageTag = "2.337.0-ubuntu-noble";
-  imageDigest = "sha256:0ad0222d64802a131d974c7edc89596aa459dab5cf2de3fdcf597756c8283cef";
+  imageTag = "2.338.0-ubuntu-noble";
+  imageDigest = "sha256:5beea06c9ce0040d4143c373c5b879d387ab2d71200725ce12c3669b3da43358";
 
   localImage = "localhost/github-runner:${imageTag}-${lib.substring 7 12 imageDigest}";
   imageCacheDir = "${hotRoot}/image-cache";
