@@ -122,6 +122,8 @@ let
     ++ [
       "yes2infra"
       "yes2dashboard"
+      "yes2sdk-core"
+      "yes2iap"
     ]
   );
 
