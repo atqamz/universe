@@ -19,6 +19,14 @@ The workstation is expected to look like a fresh current Omarchy install plus id
      --auth-key "$(sops -d --extract '["tailscale-oauth"]' ~/universe/modules/nixos/secrets/tailscale-oauth.sops.yaml)?ephemeral=false"
    ```
 
+10. Let agents drive Chrome through the Playwright MCP Bridge extension without a connect prompt: store the token shown by the extension with `pass insert playwright/mcp-extension-token`, then add this line to `~/.bashrc` right after the Omarchy `env-bootstrap` line, so non-interactive agent shells read it too:
+
+    ```sh
+    [[ -z $PLAYWRIGHT_MCP_EXTENSION_TOKEN ]] && PLAYWRIGHT_MCP_EXTENSION_TOKEN="$(timeout 3 pass show playwright/mcp-extension-token 2>/dev/null)" && export PLAYWRIGHT_MCP_EXTENSION_TOKEN
+    ```
+
+    Any local process that uses Playwright can then control the logged-in Chrome without asking. Rotate the token in the extension if that stops being acceptable.
+
 Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migrations. Add a durable personal override only after it proves necessary, and keep its ownership separate from the Omarchy baseline.
 
 ## Remote access
