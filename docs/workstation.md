@@ -19,13 +19,23 @@ The workstation is expected to look like a fresh current Omarchy install plus id
      --auth-key "$(sops -d --extract '["tailscale-oauth"]' ~/universe/modules/nixos/secrets/tailscale-oauth.sops.yaml)?ephemeral=false"
    ```
 
-10. Let agents drive Chrome through the Playwright MCP Bridge extension without a connect prompt: store the token shown by the extension with `pass insert playwright/mcp-extension-token`, then add this line to `~/.bashrc` right after the Omarchy `env-bootstrap` line, so non-interactive agent shells read it too:
+10. Let agents drive Chrome through the Playwright MCP Bridge extension without a connect prompt, one MCP server per Chrome profile. Store the token each profile's extension shows, then register the servers:
 
     ```sh
-    [[ -z $PLAYWRIGHT_MCP_EXTENSION_TOKEN ]] && PLAYWRIGHT_MCP_EXTENSION_TOKEN="$(timeout 3 pass show playwright/mcp-extension-token 2>/dev/null)" && export PLAYWRIGHT_MCP_EXTENSION_TOKEN
+    pass insert playwright/token-y2g
+    pass insert playwright/token-personal
+    claude mcp add -s user playwright-y2g -e PLAYWRIGHT_MCP_PROFILE_DIR_NAME=Default -- \
+      sh -c 'unset GPG_TTY; PLAYWRIGHT_MCP_EXTENSION_TOKEN="$(pass show playwright/token-y2g)" exec npx -y @playwright/mcp@latest --extension'
+    claude mcp add -s user playwright-personal -e "PLAYWRIGHT_MCP_PROFILE_DIR_NAME=Profile 1" -- \
+      sh -c 'unset GPG_TTY; PLAYWRIGHT_MCP_EXTENSION_TOKEN="$(pass show playwright/token-personal)" exec npx -y @playwright/mcp@latest --extension'
     ```
 
-    Any local process that uses Playwright can then control the logged-in Chrome without asking. Rotate the token in the extension if that stops being acceptable.
+    `PLAYWRIGHT_MCP_PROFILE_DIR_NAME` makes the server launch Chrome with `--profile-directory`, so each server always lands in its own profile even when both are open; the focused window does not matter. Agents pick a profile by tool name.
+
+    Read the token in the server command, not in `~/.bashrc`. A `pass show` in `~/.bashrc` runs in every shell, so after each reboot every agent and terminal shell raised its own pinentry until the passphrase was cached, and the token sat in the environment of every process. `unset GPG_TTY` matters because `~/.bashrc` exports it: the server inherits the terminal Claude Code runs in, gpg-agent draws a curses pinentry under the Claude TUI where nobody can see it, and the server dies at the 60 s pinentry timeout. Without a TTY gpg-agent falls back to the graphical `gcr-prompter`.
+
+    Any local process that can read the password-store can then control the logged-in Chrome without asking. Rotate the tokens in the extension if that stops being acceptable.
+11. Stop the Unity auth broker from asking for the admin password on every launch: `sudo install -m644 ~/universe/hosts/sfx14/50-unity-auth-broker.rules /etc/polkit-1/rules.d/`. See [Unity auth broker](#unity-auth-broker).
 
 Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migrations. Add a durable personal override only after it proves necessary, and keep its ownership separate from the Omarchy baseline.
 
@@ -78,6 +88,16 @@ Power profile selection stays with Omarchy and `power-profiles-daemon`. Universe
 Omarchy's `default/hypr/nvidia.lua` exports `LIBVA_DRIVER_NAME=nvidia` on every machine that has an NVIDIA GPU. On this hybrid laptop the browser renders on the Intel iGPU (`renderD129`, i915), and `nvidia-vaapi-driver` publishes no encode entrypoint on either render node, so that default leaves every video call encoding in software. `~/.config/hypr/hyprland.lua` overrides it to `iHD` after the Omarchy defaults load. The override stays in the Omarchy-owned config rather than being seeded from Universe.
 
 Measured under the 15 W cap, a 1080p30 encode cost 10.2 s of CPU in software against 0.4 s through iHD VAAPI, so for a video call the driver name was worth more than the power cap. Verify with `env | grep LIBVA_DRIVER_NAME` in a fresh session: the value only reaches applications through uwsm at session start, so a running session keeps the old one until the next login.
+
+## Unity auth broker
+
+The Unity CLI's auth broker (`unity --internal-auth-broker-serve`) seals its token key with systemd credentials when the machine has a TPM2: `unity doctor` reports `authBroker.sealTier linux-tpm2-systemd-creds`. It shells out to `systemd-creds encrypt|decrypt --name=unity-auth-broker-seal --with-key=host+tpm2`, and systemd gates both actions with polkit `auth_admin_keep`. The broker exits after two idle minutes, so every Editor launch starts a new one and the Omarchy polkit agent asks "Authentication is required for an application to decrypt a system credential."
+
+`50-unity-auth-broker.rules` allows `io.systemd.credentials.encrypt` and `io.systemd.credentials.decrypt` without a password only for `atqa` in the active local session, and only when the caller's command line carries `--name=unity-auth-broker-seal` as its own argument. Every other credential operation still asks. A process running as `atqa` can claim that argument too, but it only reaches the Unity seal, whose tokens already live in that user's keyring.
+
+The rule reads the command line with `cat -v` because `polkit.spawn` truncates its output at the first NUL, and argv in `/proc/<pid>/cmdline` is NUL-separated: a plain `cat` returns only `systemd-creds`. Test with a process whose arguments stay separate; `bash -c 'sleep 20; :' systemd-creds decrypt --name=unity-auth-broker-seal - - &` and `pkcheck --action-id io.systemd.credentials.decrypt --process $!` must exit 0, and the same check against a plain `sleep` must exit 2. Read refusals with `journalctl -b | grep 'Operator of'`, which names the action and the caller's command line.
+
+Raising the broker's idle time with `UNITY_AUTH_BROKER_IDLE_MS` was tried and dropped: at best it keeps one broker alive across launches, so it still prompts once per boot.
 
 ## Agents
 

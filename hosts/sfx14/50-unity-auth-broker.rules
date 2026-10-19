@@ -1,0 +1,15 @@
+polkit.addRule(function(action, subject) {
+    if ((action.id != "io.systemd.credentials.decrypt" && action.id != "io.systemd.credentials.encrypt") ||
+        subject.user != "atqa" || !subject.local || !subject.active) {
+        return polkit.Result.NOT_HANDLED;
+    }
+    try {
+        var cmdline = polkit.spawn(["/usr/bin/cat", "-v", "/proc/" + subject.pid + "/cmdline"]);
+        if (cmdline.indexOf("^@--name=unity-auth-broker-seal^@") >= 0) {
+            return polkit.Result.YES;
+        }
+    } catch (e) {
+        polkit.log("unity-auth-broker rule: " + e);
+    }
+    return polkit.Result.NOT_HANDLED;
+});
