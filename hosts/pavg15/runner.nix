@@ -624,6 +624,9 @@ let
           "-e DOTNET_NOLOGO=1"
           "-e AGENT_TOOLSDIRECTORY=${toolCacheInContainer}"
           "-e DENO_DIR=${denoCacheInContainer}"
+          "-e GIT_HTTP_LOW_SPEED_LIMIT=1000"
+          "-e GIT_HTTP_LOW_SPEED_TIME=60"
+          "-e SEGMENT_DOWNLOAD_TIMEOUT_MINS=3"
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
