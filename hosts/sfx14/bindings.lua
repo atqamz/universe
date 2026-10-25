@@ -1,0 +1,13 @@
+hl.unbind("SUPER + Q")
+hl.unbind("SUPER + W")
+hl.unbind("SUPER + mouse:273")
+hl.unbind("SUPER + CTRL + E")
+hl.unbind("SUPER + CTRL + PRINT")
+hl.unbind("SUPER + CTRL + ALT + C")
+
+o.bind("SUPER + SHIFT + Q", "Close window", hl.dsp.window.close())
+o.bind("SUPER + SHIFT + mouse:272", "Resize window", hl.dsp.window.resize(), { mouse = true })
+o.bind("SUPER + ALT + P", "Password store", { panel = "hegjon.passwordstore" })
+o.bind("SUPER + period", "Emojis", { panel = "omarchy.emojis" })
+o.bind("SUPER + SHIFT + S", "Screenshot (region)", "omarchy-capture-screenshot region")
+o.bind("SUPER + SHIFT + A", "Extract text (OCR)", "omarchy-capture-text")

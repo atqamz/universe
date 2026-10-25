@@ -13,7 +13,7 @@ Universe is personal infrastructure, not a workstation distribution.
 - Omarchy owns the sfx14 operating system, desktop, packages, and baseline user configuration.
 - Project repositories own their own development environments and project-specific agent instructions.
 
-Do not reintroduce Home Manager, Omanixy, an sfx14 NixOS configuration, desktop dotfiles, harness settings, model routing, or a general workstation configuration layer without a new concrete requirement.
+Do not reintroduce Home Manager, Omanixy, an sfx14 NixOS configuration, desktop dotfiles, harness settings, model routing, or a general workstation configuration layer without a new concrete requirement. The sfx14 Hyprland overrides in `hosts/sfx14/*.lua` are the only linked desktop config.
 
 ## Changes
 

@@ -36,8 +36,15 @@ The workstation is expected to look like a fresh current Omarchy install plus id
 
     Any local process that can read the password-store can then control the logged-in Chrome without asking. Rotate the tokens in the extension if that stops being acceptable.
 11. Stop the Unity auth broker from asking for the admin password on every launch: `sudo install -m644 ~/universe/hosts/sfx14/50-unity-auth-broker.rules /etc/polkit-1/rules.d/`. See [Unity auth broker](#unity-auth-broker).
+12. Link the Hyprland overrides: `ln -sf ~/universe/hosts/sfx14/{hyprland,input,bindings}.lua ~/.config/hypr/`, then `hyprctl reload && hyprctl configerrors`. See [Hyprland overrides](#hyprland-overrides).
 
-Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migrations. Add a durable personal override only after it proves necessary, and keep its ownership separate from the Omarchy baseline.
+Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migrations. Add a durable personal override only after it proves necessary, and keep its ownership separate from the Omarchy baseline. The Hyprland overrides are the one exception.
+
+## Hyprland overrides
+
+`hosts/sfx14/hyprland.lua`, `input.lua`, and `bindings.lua` are symlinked into `~/.config/hypr/` so keybinding, gesture, and driver overrides survive a reinstall. They load after Omarchy's defaults; the rest of `~/.config/hypr/` stays Omarchy-owned. `hyprland.lua` sets `omarchy_preinstalled_bindings = false` because the flag must be set before the defaults load, which `bindings.lua` is too late for.
+
+Anything Omarchy or a plugin writes into these files lands in this repository's working tree, as hyprmoncfg's monitor include in `hyprland.lua` did. `omarchy refresh hyprland` replaces the symlinks with stock files; rerun the link step afterwards.
 
 ## Remote access
 
@@ -85,7 +92,7 @@ Power profile selection stays with Omarchy and `power-profiles-daemon`. Universe
 
 ## sfx14 video acceleration
 
-Omarchy's `default/hypr/nvidia.lua` exports `LIBVA_DRIVER_NAME=nvidia` on every machine that has an NVIDIA GPU. On this hybrid laptop the browser renders on the Intel iGPU (`renderD129`, i915), and `nvidia-vaapi-driver` publishes no encode entrypoint on either render node, so that default leaves every video call encoding in software. `~/.config/hypr/hyprland.lua` overrides it to `iHD` after the Omarchy defaults load. The override stays in the Omarchy-owned config rather than being seeded from Universe.
+Omarchy's `default/hypr/nvidia.lua` exports `LIBVA_DRIVER_NAME=nvidia` on every machine that has an NVIDIA GPU. On this hybrid laptop the browser renders on the Intel iGPU (`renderD129`, i915), and `nvidia-vaapi-driver` publishes no encode entrypoint on either render node, so that default leaves every video call encoding in software. `~/.config/hypr/hyprland.lua` overrides it to `iHD` after the Omarchy defaults load. The override lives in `hosts/sfx14/hyprland.lua`; see [Hyprland overrides](#hyprland-overrides).
 
 Measured under the 15 W cap, a 1080p30 encode cost 10.2 s of CPU in software against 0.4 s through iHD VAAPI, so for a video call the driver name was worth more than the power cap. Verify with `env | grep LIBVA_DRIVER_NAME` in a fresh session: the value only reaches applications through uwsm at session start, so a running session keeps the old one until the next login.
 

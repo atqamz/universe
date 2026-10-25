@@ -38,6 +38,7 @@
 !/hosts/sfx14/*.service
 !/hosts/sfx14/sfx14-warp-wireguard
 !/hosts/sfx14/*.rules
+!/hosts/sfx14/*.lua
 
 !/modules/
 !/modules/nixos/
