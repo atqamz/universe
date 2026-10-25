@@ -289,7 +289,7 @@ let
       sig=$(printf '%s' "$signing_input" | openssl dgst -sha256 -sign "$PEM_PATH" -binary | b64url)
 
       http=$(curl -sS -o "$resp" -w '%{http_code}' -X POST \
-        --retry 3 --retry-delay 5 --retry-connrefused --max-time 30 \
+        --retry 5 --retry-all-errors --retry-delay 5 --max-time 30 \
         -H "Authorization: Bearer ''${signing_input}.''${sig}" \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -325,7 +325,7 @@ let
       access_token=$(github-app-token "$PEM_PATH" "$APP_ID" "$INSTALLATION_ID")
 
       http=$(curl -sS -o "$resp" -w '%{http_code}' -X POST \
-        --retry 3 --retry-delay 5 --retry-connrefused --max-time 30 \
+        --retry 5 --retry-all-errors --retry-delay 5 --max-time 30 \
         -H "Authorization: Bearer ''${access_token}" \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -577,11 +577,13 @@ let
       "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
-    wants = [ "network-online.target" ];
+    wants = [
+      "network-online.target"
+      "github-runner-token-refresh.service"
+    ];
     requires = [
       "github-runner-dirs.service"
       "github-runner-unity-image.service"
-      "github-runner-token-refresh.service"
       "${podmanUnitFor r}.service"
     ];
     wantedBy = [ "multi-user.target" ];
@@ -800,6 +802,8 @@ in
           Type = "oneshot";
           User = "github-runner";
           Group = "github-runner";
+          Restart = "on-failure";
+          RestartSec = "30s";
           ExecStart = "${tokenRefresh}/bin/github-runner-token-refresh ${appPemPath} ${appId} ${installationId} ${orgName} ${tokenEnv}";
         };
       };
