@@ -117,15 +117,10 @@ let
   podmanUnitFor = r: "github-runner-podman-${r.name}";
   runnerUnitFor = r: "github-runner-${r.name}";
 
-  claudeTrustedRepos = lib.unique (
-    mirroredRepos
-    ++ [
-      "yes2infra"
-      "yes2dashboard"
-      "yes2sdk-core"
-      "yes2iap"
-    ]
-  );
+  claudeTrustedRepos = mirroredRepos ++ [
+    "yes2sdk-core"
+    "yes2iap"
+  ];
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
     builtins.toJSON {
@@ -146,10 +141,14 @@ let
     "nsr"
     "butler"
     "nsr-nakama"
-    "nsr-webtransport"
     "rujak"
+    "yes2infra"
+    "yes2dashboard"
+    "yes2github"
   ];
   startedHookInContainer = "/opt/runner-hooks/job-started.sh";
+
+  actionCacheRoot = "${hotRoot}/action-archives";
 
   toolCacheRoot = "${hotRoot}/toolcache";
   toolCacheInContainer = "/opt/hostedtoolcache";
@@ -220,6 +219,66 @@ let
         fi
       done
       [ "$failed" -lt "''${#repos[@]}" ]
+    '';
+  };
+
+  actionCacheRefresh = pkgs.writeShellApplication {
+    name = "github-runner-action-cache-refresh";
+    runtimeInputs = with pkgs; [
+      appToken
+      coreutils
+      curl
+      git
+      gnugrep
+      gnused
+      gnutar
+      gzip
+    ];
+    text = ''
+      pins() {
+        { grep -hoE "uses:[[:space:]]*['\"]?[^[:space:]'\"#]+@[0-9a-f]{40}" || true; } \
+          | sed -E -e "s/^uses:[[:space:]]*['\"]?//" -e '\|/\.github/workflows/|d' \
+          | sed -E 's|^([^/]+/[^/@]+)[^@]*@|\1 |'
+      }
+
+      token=$(github-app-token ${appPemPath} ${appId} ${installationId})
+      install -d -m 0755 ${actionCacheRoot}
+
+      todo=$(
+        for repo in ${lib.concatMapStringsSep " " lib.escapeShellArg mirroredRepos}; do
+          [ -d ${mirrorRoot}/"$repo".git ] || continue
+          git -C ${mirrorRoot}/"$repo".git grep -I -e uses: HEAD -- .github || true
+        done | pins | sort -u
+      )
+      seen=""
+      failed=0
+      while [ -n "$todo" ]; do
+        next=""
+        while read -r action sha; do
+          file=${actionCacheRoot}/''${action/\//_}/$sha.tar.gz
+          if [ ! -s "$file" ]; then
+            install -d -m 0755 "$(dirname "$file")"
+            if curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --max-time 300 \
+              -H @<(printf 'Authorization: Bearer %s\n' "$token") \
+              -o "$file.part" "https://api.github.com/repos/$action/tarball/$sha" \
+              && tar -tzf "$file.part" >/dev/null; then
+              mv -f "$file.part" "$file"
+              echo "cached $action@$sha"
+            else
+              rm -f "$file.part"
+              echo "action archive download failed for $action@$sha" >&2
+              failed=$((failed + 1))
+              continue
+            fi
+          fi
+          next+=$(tar -xzOf "$file" --wildcards '*/action.yml' '*/action.yaml' 2>/dev/null | pins || true)
+          next+=$'\n'
+        done <<<"$todo"
+        seen=$(printf '%s\n%s\n' "$seen" "$todo" | sed '/^$/d' | sort -u)
+        todo=$(printf '%s\n' "$next" | sed '/^$/d' | sort -u | comm -23 - <(printf '%s\n' "$seen"))
+      done
+      token=""
+      [ "$failed" -eq 0 ]
     '';
   };
 
@@ -347,7 +406,7 @@ let
     name = "github-runner-dirs";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      install -d -m 0755 ${mirrorRoot} ${editorRoot} ${toolCacheRoot} ${denoCacheRoot}
+      install -d -m 0755 ${mirrorRoot} ${actionCacheRoot} ${editorRoot} ${toolCacheRoot} ${denoCacheRoot}
     ''
     + lib.concatMapStringsSep "\n" (
       r:
@@ -626,6 +685,7 @@ let
           "-e DOTNET_NOLOGO=1"
           "-e AGENT_TOOLSDIRECTORY=${toolCacheInContainer}"
           "-e DENO_DIR=${denoCacheInContainer}"
+          "-e ACTIONS_RUNNER_ACTION_ARCHIVE_CACHE=${actionCacheRoot}"
         ]
         ++ lib.optional (!r.warm) "-e ACTIONS_RUNNER_HOOK_JOB_COMPLETED=${hookInContainer}"
         ++ [
@@ -642,6 +702,7 @@ let
         ]
         ++ [
           "-v ${mirrorRoot}:${mirrorRoot}:ro"
+          "-v ${actionCacheRoot}:${actionCacheRoot}:ro"
           "-v ${toolCacheFor r}:${toolCacheInContainer}"
           "-v ${denoCacheFor r}:${denoCacheInContainer}"
           "-v ${ciTools}:${ciToolsInContainer}:ro"
@@ -793,6 +854,20 @@ in
         };
       };
 
+      github-runner-action-cache-refresh = {
+        description = "Download the action archives the mirrored repositories pin";
+        after = [
+          "network-online.target"
+          "github-runner-mirror-refresh.service"
+        ];
+        wants = [ "network-online.target" ];
+        unitConfig.RequiresMountsFor = [ hotRoot ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${actionCacheRefresh}/bin/github-runner-action-cache-refresh";
+        };
+      };
+
       github-runner-token-refresh = {
         description = "Mint short-lived registration tokens for ${hostLabel} runners";
         after = [ "network-online.target" ];
@@ -838,6 +913,17 @@ in
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnBootSec = "10min";
+          OnUnitActiveSec = "30min";
+          RandomizedDelaySec = "2min";
+          Persistent = true;
+        };
+      };
+
+      github-runner-action-cache-refresh = {
+        description = "Periodic refresh of the action archive cache";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "12min";
           OnUnitActiveSec = "30min";
           RandomizedDelaySec = "2min";
           Persistent = true;
