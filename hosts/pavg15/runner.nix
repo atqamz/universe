@@ -8,8 +8,8 @@ let
   orgName = "yes2games";
   hostLabel = "pavg15";
   imageRepo = "docker.io/myoung34/github-runner";
-  imageTag = "2.338.1-ubuntu-noble";
-  imageDigest = "sha256:340f69448f36fd361fc50d2aeef41bf3b4f0ddc93acaed858ccb14e7b4906ca2";
+  imageTag = "2.338.2-ubuntu-noble";
+  imageDigest = "sha256:16bcdd1e6805fbbeb173fab71a2016a6363e57e9ca3973d8a73dfe7eed09e069";
 
   localImage = "localhost/github-runner:${imageTag}-${lib.substring 7 12 imageDigest}";
   imageCacheDir = "${hotRoot}/image-cache";
@@ -120,6 +120,11 @@ let
   claudeTrustedRepos = mirroredRepos ++ [
     "yes2sdk-core"
     "yes2iap"
+    "yes2mail"
+    "kebab"
+    "site-metadata"
+    "yes2portal"
+    "yes2sdk-www"
   ];
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
