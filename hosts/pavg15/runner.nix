@@ -120,6 +120,11 @@ let
   claudeTrustedRepos = mirroredRepos ++ [
     "yes2sdk-core"
     "yes2iap"
+    "yes2mail"
+    "kebab"
+    "site-metadata"
+    "yes2portal"
+    "yes2sdk-www"
   ];
 
   claudeTrust = pkgs.writeText "claude-trust.json" (
