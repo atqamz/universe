@@ -6,7 +6,6 @@
     loader.efi.canTouchEfiVariables = true;
     resumeDevice = "/dev/disk/by-partlabel/disk-main-swap";
     consoleLogLevel = 0;
-    initrd.verbose = false;
     kernelParams = [
       "quiet"
       "loglevel=3"
