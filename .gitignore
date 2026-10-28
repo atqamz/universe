@@ -25,6 +25,11 @@
 !/agents/skills/playwright/
 !/agents/skills/playwright/pw
 !/agents/skills/playwright/preflight
+!/agents/skills/secret-guard/
+!/agents/skills/secret-guard/e2e
+!/agents/skills/secret-guard/guard
+!/agents/skills/secret-guard/scrub
+!/agents/skills/secret-guard/test
 !/agents/systemd/
 !/agents/systemd/*.service
 !/agents/systemd/*.timer

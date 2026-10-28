@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+import json
+import math
+import re
+import sys
+
+BREAK = r"(?:\r?\n|(?:\\r)?\\n)"
+
+
+def token(prefix, *parts):
+    loose = r"\.".join(rf"[{chars}]*(?:{BREAK}[{chars}]+)*" for chars, _ in parts)
+    strict = r"\.".join(rf"[{chars}]{{{n},}}" for chars, n in parts)
+    return re.compile(prefix + loose), re.compile(prefix + strict)
+
+
+PATTERNS = [
+    ("age-key", *token(r"AGE-SECRET-KEY-1", ("0-9A-Z", 50))),
+    ("github-token", *token(r"\bgh[pousr]_", ("A-Za-z0-9", 30))),
+    ("github-token", *token(r"\bgithub_pat_", ("A-Za-z0-9_", 30))),
+    ("anthropic-key", *token(r"\bsk-ant-", ("A-Za-z0-9_-", 20))),
+    ("google-api-key", *token(r"\bAIza", ("0-9A-Za-z_-", 30))),
+    ("cloudflare-token", *token(r"\bcf[a-z]{1,4}_", ("A-Za-z0-9_-", 30))),
+    (
+        "jwt",
+        *token(r"\beyJ", ("A-Za-z0-9_-", 10), ("A-Za-z0-9_-", 10), ("A-Za-z0-9_-", 10)),
+    ),
+]
+
+PRIVATE_KEY = re.compile(
+    r"-----BEGIN[A-Z0-9 ]*PRIVATE KEY( BLOCK)?-----[\s\S]*?(?:-----END[A-Z0-9 ]*PRIVATE KEY( BLOCK)?-----|$)"
+)
+EXIT_TRAILER = '\n( exit $? ) || echo "[exit status $?]"'
+AWS_KEY = re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")
+URL_TOKEN = re.compile(
+    r"([?&#](?:access_|auth_|api_|refresh_)?token=)[^&#\s\"'<>\\]+", re.IGNORECASE
+)
+
+ASSIGNMENT = re.compile(
+    r"(\b[\w.-]*(?:token|secret|key|password|passwd|pwd)\b[\\\"']*\s*[=:]\s*[\\\"']*)([^\s\"'\\,;&]{12,})",
+    re.IGNORECASE,
+)
+
+
+def entropy(value):
+    counts = {c: value.count(c) for c in set(value)}
+    return -sum(n / len(value) * math.log2(n / len(value)) for n in counts.values())
+
+
+def secretish(value):
+    if value[0] in "/~$<[{(*." or value.startswith("[redacted:"):
+        return False
+    if re.fullmatch(r"[a-z]+(?:[-_.][a-z]+)*", value):
+        return False
+    return entropy(value) >= 3.0
+
+
+def redact_token(kind, strict, match):
+    text = match.group(0)
+    first = re.split(BREAK, text, maxsplit=1)[0]
+    if strict.fullmatch(first):
+        return f"[redacted:{kind}]" + text[len(first) :]
+    if strict.fullmatch(re.sub(BREAK, "", text)):
+        return f"[redacted:{kind}]"
+    return text
+
+
+def scrub_text(text):
+    text = PRIVATE_KEY.sub("[redacted:private-key]", text)
+    text = AWS_KEY.sub("[redacted:aws-access-key]", text)
+    for kind, loose, strict in PATTERNS:
+        text = loose.sub(
+            lambda m, kind=kind, strict=strict: redact_token(kind, strict, m), text
+        )
+    text = URL_TOKEN.sub(r"\1[redacted:url-token]", text)
+    return ASSIGNMENT.sub(
+        lambda m: (
+            m.group(1) + "[redacted:assignment]"
+            if secretish(m.group(2))
+            else m.group(0)
+        ),
+        text,
+    )
+
+
+def walk(node, leaf):
+    if isinstance(node, str):
+        return leaf(node)
+    if isinstance(node, list):
+        return [walk(item, leaf) for item in node]
+    if isinstance(node, dict):
+        return {key: walk(value, leaf) for key, value in node.items()}
+    return node
+
+
+def hook_output(event, scrubbed):
+    return json.dumps(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": event.get("hook_event_name", "PostToolUse"),
+                "updatedToolOutput": scrubbed,
+            }
+        }
+    )
+
+
+def forward():
+    try:
+        event = json.load(sys.stdin)
+        payload = json.dumps(walk(event, scrub_text))
+    except Exception as error:
+        print(f"secret-guard: nothing forwarded: {error}", file=sys.stderr)
+        return 0
+    sys.stdout.write(payload)
+    return 0
+
+
+def wrap():
+    try:
+        event = json.load(sys.stdin)
+        command = event["tool_input"]["command"]
+    except Exception as error:
+        print(
+            f"secret-guard: command not wrapped, a failure will skip the scrub: {error}",
+            file=sys.stderr,
+        )
+        return 0
+    if command.endswith(EXIT_TRAILER):
+        return 0
+    updated = {**event["tool_input"], "command": command + EXIT_TRAILER}
+    json.dump(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "updatedInput": updated,
+            }
+        },
+        sys.stdout,
+    )
+    return 0
+
+
+def main():
+    sys.setrecursionlimit(20000)
+    if sys.argv[1:] == ["--payload"]:
+        return forward()
+    if sys.argv[1:] == ["--wrap"]:
+        return wrap()
+    try:
+        event = json.load(sys.stdin)
+        response = event["tool_response"]
+    except Exception as error:
+        print(
+            f"secret-guard: unreadable hook input, output NOT scrubbed: {error}",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        scrubbed = walk(response, scrub_text)
+        if scrubbed == response:
+            return 0
+        output = hook_output(event, scrubbed)
+    except Exception as error:
+        print(
+            f"secret-guard: scrub failed, output NOT scrubbed: {error}", file=sys.stderr
+        )
+        return 1
+    sys.stdout.write(output)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

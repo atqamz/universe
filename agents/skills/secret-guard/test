@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+import json
+import pathlib
+import subprocess
+import sys
+
+SCRUB = pathlib.Path(__file__).resolve().with_name("scrub")
+FILLER = "Fake0Not1Real2Value3Xy" * 3
+
+FAKES = {
+    "github-token": "gh" + "p_" + FILLER[:36],
+    "github-pat": "github" + "_pat_" + FILLER[:50],
+    "server-token": "gh" + "s_" + FILLER[:36],
+    "age-key": "AGE-" + "SECRET-KEY-1" + "QZ7" * 20,
+    "google-api-key": "AI" + "za" + FILLER[:35],
+    "cloudflare-token": "cf" + "ut_" + FILLER[:40],
+    "aws-access-key": "AK" + "IA" + "FAKE0NOT1REAL234",
+    "anthropic-key": "sk-" + "ant-" + FILLER[:40],
+    "jwt": "ey" + "JhbGciOiJIUzI1NiJ9." + "ey" + "JzdWIiOiJmYWtlIn0." + FILLER[:20],
+}
+KEY_BLOCK = (
+    "-----BEGIN OPENSSH "
+    + "PRIVATE KEY-----\n"
+    + "\n".join([FILLER[:60]] * 4)
+    + "\n-----END OPENSSH "
+    + "PRIVATE KEY-----"
+)
+
+failures = []
+
+
+def run(response, event="PostToolUse"):
+    payload = {"hook_event_name": event, "tool_name": "Bash", "tool_response": response}
+    done = subprocess.run(
+        [sys.executable, SCRUB],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+    )
+    if done.returncode != 0:
+        return done.returncode, None
+    if not done.stdout:
+        return 0, response
+    return 0, json.loads(done.stdout)["hookSpecificOutput"]["updatedToolOutput"]
+
+
+def bash(stdout):
+    return {"stdout": stdout, "stderr": "", "interrupted": False, "isImage": False}
+
+
+def check(name, text, leaked, marker):
+    _, out = run(bash(text))
+    flat = json.dumps(out)
+    if leaked in out["stdout"] or leaked in flat:
+        failures.append(f"{name}: value survived")
+    if marker and marker not in out["stdout"]:
+        failures.append(f"{name}: missing {marker}")
+
+
+for kind, value in FAKES.items():
+    check(kind, f"before {value} after", value, "[redacted:")
+    check(f"{kind} json-escaped", json.dumps({"v": f"x={value}"}), value, "[redacted:")
+
+check("private key", f"head\n{KEY_BLOCK}\ntail", FILLER[:60], "[redacted:private-key]")
+check(
+    "private key json-escaped",
+    json.dumps({"key": KEY_BLOCK}),
+    FILLER[:60],
+    "[redacted:private-key]",
+)
+check("private key truncated", KEY_BLOCK[:120], FILLER[:40], "[redacted:private-key]")
+
+split = FAKES["github-token"][:20] + "\n" + FAKES["github-token"][20:]
+check(
+    "token split across lines",
+    split,
+    FAKES["github-token"][20:],
+    "[redacted:github-token]",
+)
+check(
+    "token split json-escaped",
+    json.dumps({"v": split}),
+    FAKES["github-token"][20:],
+    "[redacted:github-token]",
+)
+line_end = "GH=" + FAKES["github-token"] + "\nHOME=/x"
+_, out = run(bash(line_end))
+if out["stdout"] != "GH=[redacted:github-token]\nHOME=/x":
+    failures.append(f"token at line end took the next line: {out['stdout']!r}")
+jwt = FAKES["jwt"]
+check("jwt split", jwt[:30] + "\n" + jwt[30:], jwt[30:], "[redacted:jwt]")
+
+url = "ws://127.0.0.1:9222/extension?token=" + FILLER[:43] + "&tab=1"
+check(
+    "playwright url",
+    f"Open tabs: {url}",
+    FILLER[:43],
+    "token=[redacted:url-token]&tab=1",
+)
+
+for line in [
+    "CLOUDFLARE_API_TOKEN=" + FILLER[:40],
+    "export DEPLOY_SECRET='" + FILLER[:30] + "'",
+    "aws_secret_access_key = " + FILLER[:40],
+    "password=" + FILLER[:16],
+    '"API_KEY": "' + FILLER[:32] + '"',
+    '{\\"db_password\\": \\"' + FILLER[:20] + '\\"}',
+]:
+    check(f"assignment {line[:20]}", line, FILLER[:12], "[redacted:assignment]")
+
+for benign in [
+    "SSH_KEY=/home/user/.ssh/id_ed25519.pub",
+    "GITHUB_TOKEN=${GITHUB_TOKEN}",
+    "primary_key=user-account-name",
+    "token=<redacted>",
+    "monkey see monkey do",
+    "commit 0123456789abcdef0123456789abcdef01234567",
+]:
+    _, out = run(bash(benign))
+    if out["stdout"] != benign:
+        failures.append(f"false positive: {benign!r} -> {out['stdout']!r}")
+
+clean = bash("nothing here")
+payload = {"hook_event_name": "PostToolUse", "tool_response": clean}
+done = subprocess.run(
+    [sys.executable, SCRUB], input=json.dumps(payload), capture_output=True, text=True
+)
+if done.stdout:
+    failures.append("clean output produced a replacement")
+
+read = {
+    "type": "text",
+    "file": {"filePath": "/x/.env", "content": "A_TOKEN=" + FILLER[:30], "numLines": 1},
+}
+_, out = run(read)
+if (
+    set(out) != set(read)
+    or set(out["file"]) != set(read["file"])
+    or FILLER[:30] in json.dumps(out)
+):
+    failures.append("Read output shape changed or leaked")
+
+mcp = [{"type": "text", "text": "url " + FAKES["github-token"]}]
+_, out = run(mcp)
+if FAKES["github-token"] in json.dumps(out):
+    failures.append("MCP content array leaked")
+
+done = subprocess.run(
+    [sys.executable, SCRUB], input="not json", capture_output=True, text=True
+)
+if done.returncode != 1 or "NOT scrubbed" not in done.stderr:
+    failures.append("malformed input must exit 1 with a visible error")
+
+event = {
+    "hook_event_name": "PostToolUse",
+    "tool_input": {"command": "x"},
+    "tool_response": bash(FAKES["jwt"]),
+}
+done = subprocess.run(
+    [sys.executable, SCRUB, "--payload"],
+    input=json.dumps(event),
+    capture_output=True,
+    text=True,
+)
+forwarded = json.loads(done.stdout)
+if (
+    FAKES["jwt"] in done.stdout
+    or forwarded["tool_input"] != event["tool_input"]
+    or "[redacted:jwt]" not in done.stdout
+):
+    failures.append("--payload must forward the whole event scrubbed")
+done = subprocess.run(
+    [sys.executable, SCRUB, "--payload"],
+    input="not json",
+    capture_output=True,
+    text=True,
+)
+if done.stdout:
+    failures.append("--payload must forward nothing on unreadable input")
+
+wrap_event = {"tool_input": {"command": "sh -c 'exit 7'", "description": "d"}}
+done = subprocess.run(
+    [sys.executable, SCRUB, "--wrap"],
+    input=json.dumps(wrap_event),
+    capture_output=True,
+    text=True,
+)
+updated = json.loads(done.stdout)["hookSpecificOutput"]["updatedInput"]
+shell = subprocess.run(
+    ["bash", "-c", updated["command"]], capture_output=True, text=True
+)
+if (
+    updated["description"] != "d"
+    or shell.returncode != 0
+    or shell.stdout != "[exit status 7]\n"
+):
+    failures.append(
+        f"--wrap must keep the input and report the status: {shell.returncode} {shell.stdout!r}"
+    )
+again = subprocess.run(
+    [sys.executable, SCRUB, "--wrap"],
+    input=json.dumps({"tool_input": updated}),
+    capture_output=True,
+    text=True,
+)
+if again.stdout:
+    failures.append("--wrap must not wrap twice")
+
+
+def nested(depth):
+    node = FAKES["github-token"]
+    for _ in range(depth):
+        node = [node]
+    payload = json.dumps({"tool_response": node})
+    return subprocess.run(
+        [sys.executable, SCRUB], input=payload, capture_output=True, text=True
+    )
+
+
+done = nested(5000)
+if FAKES["github-token"] in done.stdout or "[redacted:github-token]" not in done.stdout:
+    failures.append("deeply nested output must still be scrubbed")
+done = nested(30000)
+if done.returncode != 1 or done.stdout or "NOT scrubbed" not in done.stderr:
+    failures.append(
+        "an unscrubbable output must exit 1 with a visible error and no partial JSON"
+    )
+
+for failure in failures:
+    print("FAIL", failure)
+print(f"{'FAIL' if failures else 'ok'}: {len(failures)} failures")
+sys.exit(1 if failures else 0)
