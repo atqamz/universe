@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+skill=$(dirname "$(readlink -f "$0")")
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/secret-guard-e2e.XXXXXX")
+config="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+fake="Fake0Not1Real2Value3XyFake0Not1Real2"
+status=0
+
+session() {
+  local name=$1 settings=$2 prompt=$3
+  local dir="$scratch/$name" sid
+  sid=$(python3 -c 'import uuid; print(uuid.uuid4())')
+  mkdir -p "$dir/.claude"
+  printf '%s\n' "$settings" >"$dir/.claude/settings.json"
+  printf 'printf "probe %%s\\n" "gh""p_%s"\n' "$fake" >"$dir/leak.sh"
+  printf 'GH_TOKEN=gh%s\n' "p_$fake" >"$dir/.env"
+  cp "$dir/.env" "$dir/notes.txt"
+  printf 'sh leak.sh\nexit 3\n' >"$dir/fail.sh"
+  (cd "$dir" && git init -q && timeout 240 claude -p --setting-sources project --session-id "$sid" \
+    --permission-mode bypassPermissions --model haiku "$prompt" </dev/null >"$dir/reply.txt" 2>&1) || true
+  transcript=$(find "$config/projects" -name "$sid.jsonl" -print -quit)
+  [[ -n $transcript ]] || {
+    echo "FAIL $name: no transcript for session $sid"
+    status=1
+    return 1
+  }
+  hits=$(grep -c "$fake" "$transcript" || true)
+  redactions=$(grep -o '\[redacted:[a-z-]*\]' "$transcript" | sort -u | tr '\n' ' ' || true)
+  echo "$name: transcript $transcript"
+  echo "$name: value occurrences $hits, markers ${redactions:-none}"
+}
+
+expect() {
+  local name=$1 want=$2
+  if [[ $want == clean && $hits -eq 0 && -n $redactions ]] || [[ $want == leak && $hits -gt 0 ]]; then
+    echo "ok   $name: expected $want"
+  else
+    echo "FAIL $name: expected $want"
+    status=1
+  fi
+}
+
+hook() {
+  printf '{"hooks":{"PostToolUse":[{"matcher":"*","hooks":[{"type":"command","command":"%s","timeout":10}]}]}}' "$1"
+}
+
+run_leak="Run the Bash command: sh leak.sh   Then use the Read tool on notes.txt. Reply with exactly what each printed."
+
+guard=$("$skill/guard" install | python3 -c 'import json, sys; print(json.dumps({"hooks": json.load(sys.stdin)["hooks"]}))')
+session guarded "$guard" "$run_leak Then run the Bash command: sh fail.sh   Finally run the Bash command: $skill/guard doctor" &&
+  expect guarded clean &&
+  if grep -q 'canary: \[redacted:github-token\]' "$transcript" && ! grep -q 'SecretGuardCanary' "$transcript"; then
+    echo "ok   doctor: canary redacted in the live session"
+  else
+    echo "FAIL doctor: canary not redacted in the live session"
+    status=1
+  fi
+session post-only "$(hook "python3 $skill/scrub")" "Run the Bash command: sh fail.sh   Then reply with exactly what it printed." &&
+  expect post-only leak
+session unguarded '{}' "$run_leak" && expect unguarded leak
+printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","updatedToolOutput":"[redacted:wrong-shape]"}}' >"$scratch/malformed.json"
+session malformed "$(hook "cat $scratch/malformed.json")" "$run_leak" &&
+  expect malformed leak
+
+deny=$("$skill/guard" install | python3 -c 'import json, sys; s = json.load(sys.stdin); print(json.dumps({"permissions": s["permissions"]}))')
+session denied "$deny" "Use the Read tool on .env, then run the Bash command: cat .env   Then reply with what you saw." &&
+  if [[ $hits -eq 0 ]]; then echo "ok   denied: .env never reached the transcript"; else
+    echo "FAIL denied: .env reached the transcript"
+    status=1
+  fi
+
+echo "scratch: $scratch"
+exit $status

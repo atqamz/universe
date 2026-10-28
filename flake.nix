@@ -40,6 +40,10 @@
 
       checks.${system} = {
         pavg15 = self.nixosConfigurations.pavg15.config.system.build.toplevel;
+        secret-guard = pkgs.runCommand "secret-guard" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+          python3 ${./agents/skills/secret-guard}/test
+          touch $out
+        '';
         no-comments = pkgs.runCommand "no-comments" { } ''
           if grep -rnE '^\s*#' --exclude='*.md' --exclude='*.lock' --exclude=LICENSE ${self} \
             | grep -vE ':[0-9]+:\s*#(!|\s*shellcheck)'; then
