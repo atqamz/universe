@@ -22,6 +22,9 @@
 !/agents/skills/
 !/agents/skills/*/
 !/agents/skills/*/SKILL.md
+!/agents/skills/playwright/
+!/agents/skills/playwright/pw
+!/agents/skills/playwright/preflight
 !/agents/systemd/
 !/agents/systemd/*.service
 !/agents/systemd/*.timer
