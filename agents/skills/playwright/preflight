@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -uo pipefail
+here="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+profile="${PW_PROFILE:-y2g}"
+fail() { echo "playwright preflight FAILED: $1" >&2; exit 1; }
+
+command -v npx >/dev/null || fail "npx not found on PATH; install Node (mise) so npx is available, then retry"
+command -v pass >/dev/null || fail "pass not found on PATH; the operator must install or unlock password-store"
+case "$profile" in
+  y2g) entry=playwright/token-y2g ;;
+  personal) entry=playwright/token-personal ;;
+  *) fail "PW_PROFILE must be y2g or personal" ;;
+esac
+timeout 10 pass show "$entry" 2>/dev/null | head -n1 | grep -q . \
+  || fail "pass entry $entry is missing or locked; the operator must create it or unlock gpg"
+pgrep -x chrome >/dev/null \
+  || fail "Chrome is not running; the operator must start Chrome with the $profile profile"
+
+session="preflight-$$"
+out="$(timeout 25 "$here/pw" -s="$session" attach --extension=chrome 2>&1)"
+rc=$?
+timeout 10 "$here/pw" -s="$session" detach >/dev/null 2>&1
+if [ "$rc" -ne 0 ] || printf '%s' "$out" | grep -qiE 'did not connect|error|unauthori[sz]ed|invalid'; then
+  fail "extension did not answer in 25s or rejected the token; the operator must enable the Playwright extension in the $profile profile or fix the token in pass entry $entry"
+fi
+echo "playwright preflight ok ($profile)"

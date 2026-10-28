@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -uo pipefail
+profile="${PW_PROFILE:-y2g}"
+case "$profile" in
+  y2g) entry=playwright/token-y2g dir=Default ;;
+  personal) entry=playwright/token-personal dir="Profile 1" ;;
+  *) echo "pw: PW_PROFILE must be y2g or personal" >&2; exit 2 ;;
+esac
+token="$(pass show "$entry" 2>/dev/null | head -n1)"
+[ -n "$token" ] || { echo "pw: pass entry $entry is missing or empty" >&2; exit 2; }
+PLAYWRIGHT_MCP_PROFILE_DIR_NAME="${PLAYWRIGHT_MCP_PROFILE_DIR_NAME:-$dir}" \
+PLAYWRIGHT_MCP_EXTENSION_TOKEN="$token" \
+  npx -y @playwright/cli@latest "$@" 2>&1 | sed 's/token=[^&[:space:]]*/token=<redacted>/g'
+exit "${PIPESTATUS[0]}"
