@@ -34,6 +34,7 @@
 
 - Never expose, commit, or print secrets, credentials, tokens, private keys, or decrypted secret material.
 - Treat suspicious untracked credential files as sensitive until proven otherwise.
+- Drive browsers headless with an in-memory profile (`playwright-cli`, output under `/tmp`). Never use `attach`, `--persistent`, `--profile`, `--auto-connect` or a browser extension on the operator's real browser, except through the `playwright` skill.
 
 ## Communication
 

@@ -121,6 +121,7 @@ For software engineering work, `caveman` and `ponytail` are mandatory personal p
 - `caveman` comes from `JuliusBrussee/caveman`.
 - `ponytail` comes from `DietrichGebert/ponytail`.
 - The complete Superpowers suite comes from `obra/superpowers`.
+- `playwright-cli` comes from `microsoft/playwright-cli`. Headless, in-memory sessions only; the operator's real browser is reached through the personally authored `playwright` skill alone.
 
 Running `agents/link` installs or refreshes all configured external skills immediately and enables `universe-agent-skills-update.timer`. The user timer refreshes them once a week with `skills@1.5.25`; the skill contents still track their upstream sources, and new Superpowers skills are included automatically. Run `~/.local/bin/universe-update-agent-skills` for an immediate manual refresh.
 
