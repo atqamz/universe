@@ -12,7 +12,7 @@ Build or switch the server with:
 sudo nixos-rebuild switch --flake .#pavg15
 ```
 
-The server continues to use Disko, sops-nix, Tailscale, automatic upgrades, and its CI runner configuration.
+The server uses Disko, sops-nix, Tailscale, and automatic upgrades.
 
 ## Agents
 
