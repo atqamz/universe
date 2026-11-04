@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+_: {
   imports = [
     ./minimal.nix
     ./always-on.nix
@@ -8,6 +7,4 @@
     ./nix-ld.nix
     ./virtualisation.nix
   ];
-
-  system.autoUpgrade.operation = lib.mkForce "boot";
 }
