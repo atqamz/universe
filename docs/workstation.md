@@ -11,7 +11,17 @@ The workstation is expected to look like a fresh current Omarchy install plus id
 5. Clone Universe: `git clone git@github.com:atqamz/universe.git ~/universe`.
 6. Run `~/universe/agents/link`.
 7. Install Nix only for repositories that use it: `omarchy-pkg-add nix`, then `sudo systemctl enable --now nix-daemon.service`.
-8. Install the sfx14 units: `omarchy-pkg-add python-nvidia-ml-py`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, `sudo install -m755 ~/universe/hosts/sfx14/sfx14-warp-wireguard /usr/local/bin/`, then `sudo systemctl enable --now sfx14-power-cap.service sfx14-gpu-cap.service` and `sudo systemctl enable sfx14-warp-wireguard.service`.
+8. Install the sfx14 units and the GPU tool: `omarchy-pkg-add python-nvidia-ml-py pciutils`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, `sudo install -m755 ~/universe/hosts/sfx14/sfx14-warp-wireguard /usr/local/bin/`, then `sudo systemctl enable --now sfx14-power-cap.service` and `sudo systemctl enable sfx14-warp-wireguard.service`. The dGPU policy is owned by [sfx14-gpu](https://github.com/atqamz/sfx14-gpu), pinned to a release; install it and its units:
+
+   ```sh
+   tag=v0.1.0
+   curl -fsSL "https://github.com/atqamz/sfx14-gpu/archive/refs/tags/$tag.tar.gz" | tar -xz -C /tmp
+   src="/tmp/sfx14-gpu-${tag#v}"
+   sudo install -Dm755 "$src/bin/sfx14-gpu" /usr/local/bin/sfx14-gpu
+   sudo install -Dm644 "$src"/systemd/sfx14-gpu-{off,game}.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now sfx14-gpu-off.service
+   ```
 9. Join the tailnet and enable remote access: `omarchy-pkg-add tailscale`, `sudo systemctl enable --now tailscaled.service`, then register against the same OAuth client pavg15 uses:
 
    ```sh
@@ -78,15 +88,15 @@ PL2 has to stay above PL1. PL2 governs the 2.44 ms burst window, so a PL2 below 
 
 The unit writes both the MSR and the MMIO domain, and the effective limit is the minimum of the two. The MSR domain is the one that holds: 28 W survived a full heat cycle there. The earlier 15 W did not, and PL1 was found back at 45 W while the PL2 write from the same `ExecStart` had stuck, so a PL1 set far below the firmware's 28 W hint has to be read back rather than assumed. `thermald` owns MMIO PL1 as a cooling device and was measured moving it between 20 W and 45 W as the package temperature changed, so the MMIO write only matters when `thermald` is not running. Re-check with `grep . /sys/class/powercap/intel-rapl{,-mmio}:0/constraint_[01]_power_limit_uw` after a hot run or a suspend cycle; MMIO values moving on their own is expected, MSR values moving is not.
 
-`sfx14-gpu-cap.service` reproduces what the retired NixOS configuration did to the RTX 4050: persistence mode on, graphics clocks locked to 210-1540 MHz, and a +200 MHz GPC VF offset so the locked clock runs at a lower voltage point. The offset needs `python-nvidia-ml-py`; `nvidia-smi` only exposes negative VF derate on GeForce. Persistence mode keeps the dGPU initialised, which costs a little idle power.
+`sfx14-gpu` owns the dGPU policy now. `sfx14-gpu-off.service` runs `off` at boot (persistence cleared, the card waits for D3cold), and `sfx14-gpu-game.service` applies the gaming profile the retired NixOS configuration had: persistence on, graphics clocks locked to 210-1540 MHz, and a +200 MHz GPC VF offset so the locked clock runs at a lower voltage point. The offset needs `python-nvidia-ml-py`; `nvidia-smi` only exposes negative VF derate on GeForce. With nothing holding `/dev/nvidia*` and persistence off, the card sleeps in D3cold; the nvidia driver and the compositor must not open its DRM nodes (see the `AQ_DRM_DEVICES` note below).
 
-That unit silently skipped itself at every boot until now. `/dev/nvidiactl` appears about seven seconds after the nvidia module loads, which is after systemd reaches the unit, so `ConditionPathExists` on that node was always false and the GPU ran uncapped. It now conditions on `nvidia-modprobe` and calls it from `ExecStartPre`, which is the vendor's own way to create the nodes. Confirm the offset landed by reading `nvmlDeviceGetGpcClkVfOffset`; the reported maximum graphics clock also moves from 3105 to 3300 MHz when it is applied. The 1540 MHz ceiling only shows under a graphics load, not under NVENC, which runs on a separate clock domain.
+The retired unit silently skipped itself at every boot: `/dev/nvidiactl` appears about seven seconds after the nvidia module loads, which is after systemd reaches the unit, so `ConditionPathExists` on that node was always false and the GPU ran uncapped. The tool's units condition on `nvidia-smi`, and the tool runs `nvidia-modprobe -c 0 -u` itself before it touches the card. Confirm the offset landed by reading `nvmlDeviceGetGpcClkVfOffset`; the reported maximum graphics clock also moves from 3105 to 3300 MHz when it is applied. The 1540 MHz ceiling only shows under a graphics load, not under NVENC, which runs on a separate clock domain.
 
-Both units reapply on resume through `WantedBy=suspend.target` plus `After=suspend.target`, because firmware restores its own defaults across a suspend cycle.
+The power-cap unit reapplies on resume through `WantedBy=suspend.target` plus `After=suspend.target`, because firmware restores its own defaults across a suspend cycle. The gaming unit is manual, so start it again after a suspend; the off unit runs at boot and needs no reapply.
 
 Voltage undervolting is not possible on this machine. The OC mailbox is locked: a write of MSR 0x150 returns no fault but the offset reads back as 0 mV, with Secure Boot disabled and kernel lockdown `[none]`. The retired NixOS configuration did not undervolt either, despite the name; its `services.undervolt` block only carried RAPL limits.
 
-The units are copied into `/etc/systemd/system` rather than symlinked, because `/home` is a separate mount and systemd must read them before it is available. Re-run the install command after editing them here.
+The universe units are copied into `/etc/systemd/system` rather than symlinked, because `/home` is a separate mount and systemd must read them before it is available; the tool's units are installed the same way by its install command. Re-run the install after editing them here.
 
 Power profile selection stays with Omarchy and `power-profiles-daemon`. Universe does not set it.
 
