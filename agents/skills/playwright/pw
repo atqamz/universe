@@ -19,7 +19,12 @@ run "$@"
 rc=$?
 session=()
 for a in "$@"; do case "$a" in -s=*) session=("$a") ;; esac; done
-if [ "$rc" -eq 0 ] && printf '%s\n' "$@" | grep -qx tab-new; then
+close_connect=0
+printf '%s\n' "$@" | grep -qx tab-new && close_connect=1
+if [ "$rc" -eq 0 ] && [ "${PW_FOREGROUND:-}" != 1 ] && printf '%s\n' "$@" | grep -qx attach; then
+  run "${session[@]}" tab-new about:blank >/dev/null && close_connect=1
+fi
+if [ "$rc" -eq 0 ] && [ "$close_connect" -eq 1 ]; then
   idx=$(run "${session[@]}" tab-list | sed -n 's/^- \([0-9]*\):.*<connect tab>.*/\1/p' | head -n1)
   [ -n "$idx" ] && run "${session[@]}" tab-close "$idx" >/dev/null
 fi
