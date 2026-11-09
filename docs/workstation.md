@@ -54,7 +54,9 @@ Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migratio
 
 `hosts/sfx14/hyprland.lua`, `input.lua`, and `bindings.lua` are symlinked into `~/.config/hypr/` so keybinding, gesture, and driver overrides survive a reinstall. They load after Omarchy's defaults; the rest of `~/.config/hypr/` stays Omarchy-owned. `hyprland.lua` sets `omarchy_preinstalled_bindings = false` because the flag must be set before the defaults load, which `bindings.lua` is too late for.
 
-Anything Omarchy or a plugin writes into these files lands in this repository's working tree, as hyprmoncfg's monitor include in `hyprland.lua` did. `omarchy refresh hyprland` replaces the symlinks with stock files; rerun the link step afterwards.
+Anything Omarchy or a plugin writes into these files lands in this repository's working tree. `omarchy refresh hyprland` copies stock defaults through the symlinks, overwriting the files here; restore them with `git checkout` and keep changes committed.
+
+Monitors are set in `~/.config/hypr/monitors.lua`, which is not symlinked, with `omarchy_monitor_panel_settings = false`.
 
 ## Remote access
 

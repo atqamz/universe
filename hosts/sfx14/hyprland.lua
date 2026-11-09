@@ -11,6 +11,9 @@ dofile((os.getenv("OMARCHY_PATH") or "/usr/share/omarchy") .. "/default/hypr/boo
 omarchy_preinstalled_bindings = false
 
 -- Load Omarchy defaults.
+-- Your own gestures replace Omarchy's defaults.
+omarchy_default_gestures = false
+
 require("default.hypr.omarchy")
 
 -- Put your personal overrides in these files. They're loaded after Omarchy's
@@ -27,6 +30,8 @@ require("default.hypr.toggles")
 
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
+o.window("google-chrome", { focus_on_activate = false })
 
--- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
-do local path = os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua"; local file = io.open(path, "r"); if file then file:close(); dofile(path) end end
+-- Keep Hyprland off the NVIDIA DRM nodes so the dGPU can reach D3cold when idle.
+-- Read at compositor start: takes effect on the next Hyprland restart, not on reload.
+hl.env("AQ_DRM_DEVICES", "/dev/dri/by-path/pci-0000:00:02.0-card") -- iGPU (i915); card numbers shift between boots
