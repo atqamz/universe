@@ -11,3 +11,6 @@ o.bind("SUPER + ALT + P", "Password store", { panel = "hegjon.passwordstore" })
 o.bind("SUPER + period", "Emojis", { panel = "omarchy.emojis" })
 o.bind("SUPER + SHIFT + S", "Screenshot (region)", "omarchy-capture-screenshot region")
 o.bind("SUPER + SHIFT + A", "Extract text (OCR)", "omarchy-capture-text")
+o.bind("SUPER + ALT + V", "Clipboard history", { panel = "omarchy.clipboard" })
+
+o.bind("SUPER + ALT + D", "Dictate (hyprwhspr)", "/home/atqa/.local/bin/hyprwhspr-dictate")
