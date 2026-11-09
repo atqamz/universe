@@ -52,11 +52,9 @@ Do not seed `~/.config` from Universe. Let Omarchy own its defaults and migratio
 
 ## Hyprland overrides
 
-`hosts/sfx14/hyprland.lua`, `input.lua`, and `bindings.lua` are symlinked into `~/.config/hypr/` so keybinding, gesture, and driver overrides survive a reinstall. They load after Omarchy's defaults; the rest of `~/.config/hypr/` stays Omarchy-owned. `hyprland.lua` sets `omarchy_preinstalled_bindings = false` because the flag must be set before the defaults load, which `bindings.lua` is too late for.
+`hosts/sfx14/hyprland.lua`, `input.lua`, `bindings.lua`, and `monitors.lua` are symlinked into `~/.config/hypr/` so keybinding, gesture, driver, and monitor overrides survive a reinstall. They load after Omarchy's defaults; the rest of `~/.config/hypr/` stays Omarchy-owned. `hyprland.lua` sets `omarchy_preinstalled_bindings = false` because the flag must be set before the defaults load, which `bindings.lua` is too late for.
 
-Anything Omarchy or a plugin writes into these files lands in this repository's working tree. `omarchy refresh hyprland` copies stock defaults through the symlinks, overwriting the files here; restore them with `git checkout` and keep changes committed.
-
-Monitors are set in `~/.config/hypr/monitors.lua`, which is not symlinked, with `omarchy_monitor_panel_settings = false`.
+Anything Omarchy or a plugin writes into these files lands in this repository's working tree. `omarchy refresh hyprland` copies stock defaults through the symlinks, overwriting the files here; restore them with `git checkout` and keep changes committed. `monitors.lua` sets `omarchy_monitor_panel_settings = false`, so the Omarchy display panel stands down and that file alone sets every monitor. The Gigabyte runs its advertised `2560x1440` mode: a custom mode such as `2880x1620@60` is rejected by the kernel and leaves the output without signal.
 
 ## Remote access
 
