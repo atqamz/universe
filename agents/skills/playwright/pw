@@ -15,14 +15,26 @@ run() {
     npx -y @playwright/cli@latest "$@" 2>&1 | sed -e 's/token=[^&[:space:]]*/token=<redacted>/g' -e 's#chrome-extension://[^)[:space:]]*connect\.html[^)[:space:]]*#<connect tab>#g'
   return "${PIPESTATUS[0]}"
 }
-run "$@"
-rc=$?
 session=()
 for a in "$@"; do case "$a" in -s=*) session=("$a") ;; esac; done
+detaching=0
+printf '%s\n' "$@" | grep -qx detach && [ "${#session[@]}" -gt 0 ] && detaching=1
+if [ "$detaching" -eq 1 ]; then
+  for idx in $(run "${session[@]}" tab-list | sed -n 's/^- \([0-9]*\):.*/\1/p' | sort -rn); do
+    run "${session[@]}" tab-close "$idx" >/dev/null
+  done
+fi
+if [ "$detaching" -eq 1 ]; then
+  run "$@" >/dev/null
+  rc=0
+else
+  run "$@"
+  rc=$?
+fi
 close_connect=0
 printf '%s\n' "$@" | grep -qx tab-new && close_connect=1
 if [ "$rc" -eq 0 ] && [ "${PW_FOREGROUND:-}" != 1 ] && printf '%s\n' "$@" | grep -qx attach; then
-  run "${session[@]}" tab-new about:blank >/dev/null && close_connect=1
+  run "${session[@]}" tab-new "${PW_START_URL:-about:blank}" >/dev/null && close_connect=1
 fi
 if [ "$rc" -eq 0 ] && [ "$close_connect" -eq 1 ]; then
   idx=$(run "${session[@]}" tab-list | sed -n 's/^- \([0-9]*\):.*<connect tab>.*/\1/p' | head -n1)

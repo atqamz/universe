@@ -35,11 +35,11 @@ PLAYWRIGHT_MCP_PROFILE_DIR_NAME=Default PLAYWRIGHT_MCP_EXTENSION_TOKEN="$(pass s
 ## 3. Session etiquette
 
 - Use a fresh `-s=<name>` per task and per retry.
-- `pw ... attach` opens a hidden `about:blank` tab and closes the connect tab at once, so you start on that blank tab. `goto URL` there, or open more with `pw -s=<name> tab-new URL`. Leave the operator's tabs alone, including the Hand board, and close every tab you opened before `detach`.
+- `pw ... attach` opens a hidden `about:blank` tab and closes the connect tab at once, so you start on that blank tab. `goto URL` there, or open more with `pw -s=<name> tab-new URL`. Set `PW_START_URL=URL` on the attach to start on that page and skip the blank one. `tab-list` shows only the session's own tabs. Leave the operator's tabs alone, including the Hand board.
 - The extension opens its `connect.html` tab on attach. `pw` closes it after a successful `tab-new` (closing it while it is the session's only tab ends the session), and prints it as `<connect tab>`.
 - Under Hyprland the preload opens the connect page with `--new-window`, moves that window silently to `special:pw` and refocuses the window that was active; it is gone once `pw` closes the connect tab (measured: under 60 ms visible, about 0.4 s alive). Without Hyprland or with `PW_FOREGROUND=1` the connect tab opens in the operator's window as before.
 - Agent tabs open in the background (`background-connect.cjs`, preloaded by `pw`), so the operator's window never switches tab. A background tab cannot take a screenshot (it times out) and real clicks may time out: read with `eval`, click with `el.click()` in `setTimeout`. Never use `PW_FOREGROUND=1` on your own: the operator works in that window and a foreground tab steals focus. Read pages with `eval` (`document.body.innerText`, `snapshot`), type with `fill`/`type` on a snapshot ref, and click with `el.click()` in `setTimeout`. Use `PW_FOREGROUND=1 pw ...` only when the brief or the operator explicitly allows it for that session.
-- When done: `pw -s=<name> tab-close N`, then `pw -s=<name> detach`. Delete the `.playwright-cli/` folder the CLI writes in the working directory. Do not commit it.
+- When done: `pw -s=<name> detach`. It closes every tab the session opened first, so none are left in the operator's Chrome; that ends the session. Delete the `.playwright-cli/` folder the CLI writes in the working directory. Do not commit it.
 - Never run `request N`: it prints request headers with the session auth. Use `requests` then `--raw response-body N`.
 - The CLI's tab may be hidden, so `click` and `drop` can time out on "stable". Use `eval` with `el.click()` inside `setTimeout`.
 
