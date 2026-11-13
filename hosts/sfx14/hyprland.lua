@@ -32,6 +32,7 @@ require("default.hypr.toggles")
 -- o.window("qemu", { workspace = "5" })
 o.window("google-chrome", { focus_on_activate = false })
 
--- Keep Hyprland off the NVIDIA DRM nodes so the dGPU can reach D3cold when idle.
--- Read at compositor start: takes effect on the next Hyprland restart, not on reload.
-hl.env("AQ_DRM_DEVICES", "/dev/dri/by-path/pci-0000:00:02.0-card") -- iGPU (i915); card numbers shift between boots
+-- AQ_DRM_DEVICES (keep Hyprland off the NVIDIA nodes so the dGPU can reach
+-- D3cold) is set in ~/.config/uwsm/env.d/50-aq-drm-devices.sh, not here:
+-- aquamarine splits it on ':' and ',', which breaks the by-path symlink, and a
+-- config env line would only clobber the corrected value.
