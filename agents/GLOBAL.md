@@ -54,8 +54,6 @@ Use plain prose, then resume:
 ## Authorization and Security
 
 - Do not commit, push, open or close issues, open or edit pull or merge requests, review, or merge unless explicitly authorized for that action.
-- Never add a `Co-Authored-By` trailer or any attribution naming a model or tool.
-- Never force-push a default branch.
 - Never expose, commit, or print secrets, credentials, tokens, private keys, or decrypted secret material.
 - Treat suspicious untracked credential files as sensitive until proven otherwise.
 - Drive routine browsers headless with an in-memory profile and output under `/tmp`. Use the `playwright` skill only for the operator's real Chrome.

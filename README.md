@@ -16,7 +16,7 @@ The server uses Disko, sops-nix, Tailscale, and automatic upgrades.
 
 ## Agents
 
-Universe owns `agents/AGENTS.md`, `agents/CODING.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `~/AGENTS.md` routes coding work to `~/CODING.md` and holds communication rules. Skill content lives in `atqamz/skills` and is installed with `gh skill`.
+Universe owns `agents/GLOBAL.md`, `agents/CODING.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `~/AGENTS.md` routes coding work to `~/CODING.md` and holds communication rules. Skill content lives in `atqamz/skills` and is installed with `gh skill`.
 
 On an Omarchy workstation after cloning Universe:
 
