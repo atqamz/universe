@@ -122,6 +122,6 @@ Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and
 
 `agents/link` installs `~/AGENTS.md` as a symlink to `agents/global.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the `atqamz/skills` release pinned in `agents/skills.ref` with `gh skill` into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Codex and omp read `~/.agents/skills`.
 
-`gh skill` injects source metadata and treats pinned skills as fixed. `gh skill update` skips them; bump `agents/skills.ref` and rerun `agents/skills-install` to move. To change skill content, open a pull request in `atqamz/skills`, let its CI pass, tag a release, then bump the pin here.
+`gh skill` injects source metadata and treats pinned skills as fixed. `gh skill update` skips them; bump `agents/skills.ref` and rerun `agents/skills-install` to move. To change skill content, open a pull request in `atqamz/skills`; a green `main` publishes `v0.2.<run-number>` automatically, then bump the pin here.
 
 Project-specific instructions belong in the project's `AGENTS.md`. Claude Code reads `AGENTS.md` natively; do not add a `CLAUDE.md`.
