@@ -6,7 +6,7 @@ Universe is personal infrastructure, not a workstation distribution.
 
 - `hosts/pavg15` and `modules/nixos` own the pavg15 NixOS server.
 - `hosts/sfx14` owns machine-specific sfx14 units only. It is not a workstation configuration layer.
-- `agents/global.md` owns durable personal agent defaults. `agents/link` installs it as `~/AGENTS.md`.
+- `agents/AGENTS.md` owns durable personal agent defaults. `agents/link` installs it as `~/AGENTS.md`.
 - `agents/bootstrap` owns the minimal harness bootstrap files.
 - `atqamz/skills` owns personally authored reusable skills. `agents/skills.ref` pins the released tag and `agents/skills-install` installs it with `gh skill`.
 - Vault owns private identity and secret bootstrap material.

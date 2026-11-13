@@ -16,7 +16,7 @@ The server uses Disko, sops-nix, Tailscale, and automatic upgrades.
 
 ## Agents
 
-Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. Skill content lives in `atqamz/skills` and is installed with `gh skill`.
+Universe owns `agents/AGENTS.md`, `agents/CODING.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `~/AGENTS.md` routes coding work to `~/CODING.md` and holds communication rules. Skill content lives in `atqamz/skills` and is installed with `gh skill`.
 
 On an Omarchy workstation after cloning Universe:
 
@@ -25,7 +25,7 @@ On an Omarchy workstation after cloning Universe:
 ~/universe/agents/skills-install
 ```
 
-`agents/link` installs `~/AGENTS.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the pinned `atqamz/skills` release into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Pinned skills are skipped by `gh skill update`; bump `agents/skills.ref` to move them.
+`agents/link` installs `~/AGENTS.md` and `~/CODING.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the pinned `atqamz/skills` release into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Pinned skills are skipped by `gh skill update`; bump `agents/skills.ref` to move them.
 
 ## Develop
 

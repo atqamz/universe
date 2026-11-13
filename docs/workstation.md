@@ -118,9 +118,9 @@ Raising the broker's idle time with `UNITY_AUTH_BROKER_IDLE_MS` was tried and dr
 
 ## Agents
 
-Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `atqamz/skills` owns skill content. Universe does not manage harness settings beyond the marked bootstrap files and the `instructions` entry in `~/.config/opencode/opencode.json`.
+Universe owns `agents/AGENTS.md`, `agents/CODING.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `atqamz/skills` owns skill content. Universe does not manage harness settings beyond the marked bootstrap files and the `instructions` entry in `~/.config/opencode/opencode.json`.
 
-`agents/link` installs `~/AGENTS.md` as a symlink to `agents/global.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the `atqamz/skills` release pinned in `agents/skills.ref` with `gh skill` into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Codex and omp read `~/.agents/skills`.
+`agents/link` installs `~/AGENTS.md` as a symlink to `agents/AGENTS.md`, `~/CODING.md` as a symlink to `agents/CODING.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the `atqamz/skills` release pinned in `agents/skills.ref` with `gh skill` into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Codex and omp read `~/.agents/skills`.
 
 `gh skill` injects source metadata and treats pinned skills as fixed. `gh skill update` skips them; bump `agents/skills.ref` and rerun `agents/skills-install` to move. To change skill content, open a pull request in `atqamz/skills`; `ci.yaml` checks it, and a green `main` lets `cd.yaml` publish `v0.3.<run-number>` automatically, then bump the pin here.
 

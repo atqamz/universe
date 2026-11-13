@@ -14,7 +14,8 @@
 !/.github/workflows/*.yaml
 
 !/agents/
-!/agents/global.md
+!/agents/AGENTS.md
+!/agents/CODING.md
 !/agents/link
 !/agents/bootstrap/
 !/agents/bootstrap/*.md

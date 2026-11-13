@@ -82,7 +82,13 @@ install_bootstrap() {
   echo "installed $target"
 }
 
-link_owned "$root/global.md" "$HOME/AGENTS.md"
+legacy_global="$repo_root/agents/global.md"
+if [ -L "$HOME/AGENTS.md" ] && [ "$(readlink -- "$HOME/AGENTS.md")" = "$legacy_global" ]; then
+  rm -f -- "$HOME/AGENTS.md"
+fi
+
+link_owned "$root/AGENTS.md" "$HOME/AGENTS.md"
+link_owned "$root/CODING.md" "$HOME/CODING.md"
 
 install_bootstrap "$root/bootstrap/claude.md" "$HOME/.claude/CLAUDE.md"
 install_bootstrap "$root/bootstrap/codex.md" "$HOME/.codex/AGENTS.md"
