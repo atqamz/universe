@@ -9,7 +9,7 @@ The workstation is expected to look like a fresh current Omarchy install plus id
 3. Clone the private Vault: `gh repo clone atqamz/vault ~/vault`.
 4. Run `~/vault/scripts/bootstrap-workstation` to restore personal identity and password-store.
 5. Clone Universe: `git clone git@github.com:atqamz/universe.git ~/universe`.
-6. Run `~/universe/agents/link`.
+6. Run `~/universe/agents/link` and `~/universe/agents/skills-install`.
 7. Install Nix only for repositories that use it: `omarchy-pkg-add nix`, then `sudo systemctl enable --now nix-daemon.service`.
 8. Install the sfx14 units and the GPU tool: `omarchy-pkg-add python-nvidia-ml-py pciutils`, `sudo install -m644 ~/universe/hosts/sfx14/*.service /etc/systemd/system/`, `sudo install -m755 ~/universe/hosts/sfx14/sfx14-warp-wireguard /usr/local/bin/`, then `sudo systemctl enable --now sfx14-power-cap.service` and `sudo systemctl enable sfx14-warp-wireguard.service`. The dGPU policy is owned by [sfx14-gpu](https://github.com/atqamz/sfx14-gpu), pinned to a release; install it and its units:
 
@@ -118,10 +118,10 @@ Raising the broker's idle time with `UNITY_AUTH_BROKER_IDLE_MS` was tried and dr
 
 ## Agents
 
-Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the skills under `agents/skills`. It does not manage harness settings beyond the marked bootstrap files and the `instructions` entry in `~/.config/opencode/opencode.json`.
+Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the `agents/skills.ref` pin. `atqamz/skills` owns skill content. Universe does not manage harness settings beyond the marked bootstrap files and the `instructions` entry in `~/.config/opencode/opencode.json`.
 
-`agents/link` installs `~/AGENTS.md` as a symlink to `agents/global.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, adds `~/AGENTS.md` to OpenCode's `instructions`, and links each skill into `~/.agents/skills`, `~/.claude/skills`, and `~/.codex/skills`. It refuses to replace an existing real file or a foreign symlink.
+`agents/link` installs `~/AGENTS.md` as a symlink to `agents/global.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, and adds `~/AGENTS.md` to OpenCode's `instructions`. `agents/skills-install` installs the `atqamz/skills` release pinned in `agents/skills.ref` with `gh skill` into `~/.agents/skills`, `~/.claude/skills`, and `~/.config/opencode/skills`. Codex and omp read `~/.agents/skills`.
 
-Skills are imperative manuals. `SKILL.md` holds the procedure; `references/` holds lookup material and `docs/` holds longer rationale. Do not add external skill managers or refresh timers.
+`gh skill` injects source metadata and treats pinned skills as fixed. `gh skill update` skips them; bump `agents/skills.ref` and rerun `agents/skills-install` to move. To change skill content, open a pull request in `atqamz/skills`, let its CI pass, tag a release, then bump the pin here.
 
 Project-specific instructions belong in the project's `AGENTS.md`. Claude Code reads `AGENTS.md` natively; do not add a `CLAUDE.md`.

@@ -84,14 +84,6 @@ install_bootstrap() {
 
 link_owned "$root/global.md" "$HOME/AGENTS.md"
 
-for skill in "$root"/skills/*/; do
-  [ -f "$skill/SKILL.md" ] || continue
-  name="$(basename -- "$skill")"
-  link_owned "${skill%/}" "$HOME/.agents/skills/$name"
-  link_owned "${skill%/}" "$HOME/.claude/skills/$name"
-  link_owned "${skill%/}" "$HOME/.codex/skills/$name"
-done
-
 install_bootstrap "$root/bootstrap/claude.md" "$HOME/.claude/CLAUDE.md"
 install_bootstrap "$root/bootstrap/codex.md" "$HOME/.codex/AGENTS.md"
 install_bootstrap "$root/bootstrap/agents.md" "$HOME/.agents/AGENTS.md"
@@ -114,7 +106,7 @@ if [ -f "$opencode_config" ]; then
     fi
     opencode_ready=1
   else
-    echo "jq is required to add ~/AGENTS.md to $opencode_config" >&2
+    echo "jq is required to add $HOME/AGENTS.md to $opencode_config" >&2
   fi
 fi
 
@@ -122,19 +114,26 @@ if [ "$opencode_ready" = 1 ]; then
   remove_owned_symlink "$HOME/.config/opencode/AGENTS.md" || true
 fi
 
-for skills_root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills"; do
+for skills_root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.config/opencode/skills"; do
   [ -d "$skills_root" ] || continue
   for link in "$skills_root"/*; do
     [ -L "$link" ] || continue
+    link_target="$(readlink -- "$link" 2>/dev/null || true)"
     link_real="$(readlink -f -- "$link" 2>/dev/null || true)"
+    case "$link_target" in
+      "$repo_root/agents/skills"/*)
+        rm -f -- "$link"
+        echo "removed legacy $link"
+        continue
+        ;;
+    esac
     case "$link_real" in
-      "$root/skills"/*)
-        name="$(basename -- "$link")"
-        if [ ! -f "$root/skills/$name/SKILL.md" ]; then
-          rm -f -- "$link"
-          echo "removed stale $link"
-        fi
+      "$repo_root/agents/skills"/*)
+        rm -f -- "$link"
+        echo "removed legacy $link"
         ;;
     esac
   done
 done
+
+echo "run $root/skills-install to install the pinned skills"

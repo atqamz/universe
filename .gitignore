@@ -18,14 +18,8 @@
 !/agents/link
 !/agents/bootstrap/
 !/agents/bootstrap/*.md
-!/agents/skills/
-!/agents/skills/*/
-!/agents/skills/*/SKILL.md
-!/agents/skills/*/*
-!/agents/skills/*/scripts/**
-!/agents/skills/*/examples/**
-!/agents/skills/*/references/**
-!/agents/skills/*/docs/**
+!/agents/skills.ref
+!/agents/skills-install
 
 !/docs/
 !/docs/*.md

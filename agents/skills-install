@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ref="$(tr -d '[:space:]' < "$root/skills.ref")"
+
+if [ -z "$ref" ]; then
+  echo "agents/skills.ref is empty" >&2
+  exit 1
+fi
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "gh is required to install skills" >&2
+  exit 1
+fi
+
+for agent in claude-code codex opencode; do
+  gh skill install atqamz/skills --all --pin "$ref" --scope user --agent "$agent" --force
+done
+
+for skills_root in "$HOME/.claude/skills" "$HOME/.agents/skills" "$HOME/.config/opencode/skills"; do
+  [ -d "$skills_root" ] || continue
+  while IFS= read -r -d '' file; do
+    if head -1 -- "$file" | grep -q '^#!'; then
+      chmod +x -- "$file"
+    fi
+  done < <(find "$skills_root" -type f -print0)
+done
