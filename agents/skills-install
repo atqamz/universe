@@ -14,6 +14,21 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+installed="$(mktemp)"
+trap 'rm -f -- "$installed"' EXIT
+gh skill list --scope user --json path,sourceURL \
+  --jq '.[] | select(.sourceURL == "https://github.com/atqamz/skills") | .path' > "$installed"
+
+while IFS= read -r skill_dir; do
+  [ -d "$skill_dir" ] || continue
+  [ -L "$skill_dir" ] && continue
+  case "$skill_dir" in
+    "$HOME/.claude/skills"/*|"$HOME/.agents/skills"/*|"$HOME/.config/opencode/skills"/*)
+      rm -rf -- "$skill_dir"
+      ;;
+  esac
+done < "$installed"
+
 for agent in claude-code codex opencode; do
   gh skill install atqamz/skills --all --pin "$ref" --scope user --agent "$agent" --force
 done
@@ -25,4 +40,5 @@ while IFS= read -r skill_dir; do
       chmod +x -- "$file"
     fi
   done < <(find "$skill_dir" -type f -print0)
-done < <(gh skill list --scope user --json path --jq '.[].path')
+done < <(gh skill list --scope user --json path,sourceURL \
+  --jq '.[] | select(.sourceURL == "https://github.com/atqamz/skills") | .path')
