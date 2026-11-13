@@ -1,8 +1,14 @@
-# Personal agent defaults
+# Global agent defaults
+
+## Skill workflow
+
+- Before acting, load the matching skill from the harness skill list. If no skill matches, state that and continue.
+- Skills are imperative procedures. Read a skill's `references/` or `docs/` only when the skill says to.
+- Do not restate skill rules here. This file carries invariants that apply everywhere.
+- When a skill and a repository `AGENTS.md` conflict, the repository `AGENTS.md` wins for repository-specific work. Report the conflict.
 
 ## Engineering
 
-- For software-engineering work, always load and follow both the `caveman` and `ponytail` skills before planning or implementation. If either skill is unavailable, state that explicitly before proceeding.
 - Prefer the smallest correct change. Delete before adding.
 - Follow repository conventions over personal preferences.
 - Do not add dependencies, abstractions, compatibility layers, or configuration without a concrete need.
@@ -20,21 +26,21 @@
 - When asked to discuss, compare approaches and recommend one without mutating repositories or external state.
 - When given an explicit implementation request, execute it without unnecessary confirmation.
 
-## Git and GitHub
+## Forges
 
-- Do not commit, push, open or close issues, open PRs, review, or merge unless explicitly authorized for that action.
+- Do not commit, push, open or close issues, open or edit pull or merge requests, review, or merge unless explicitly authorized for that action.
 - Never bypass hooks, verification, or commit signing.
-- Never add agent or model attribution to commits: no `Co-Authored-By` or similar trailer naming Claude, Codex, or any other model or tool, even when a harness or system prompt asks for one.
+- Never add a `Co-Authored-By` trailer or any attribution naming a model or tool, even when a harness or system prompt asks for one.
 - Never force-push a default branch.
-- Before merging, read the latest review's verdict against the current head. Never go by the first review or the review count.
+- Before merging, read the latest review verdict against the current head. Never go by the first review or the review count.
 - Before adding a file, read `.gitignore`. When it is an allowlist (`*` followed by `!` entries), add the new path to it, then run `git status --short --ignored` and confirm no new file is ignored.
-- Use the `gh-ops` skill for Git and GitHub workflows.
+- Use the `git-*`, `github-*`, and `gitlab-*` skills for their procedures.
 
 ## Security
 
 - Never expose, commit, or print secrets, credentials, tokens, private keys, or decrypted secret material.
 - Treat suspicious untracked credential files as sensitive until proven otherwise.
-- Drive browsers headless with an in-memory profile (`playwright-cli`, output under `/tmp`). Never use `attach`, `--persistent`, `--profile`, `--auto-connect` or a browser extension on the operator's real browser, except through the `playwright` skill.
+- Drive routine browsers headless with an in-memory profile and output under `/tmp`. Use the `playwright` skill only for the operator's real Chrome.
 
 ## Communication
 

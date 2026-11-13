@@ -118,21 +118,10 @@ Raising the broker's idle time with `UNITY_AUTH_BROKER_IDLE_MS` was tried and dr
 
 ## Agents
 
-Universe owns only:
+Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the skills under `agents/skills`. It does not manage harness settings beyond the marked bootstrap files and the `instructions` entry in `~/.config/opencode/opencode.json`.
 
-- `agents/global.md`: personal defaults shared across Claude Code, Codex, and OpenCode.
-- `agents/skills/*`: personally authored reusable skills such as `gh-ops`.
-- `agents/update-skills`: refreshes mandatory externally owned skills from their canonical skills.sh/GitHub sources.
+`agents/link` installs `~/AGENTS.md` as a symlink to `agents/global.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, adds `~/AGENTS.md` to OpenCode's `instructions`, and links each skill into `~/.agents/skills`, `~/.claude/skills`, and `~/.codex/skills`. It refuses to replace an existing real file or a foreign symlink.
 
-`agents/link` links files and individual personally owned skill directories. It never replaces an existing real file or a foreign symlink, and it never replaces whole harness directories such as `~/.claude`, `~/.codex`, `~/.config/opencode`, or `~/.agents/skills`.
+Skills are imperative manuals. `SKILL.md` holds the procedure; `references/` holds lookup material and `docs/` holds longer rationale. Do not add external skill managers or refresh timers.
 
-For software engineering work, `caveman` and `ponytail` are mandatory personal policy. Universe also installs the complete Superpowers suite. These skills remain externally owned rather than vendored into Universe:
-
-- `caveman` comes from `JuliusBrussee/caveman`.
-- `ponytail` comes from `DietrichGebert/ponytail`.
-- The complete Superpowers suite comes from `obra/superpowers`.
-- `playwright-cli` comes from `microsoft/playwright-cli`. Headless, in-memory sessions only; the operator's real browser is reached through the personally authored `playwright` skill alone.
-
-Running `agents/link` installs or refreshes all configured external skills immediately and enables `universe-agent-skills-update.timer`. The user timer refreshes them once a week with `skills@1.5.25`; the skill contents still track their upstream sources, and new Superpowers skills are included automatically. Run `~/.local/bin/universe-update-agent-skills` for an immediate manual refresh.
-
-Project-specific instructions belong in the project. Prefer `AGENTS.md` as the canonical project policy and a small `CLAUDE.md` that imports it when Claude compatibility is needed.
+Project-specific instructions belong in the project's `AGENTS.md`. Claude Code reads `AGENTS.md` natively; do not add a `CLAUDE.md`.

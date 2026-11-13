@@ -16,7 +16,7 @@ The server uses Disko, sops-nix, Tailscale, and automatic upgrades.
 
 ## Agents
 
-Universe does not manage Claude Code, Codex, or OpenCode settings. It only owns `agents/global.md` and the skills under `agents/skills`.
+Universe owns `agents/global.md`, the bootstrap files in `agents/bootstrap`, and the skills under `agents/skills`. It does not install external skill managers or refresh timers.
 
 On an Omarchy workstation after cloning Universe:
 
@@ -24,7 +24,7 @@ On an Omarchy workstation after cloning Universe:
 ~/universe/agents/link
 ```
 
-The linker refuses to overwrite existing real files or foreign symlinks.
+The linker installs `~/AGENTS.md`, writes the marked bootstrap files for Claude Code, Codex, and omp, adds `~/AGENTS.md` to OpenCode's `instructions`, and links each skill into `~/.agents/skills`, `~/.claude/skills`, and `~/.codex/skills`. It refuses to replace an existing real file or a foreign symlink.
 
 ## Develop
 

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$root/.." && pwd)"
+bootstrap_marker='<!-- universe bootstrap: managed by ~/universe/agents/link -->'
 
 link_owned() {
   local source="$1"
@@ -29,21 +31,110 @@ link_owned() {
   echo "linked $target"
 }
 
-link_owned "$root/global.md" "$HOME/.claude/CLAUDE.md"
-link_owned "$root/global.md" "$HOME/.codex/AGENTS.md"
-link_owned "$root/global.md" "$HOME/.config/opencode/AGENTS.md"
+remove_owned_symlink() {
+  local target="$1"
+  local target_real
 
-for skill in "$root"/skills/*; do
-  [ -d "$skill" ] || continue
-  name="${skill##*/}"
-  link_owned "$skill" "$HOME/.agents/skills/$name"
-  link_owned "$skill" "$HOME/.claude/skills/$name"
+  [ -L "$target" ] || return 0
+  target_real="$(readlink -f -- "$target" 2>/dev/null || true)"
+  case "$target_real" in
+    "$repo_root"/*)
+      rm -f -- "$target"
+      echo "removed $target"
+      ;;
+    *)
+      echo "refusing to remove foreign symlink: $target" >&2
+      return 1
+      ;;
+  esac
+}
+
+install_bootstrap() {
+  local source="$1"
+  local target="$2"
+  local target_real
+
+  mkdir -p -- "$(dirname -- "$target")"
+
+  if [ -L "$target" ]; then
+    target_real="$(readlink -f -- "$target" 2>/dev/null || true)"
+    case "$target_real" in
+      "$repo_root"/*) rm -f -- "$target" ;;
+      *)
+        echo "refusing to replace foreign symlink: $target" >&2
+        return 1
+        ;;
+    esac
+  elif [ -f "$target" ]; then
+    if cmp -s -- "$source" "$target"; then
+      return
+    fi
+    if ! grep -qF -- "$bootstrap_marker" "$target"; then
+      echo "refusing to replace existing file: $target" >&2
+      return 1
+    fi
+  elif [ -e "$target" ]; then
+    echo "refusing to replace existing path: $target" >&2
+    return 1
+  fi
+
+  cp -- "$source" "$target"
+  echo "installed $target"
+}
+
+link_owned "$root/global.md" "$HOME/AGENTS.md"
+
+for skill in "$root"/skills/*/; do
+  [ -f "$skill/SKILL.md" ] || continue
+  name="$(basename -- "$skill")"
+  link_owned "${skill%/}" "$HOME/.agents/skills/$name"
+  link_owned "${skill%/}" "$HOME/.claude/skills/$name"
+  link_owned "${skill%/}" "$HOME/.codex/skills/$name"
 done
 
-link_owned "$root/update-skills" "$HOME/.local/bin/universe-update-agent-skills"
-link_owned "$root/systemd/universe-agent-skills-update.service" "$HOME/.config/systemd/user/universe-agent-skills-update.service"
-link_owned "$root/systemd/universe-agent-skills-update.timer" "$HOME/.config/systemd/user/universe-agent-skills-update.timer"
+install_bootstrap "$root/bootstrap/claude.md" "$HOME/.claude/CLAUDE.md"
+install_bootstrap "$root/bootstrap/codex.md" "$HOME/.codex/AGENTS.md"
+install_bootstrap "$root/bootstrap/agents.md" "$HOME/.agents/AGENTS.md"
 
-bash "$root/update-skills"
-systemctl --user daemon-reload
-systemctl --user enable --now universe-agent-skills-update.timer
+opencode_config="$HOME/.config/opencode/opencode.json"
+opencode_ready=0
+if [ -f "$opencode_config" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    tmp="$(mktemp)"
+    jq --arg p "$HOME/AGENTS.md" '
+      if ((.instructions // []) | index($p)) then .
+      else .instructions = ((.instructions // []) + [$p])
+      end
+    ' "$opencode_config" > "$tmp"
+    if cmp -s -- "$opencode_config" "$tmp"; then
+      rm -f -- "$tmp"
+    else
+      mv -- "$tmp" "$opencode_config"
+      echo "updated $opencode_config"
+    fi
+    opencode_ready=1
+  else
+    echo "jq is required to add ~/AGENTS.md to $opencode_config" >&2
+  fi
+fi
+
+if [ "$opencode_ready" = 1 ]; then
+  remove_owned_symlink "$HOME/.config/opencode/AGENTS.md" || true
+fi
+
+for skills_root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills"; do
+  [ -d "$skills_root" ] || continue
+  for link in "$skills_root"/*; do
+    [ -L "$link" ] || continue
+    link_real="$(readlink -f -- "$link" 2>/dev/null || true)"
+    case "$link_real" in
+      "$root/skills"/*)
+        name="$(basename -- "$link")"
+        if [ ! -f "$root/skills/$name/SKILL.md" ]; then
+          rm -f -- "$link"
+          echo "removed stale $link"
+        fi
+        ;;
+    esac
+  done
+done
